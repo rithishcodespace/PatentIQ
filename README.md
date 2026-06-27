@@ -1,2 +1,2 @@
 # PatentIQ
-e Automated patent prior-art search engine using semantic similarity
+Automated patent prior-art search engine using semantic similarity
