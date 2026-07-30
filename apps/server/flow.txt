@@ -1,0 +1,62 @@
+# architecture
+
+User Patent
+      │
+      ▼
+Section Extraction
+      │
+      ▼
+Section Embeddings
+      │
+      ▼
+pgvector Search (Top 100)
+      │
+      ▼
+Hybrid Ranking
+      │
+      ├── Semantic Score
+      ├── BM25 Score
+      ├── Claim Similarity
+      └── IPC Match
+      ▼
+    Top 20
+      │
+      ▼
+Cross Encoder Reranking
+      │
+      ▼
+Top 10
+      │
+      ▼
+LLM Novelty Analysis
+      │
+      ▼
+Patentability Report
+
+# rithish work today
+                    Upload Patent
+                          │
+                          ▼
+                  uploads module
+                          │
+                          ▼
+                 patents module
+          Extract Title/Abstract/Claims/IPC
+                          │
+                          ▼
+               embeddings module
+            Generate embedding vectors
+                          │
+                          ▼
+         PostgreSQL + pgvector storage
+                          │
+                          ▼
+                  search module
+            Top-100 Semantic Search
+                          │
+                          ▼
+                   rag module
+      Hybrid Ranking + Cross Encoder
+                          │
+                          ▼
+                 LLM Patent Report

@@ -1,0 +1,5 @@
+DATASET - Patents citations
+
+OLLAMA MODELS:
+ nomic-embed-text -> creates vector embeddings + semantic search
+ qwen2.5:3b -> LLM (patent analysis, reports, explaining similarities, answering questions about retrieved patents)
