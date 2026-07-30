@@ -29,6 +29,11 @@ prisma/dev.db
 prisma/*.db
 prisma/*.db-journal
 
+# Large data files
+*.csv
+*.zip
+*.crdownload
+
 # Uploads
 storage/
 uploads/
