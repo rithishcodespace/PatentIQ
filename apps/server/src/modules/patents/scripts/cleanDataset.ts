@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { pipeline } from 'stream/promises';
 import csvParser from 'csv-parser';
 import { format as formatCsv } from 'fast-csv';
 
@@ -27,25 +26,17 @@ export interface RawPatentRow {
 }
 
 /**
- * Interface representing cleaned patent row.
+ * Interface representing cleaned patent row containing only requested 8 columns.
  */
 export interface CleanedPatentRow {
   patnum: string;
+  title: string;
+  abstract: string;
+  claims: string;
+  ipc: string;
   pubdate: string;
   appnum: string;
   appdate: string;
-  ipc: string;
-  ipcver: string;
-  city: string;
-  state: string;
-  country: string;
-  owner: string;
-  claims: string;
-  title: string;
-  abstract: string;
-  gen: string;
-  file: string;
-  [key: string]: string;
 }
 
 /**
@@ -117,15 +108,19 @@ export class PatentDatasetCleaner {
   }
 
   /**
-   * Sanitizes and cleans all fields of a raw patent row.
+   * Sanitizes and extracts only the 8 required columns from a raw patent row.
    */
-  public static sanitizeRow(rawRow: RawPatentRow): Record<string, string> {
-    const cleanedRow: Record<string, string> = {};
-    for (const [key, value] of Object.entries(rawRow)) {
-      const cleanKey = key.trim();
-      cleanedRow[cleanKey] = this.normalizeText(value);
-    }
-    return cleanedRow;
+  public static sanitizeRow(rawRow: RawPatentRow): CleanedPatentRow {
+    return {
+      patnum: this.normalizeText(rawRow.patnum),
+      title: this.normalizeText(rawRow.title),
+      abstract: this.normalizeText(rawRow.abstract),
+      claims: this.normalizeText(rawRow.claims),
+      ipc: this.normalizeText(rawRow.ipc),
+      pubdate: this.normalizeText(rawRow.pubdate),
+      appnum: this.normalizeText(rawRow.appnum),
+      appdate: this.normalizeText(rawRow.appdate),
+    };
   }
 
   /**
@@ -163,7 +158,10 @@ export class PatentDatasetCleaner {
     const readStream = fs.createReadStream(inputPath);
     const writeStream = fs.createWriteStream(outputPath);
 
-    const csvTransformStream = formatCsv({ headers: true });
+    // Explicitly set output headers to preserve only the 8 required columns in exact order
+    const csvTransformStream = formatCsv({
+      headers: ['patnum', 'title', 'abstract', 'claims', 'ipc', 'pubdate', 'appnum', 'appdate'],
+    });
     csvTransformStream.pipe(writeStream);
 
     const parser = readStream.pipe(csvParser());
@@ -172,22 +170,21 @@ export class PatentDatasetCleaner {
       for await (const rawRow of parser) {
         totalRead++;
 
-        // Step 1: Clean and normalize fields
+        // Step 1: Clean and extract only required 8 fields
         const cleanedRow = PatentDatasetCleaner.sanitizeRow(rawRow as RawPatentRow);
 
-        const title = cleanedRow.title || '';
-        const abstract = cleanedRow.abstract || '';
-        const patnum = cleanedRow.patnum || '';
-        const appnum = cleanedRow.appnum || '';
-
         // Step 2: Remove rows missing title or abstract
-        if (!title || !abstract) {
+        if (!cleanedRow.title || !cleanedRow.abstract) {
           skippedMissingTitleOrAbstract++;
           continue;
         }
 
         // Step 3: Remove duplicate patents (Deduplicate by patnum, falling back to appnum)
-        const patentIdKey = patnum || appnum || `${title.substring(0, 30)}_${abstract.substring(0, 30)}`;
+        const patentIdKey =
+          cleanedRow.patnum ||
+          cleanedRow.appnum ||
+          `${cleanedRow.title.substring(0, 30)}_${cleanedRow.abstract.substring(0, 30)}`;
+
         if (seenPatents.has(patentIdKey)) {
           skippedDuplicates++;
           continue;
@@ -209,11 +206,11 @@ export class PatentDatasetCleaner {
           const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
           Logger.info(
             `Processed ${totalRead.toLocaleString()} rows | ` +
-            `Cleaned: ${totalCleaned.toLocaleString()} | ` +
-            `Duplicates skipped: ${skippedDuplicates.toLocaleString()} | ` +
-            `Missing data skipped: ${skippedMissingTitleOrAbstract.toLocaleString()} | ` +
-            `Heap: ${memoryUsageMB} MB | ` +
-            `Elapsed: ${elapsedSec}s`
+              `Cleaned: ${totalCleaned.toLocaleString()} | ` +
+              `Duplicates skipped: ${skippedDuplicates.toLocaleString()} | ` +
+              `Missing data skipped: ${skippedMissingTitleOrAbstract.toLocaleString()} | ` +
+              `Heap: ${memoryUsageMB} MB | ` +
+              `Elapsed: ${elapsedSec}s`
           );
         }
       }
@@ -242,7 +239,6 @@ export class PatentDatasetCleaner {
 
       this.printSummaryReport(stats);
       return stats;
-
     } catch (error) {
       Logger.error(`Failed to process dataset CSV stream:`, error);
       // Clean up incomplete output file if error occurs
@@ -283,15 +279,17 @@ export class PatentDatasetCleaner {
  */
 async function main(): Promise<void> {
   const projectRoot = process.cwd();
-  
-  // Default paths relative to apps/server or project root
-  const defaultInputPath = path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-    ? path.resolve(projectRoot, 'src/modules/patents/dataset/raw/grant_grant.csv')
-    : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/raw/grant_grant.csv');
 
-  const defaultOutputPath = path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-    ? path.resolve(projectRoot, 'src/modules/patents/dataset/clean/grant_grant_clean.csv')
-    : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/clean/grant_grant_clean.csv');
+  // Default paths relative to apps/server or project root
+  const defaultInputPath =
+    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
+      ? path.resolve(projectRoot, 'src/modules/patents/dataset/raw/grant_grant.csv')
+      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/raw/grant_grant.csv');
+
+  const defaultOutputPath =
+    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
+      ? path.resolve(projectRoot, 'src/modules/patents/dataset/clean/grant_grant_clean.csv')
+      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/clean/grant_grant_clean.csv');
 
   // Allow custom CLI arguments if provided: --input <path> --output <path>
   const args = process.argv.slice(2);
