@@ -12,7 +12,8 @@
     "extract-sections": "tsx src/modules/patents/scripts/extractPatentSections.ts",
     "generate-embeddings": "tsx src/modules/patents/scripts/generateEmbeddings.ts",
     "upload-pinecone": "tsx src/modules/patents/scripts/uploadToPinecone.ts",
-    "semantic-search": "tsx src/modules/patents/scripts/semanticSearch.ts"
+    "semantic-search": "tsx src/modules/patents/scripts/semanticSearch.ts",
+    "benchmark-search": "tsx src/modules/patents/scripts/benchmarkSearch.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
