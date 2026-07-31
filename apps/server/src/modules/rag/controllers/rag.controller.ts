@@ -13,7 +13,7 @@ export class RagController {
 
   /**
    * Endpoint Handler: POST /api/rag/analyze
-   * Performs semantic retrieval of prior art and generates AI novelty analysis via Ollama (Qwen).
+   * Performs semantic retrieval of prior art and generates grounded 7-section AI novelty analysis via Ollama (Qwen).
    */
   async analyze(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     // 1. Zod Validation
@@ -31,17 +31,23 @@ export class RagController {
 
     // 3. Log Performance Summary Metrics without logging full prompt or payload
     const metrics = response.metrics;
+    const retrievedCount = response.retrievedPatents ? response.retrievedPatents.length : (metrics?.retrievedCount ?? 0);
     request.log.info(
-      `[RagAPI] query="${response.query}" | retrievedCount=${response.retrievedPatents.length} | retrievalMs=${metrics?.retrievalTimeMs ?? 0}ms | promptMs=${metrics?.promptTimeMs ?? 0}ms | llmMs=${metrics?.llmInferenceTimeMs ?? 0}ms | totalMs=${metrics?.totalTimeMs ?? 0}ms`
+      `[RagAPI] query="${response.query}" | retrievedCount=${retrievedCount} | retrievalMs=${metrics?.retrievalTimeMs ?? 0}ms | promptMs=${metrics?.promptTimeMs ?? 0}ms | llmMs=${metrics?.llmInferenceTimeMs ?? 0}ms | totalMs=${metrics?.totalTimeMs ?? 0}ms`
     );
 
-    // 4. Return JSON response
-    reply.status(200).send({
+    // 4. Return JSON response payload
+    const responsePayload: Record<string, any> = {
       success: response.success,
       query: response.query,
-      retrievedPatents: response.retrievedPatents,
       analysis: response.analysis,
-    });
+    };
+
+    if (response.retrievedPatents && response.retrievedPatents.length > 0) {
+      responsePayload.retrievedPatents = response.retrievedPatents;
+    }
+
+    reply.status(200).send(responsePayload);
   }
 
   /**

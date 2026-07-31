@@ -1,10 +1,10 @@
 import { buildApp } from '../../../app.js';
-import { PatentAnalysisPromptBuilder } from '../prompts/patent-analysis.prompt.js';
+import { NoveltyAnalysisPromptBuilder } from '../prompts/novelty-analysis.prompt.js';
 import type { SearchResult } from '../../search/interfaces/search.interface.js';
 
 async function runRagApiIntegrationTests() {
   console.log('\n========================================================');
-  console.log('      PATENTIQ POST /api/rag/analyze INTEGRATION TEST   ');
+  console.log('    PATENTIQ 7-SECTION NOVELTY ANALYSIS INTEGRATION TEST');
   console.log('========================================================\n');
 
   let passedTests = 0;
@@ -20,13 +20,14 @@ async function runRagApiIntegrationTests() {
     }
   }
 
-  // 1. Prompt Builder Unit Tests
-  console.log('--- Prompt Builder Unit Tests ---');
+  // 1. Novelty Prompt Builder Unit Tests
+  console.log('--- Novelty Prompt Builder Unit Tests ---');
 
-  const systemPrompt = PatentAnalysisPromptBuilder.getSystemPrompt();
+  const systemPrompt = NoveltyAnalysisPromptBuilder.getSystemPrompt();
   assert(
-    systemPrompt.includes('patent examiner') && systemPrompt.includes('grounded in the retrieved prior-art'),
-    'PromptBuilder: Returns structured system prompt'
+    systemPrompt.includes('STRICT GROUNDING & ANTI-HALLUCINATION RULES') &&
+      systemPrompt.includes('The retrieved patents do not provide sufficient information to determine this'),
+    'PromptBuilder: Returns structured system prompt with anti-hallucination rules'
   );
 
   const mockPatents: SearchResult[] = [
@@ -41,7 +42,7 @@ async function runRagApiIntegrationTests() {
     },
   ];
 
-  const builtPrompt = PatentAnalysisPromptBuilder.buildPrompt(
+  const builtPrompt = NoveltyAnalysisPromptBuilder.buildPrompt(
     'A wireless charging system for autonomous drones',
     mockPatents,
     { maxClaimsLength: 50 }
@@ -51,27 +52,39 @@ async function runRagApiIntegrationTests() {
   assert(builtPrompt.includes('Autonomous Drone Wireless Charging Pad'), 'PromptBuilder: Includes Title in context');
   assert(builtPrompt.includes('[truncated]'), 'PromptBuilder: Truncates long claims according to maxClaimsLength');
 
-  // Test JSON output parser
+  // Test 7-section JSON output parser
   const sampleJsonOutput = JSON.stringify({
-    summary: 'Test Summary',
-    similarPatents: 'Test Similar Patents',
-    novelty: 'Test Novelty',
-    overlappingClaims: 'Test Overlapping Claims',
-    recommendations: 'Test Recommendations',
+    summary: 'Autonomous drone wireless charging pad system.',
+    similarPatents: [{ patentId: 'US1234567', reason: 'Inductive charging pad alignment.' }],
+    featureComparison: {
+      commonFeatures: ['Inductive wireless coil'],
+      uniqueFeatures: ['Autonomous vision-guided landing gear alignment'],
+      partialOverlap: ['Power negotiation telemetry'],
+    },
+    novelAspects: ['Vision-assisted closed-loop inductive charging pad alignment.'],
+    overlappingClaims: ['Claim 1 of US1234567 shares inductive power transfer coil layout.'],
+    risks: ['Potential overlap with primary power transmitter claims of US1234567.'],
+    recommendations: ['Draft claims specifically covering dynamic vision-guided loop feedback.'],
   });
 
-  const parsedJson = PatentAnalysisPromptBuilder.parseAnalysisResponse(sampleJsonOutput);
-  assert(parsedJson.summary === 'Test Summary', 'PromptBuilder Parser: Parses raw JSON output string');
-  assert(parsedJson.novelty === 'Test Novelty', 'PromptBuilder Parser: Extracts novelty field');
+  const parsedJson = NoveltyAnalysisPromptBuilder.parseNoveltyAnalysisResponse(sampleJsonOutput);
+  assert(parsedJson.summary.includes('Autonomous drone'), 'PromptBuilder Parser: Parses 7-section summary');
+  assert(parsedJson.similarPatents.length === 1 && parsedJson.similarPatents[0]?.patentId === 'US1234567', 'PromptBuilder Parser: Parses similarPatents array');
+  assert(parsedJson.featureComparison.uniqueFeatures.length === 1, 'PromptBuilder Parser: Parses featureComparison uniqueFeatures');
+  assert(parsedJson.novelAspects.length === 1, 'PromptBuilder Parser: Parses novelAspects array');
+  assert(parsedJson.overlappingClaims.length === 1, 'PromptBuilder Parser: Parses overlappingClaims array');
+  assert(parsedJson.risks.length === 1, 'PromptBuilder Parser: Parses risks array');
+  assert(parsedJson.recommendations.length === 1, 'PromptBuilder Parser: Parses recommendations array');
 
   // Test Markdown Wrapped JSON
   const markdownWrapped = `\`\`\`json\n${sampleJsonOutput}\n\`\`\``;
-  const parsedMarkdown = PatentAnalysisPromptBuilder.parseAnalysisResponse(markdownWrapped);
-  assert(parsedMarkdown.summary === 'Test Summary', 'PromptBuilder Parser: Strips markdown wrappers correctly');
+  const parsedMarkdown = NoveltyAnalysisPromptBuilder.parseNoveltyAnalysisResponse(markdownWrapped);
+  assert(parsedMarkdown.summary.includes('Autonomous drone'), 'PromptBuilder Parser: Strips markdown wrappers correctly');
 
   // Test Fallback for empty results
-  const emptyFallback = PatentAnalysisPromptBuilder.createFallbackResult('No prior art found');
+  const emptyFallback = NoveltyAnalysisPromptBuilder.createFallbackResult('No prior art found');
   assert(emptyFallback.summary === 'No prior art found', 'PromptBuilder: Creates clean fallback result on empty results');
+  assert(emptyFallback.similarPatents.length === 0, 'Fallback result returns empty array for similarPatents');
 
   console.log('\n--- Fastify Endpoint Tests ---');
   const app = await buildApp();
@@ -131,13 +144,16 @@ async function runRagApiIntegrationTests() {
     if (resValid.statusCode === 200) {
       assert(validBody.success === true, 'Response payload contains success: true');
       assert(validBody.query === searchQuery, 'Response payload contains matching query string');
-      assert(Array.isArray(validBody.retrievedPatents), 'Response payload contains retrievedPatents array');
       assert(validBody.analysis && typeof validBody.analysis === 'object', 'Response payload contains analysis object');
-      assert(typeof validBody.analysis.summary === 'string', 'Analysis contains summary field');
-      assert(typeof validBody.analysis.novelty === 'string', 'Analysis contains novelty field');
-      assert(typeof validBody.analysis.recommendations === 'string', 'Analysis contains recommendations field');
+      assert(typeof validBody.analysis.summary === 'string', 'Analysis contains summary section');
+      assert(Array.isArray(validBody.analysis.similarPatents), 'Analysis contains similarPatents array');
+      assert(validBody.analysis.featureComparison && Array.isArray(validBody.analysis.featureComparison.commonFeatures), 'Analysis contains featureComparison object');
+      assert(Array.isArray(validBody.analysis.novelAspects), 'Analysis contains novelAspects array');
+      assert(Array.isArray(validBody.analysis.overlappingClaims), 'Analysis contains overlappingClaims array');
+      assert(Array.isArray(validBody.analysis.risks), 'Analysis contains risks array');
+      assert(Array.isArray(validBody.analysis.recommendations), 'Analysis contains recommendations array');
 
-      console.log('\nSample RAG Analysis Response Payload:');
+      console.log('\nSample 7-Section Novelty Analysis Response Payload:');
       console.log(JSON.stringify(validBody, null, 2));
     } else if (resValid.statusCode === 503) {
       console.log(`[INFO] Downstream dependency unavailable (Ollama / Pinecone): ${validBody.message}`);
@@ -153,7 +169,7 @@ async function runRagApiIntegrationTests() {
 
     await app.close();
   } catch (error) {
-    console.error('RAG API Integration test execution failed:', error);
+    console.error('7-Section Novelty Analysis API Integration test execution failed:', error);
     await app.close();
     process.exit(1);
   }

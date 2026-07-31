@@ -2,8 +2,10 @@ import { z } from 'zod';
 import type {
   RagAnalysisRequest,
   RagAnalysisResponse,
-  RagAnalysisResult,
+  NoveltyAnalysisResult,
   RagRetrievedPatent,
+  SimilarPatentItem,
+  FeatureComparison,
 } from '../interfaces/rag.interface.js';
 
 /**
@@ -44,17 +46,40 @@ export const RagRetrievedPatentDtoSchema = z.object({
 export type RagRetrievedPatentDto = z.infer<typeof RagRetrievedPatentDtoSchema>;
 
 /**
- * Zod schema for AI novelty analysis result.
+ * Zod schema for similar patent item in novelty report.
  */
-export const RagAnalysisResultDtoSchema = z.object({
-  summary: z.string(),
-  similarPatents: z.string(),
-  novelty: z.string(),
-  overlappingClaims: z.string(),
-  recommendations: z.string(),
+export const SimilarPatentItemDtoSchema = z.object({
+  patentId: z.string(),
+  reason: z.string(),
 });
 
-export type RagAnalysisResultDto = z.infer<typeof RagAnalysisResultDtoSchema>;
+export type SimilarPatentItemDto = z.infer<typeof SimilarPatentItemDtoSchema>;
+
+/**
+ * Zod schema for feature comparison section.
+ */
+export const FeatureComparisonDtoSchema = z.object({
+  commonFeatures: z.array(z.string()),
+  uniqueFeatures: z.array(z.string()),
+  partialOverlap: z.array(z.string()),
+});
+
+export type FeatureComparisonDto = z.infer<typeof FeatureComparisonDtoSchema>;
+
+/**
+ * Zod schema for 7-section AI novelty analysis result.
+ */
+export const NoveltyAnalysisResultDtoSchema = z.object({
+  summary: z.string(),
+  similarPatents: z.array(SimilarPatentItemDtoSchema),
+  featureComparison: FeatureComparisonDtoSchema,
+  novelAspects: z.array(z.string()),
+  overlappingClaims: z.array(z.string()),
+  risks: z.array(z.string()),
+  recommendations: z.array(z.string()),
+});
+
+export type NoveltyAnalysisResultDto = z.infer<typeof NoveltyAnalysisResultDtoSchema>;
 
 /**
  * Zod schema for full RAG response payload.
@@ -62,13 +87,20 @@ export type RagAnalysisResultDto = z.infer<typeof RagAnalysisResultDtoSchema>;
 export const RagAnalysisResponseDtoSchema = z.object({
   success: z.boolean(),
   query: z.string(),
-  retrievedPatents: z.array(RagRetrievedPatentDtoSchema),
-  analysis: RagAnalysisResultDtoSchema,
+  retrievedPatents: z.array(RagRetrievedPatentDtoSchema).optional(),
+  analysis: NoveltyAnalysisResultDtoSchema,
 });
 
 export type RagAnalysisResponseDto = z.infer<typeof RagAnalysisResponseDtoSchema>;
 
-export type { RagAnalysisRequest, RagAnalysisResponse, RagAnalysisResult, RagRetrievedPatent };
+export type {
+  RagAnalysisRequest,
+  RagAnalysisResponse,
+  NoveltyAnalysisResult,
+  RagRetrievedPatent,
+  SimilarPatentItem,
+  FeatureComparison,
+};
 
 /**
  * Legacy hybrid ranking DTO schema for backward compatibility.
