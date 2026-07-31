@@ -1,22 +1,33 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
-type ModalProps = {
-  open: boolean
-  title: string
-  children: ReactNode
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: ReactNode;
 }
 
-export function Modal({ open, title, children }: ModalProps) {
-  if (!open) {
-    return null
-  }
+const Modal = ({ isOpen, onClose, children }: ModalProps) => {
+
+  if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="panel modal-panel">
-        <h2>{title}</h2>
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 px-4">
+
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-8 relative">
+
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-5 text-2xl text-gray-500 hover:text-red-500"
+        >
+          ✕
+        </button>
+
         {children}
+
       </div>
+
     </div>
-  )
-}
+  );
+};
+
+export default Modal;

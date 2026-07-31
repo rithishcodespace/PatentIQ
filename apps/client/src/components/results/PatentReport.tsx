@@ -8,6 +8,38 @@ interface ReportProps {
 }
 
 const PatentReport = ({ report }: ReportProps) => {
+
+  const Row = ({
+    title,
+    value,
+  }: {
+    title: string;
+    value: number;
+  }) => (
+    <div>
+
+      <div className="flex justify-between mb-2">
+
+        <span>{title}</span>
+
+        <span>{value}/5</span>
+
+      </div>
+
+      <div className="w-full bg-gray-200 rounded-full h-2">
+
+        <div
+          className="bg-blue-600 h-2 rounded-full"
+          style={{
+            width: `${value * 20}%`,
+          }}
+        />
+
+      </div>
+
+    </div>
+  );
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6 sticky top-8">
 
@@ -15,36 +47,36 @@ const PatentReport = ({ report }: ReportProps) => {
         Patentability Report
       </h2>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
 
-        <div>
-          <p className="font-medium">Novelty</p>
-          <p>{"⭐".repeat(report.novelty)}</p>
-        </div>
+        <Row
+          title="Novelty"
+          value={report.novelty}
+        />
 
-        <div>
-          <p className="font-medium">Inventive Step</p>
-          <p>{"⭐".repeat(report.inventiveStep)}</p>
-        </div>
+        <Row
+          title="Inventive Step"
+          value={report.inventiveStep}
+        />
 
-        <div>
-          <p className="font-medium">
-            Industrial Applicability
-          </p>
-          <p>{"⭐".repeat(report.industrialApplicability)}</p>
-        </div>
+        <Row
+          title="Industrial Applicability"
+          value={report.industrialApplicability}
+        />
 
         <hr />
 
-        <div>
+        <div className="text-center">
 
-          <p className="text-gray-500">
-            Overall Score
-          </p>
+          <h1 className="text-5xl font-bold text-blue-600">
 
-          <h1 className="text-4xl font-bold text-blue-600">
             {report.overall}%
+
           </h1>
+
+          <p className="text-gray-500 mt-2">
+            Overall Patentability Score
+          </p>
 
         </div>
 
