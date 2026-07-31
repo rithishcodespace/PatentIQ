@@ -9,16 +9,18 @@ interface Patent {
 
 interface ResultsListProps {
   results: Patent[];
+  onView?: (patent: Patent) => void;
 }
 
-const ResultsList = ({ results }: ResultsListProps) => {
+const ResultsList = ({ results, onView }: ResultsListProps) => {
   return (
     <div className="space-y-6">
       {results.map((patent) => (
-        <ResultCard
-          key={patent.id}
-          patent={patent}
-        />
+       <ResultCard
+        key={patent.id}
+        patent={patent}
+        onView={onView}
+/>
       ))}
     </div>
   );
