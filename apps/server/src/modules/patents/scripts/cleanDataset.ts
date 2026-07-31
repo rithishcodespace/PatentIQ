@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import csvParser from 'csv-parser';
 import { format as formatCsv } from 'fast-csv';
 
@@ -278,18 +279,12 @@ export class PatentDatasetCleaner {
  * Main execution entry point.
  */
 async function main(): Promise<void> {
-  const projectRoot = process.cwd();
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const scriptsDir = path.dirname(currentFilePath);
+  const patentsModuleDir = path.resolve(scriptsDir, '..');
 
-  // Default paths relative to apps/server or project root
-  const defaultInputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/raw/grant_grant.csv')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/raw/grant_grant.csv');
-
-  const defaultOutputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/clean/grant_grant_clean.csv')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/clean/grant_grant_clean.csv');
+  const defaultInputPath = path.resolve(patentsModuleDir, 'dataset/raw/grant_grant.csv');
+  const defaultOutputPath = path.resolve(patentsModuleDir, 'dataset/clean/grant_grant_clean.csv');
 
   // Allow custom CLI arguments if provided: --input <path> --output <path>
   const args = process.argv.slice(2);

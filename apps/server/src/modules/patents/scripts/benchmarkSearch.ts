@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { PatentSemanticSearcher } from './semanticSearch.js';
 import { env } from '../../../config/env.config.js';
 
@@ -272,12 +273,11 @@ export class PatentSearchBenchmarker {
  * CLI Main execution entry point.
  */
 async function main(): Promise<void> {
-  const projectRoot = process.cwd();
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const scriptsDir = path.dirname(currentFilePath);
+  const patentsModuleDir = path.resolve(scriptsDir, '..');
 
-  const defaultOutputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/processed/search_benchmark.json')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/processed/search_benchmark.json');
+  const defaultOutputPath = path.resolve(patentsModuleDir, 'dataset/processed/search_benchmark.json');
 
   const args = process.argv.slice(2);
   let outputPath = defaultOutputPath;

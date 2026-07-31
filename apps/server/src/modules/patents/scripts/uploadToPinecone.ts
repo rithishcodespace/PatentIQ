@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import readline from 'readline';
 import { Pinecone, type PineconeRecord } from '@pinecone-database/pinecone';
 import { env } from '../../../config/env.config.js';
@@ -308,12 +309,11 @@ export class PineconePatentUploader {
  * CLI Main execution entry point.
  */
 async function main(): Promise<void> {
-  const projectRoot = process.cwd();
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const scriptsDir = path.dirname(currentFilePath);
+  const patentsModuleDir = path.resolve(scriptsDir, '..');
 
-  const defaultInputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/processed/patent_embeddings.json')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/processed/patent_embeddings.json');
+  const defaultInputPath = path.resolve(patentsModuleDir, 'dataset/processed/patent_embeddings.json');
 
   const args = process.argv.slice(2);
   let inputPath = defaultInputPath;

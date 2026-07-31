@@ -16,6 +16,11 @@ build/
 .notes.txt
 .flow.txt
 
+src/modules/patents/dataset/processed/*
+!src/modules/patents/dataset/processed/.gitkeep
+
+src/modules/patents/dataset/clean/*
+!src/modules/patents/dataset/clean/.gitkeep
 # Logs
 logs/
 *.log
