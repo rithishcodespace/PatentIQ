@@ -21,6 +21,7 @@ import { PatentParserService } from '../modules/patents/services/patent-parser.s
 import { PatentService } from '../modules/patents/services/patent.service.js';
 import { EmbeddingsService } from '../modules/embeddings/services/embeddings.service.js';
 import { SearchService } from '../modules/search/services/search.service.js';
+import { BenchmarkService } from '../modules/search/services/benchmark.service.js';
 import { RagService } from '../modules/rag/services/rag.service.js';
 import { ReportsService } from '../modules/reports/services/reports.service.js';
 import { UploadsService } from '../modules/uploads/services/uploads.service.js';
@@ -33,6 +34,7 @@ import { UsersController } from '../modules/users/controllers/users.controller.j
 import { PatentsController } from '../modules/patents/controllers/patents.controller.js';
 import { EmbeddingsController } from '../modules/embeddings/controllers/embeddings.controller.js';
 import { SearchController } from '../modules/search/controllers/search.controller.js';
+import { BenchmarkController } from '../modules/search/controllers/benchmark.controller.js';
 import { RagController } from '../modules/rag/controllers/rag.controller.js';
 import { ReportsController } from '../modules/reports/controllers/reports.controller.js';
 import { UploadsController } from '../modules/uploads/controllers/uploads.controller.js';
@@ -46,6 +48,7 @@ export interface DIContainer {
     patents: PatentsController;
     embeddings: EmbeddingsController;
     search: SearchController;
+    benchmark: BenchmarkController;
     rag: RagController;
     reports: ReportsController;
     uploads: UploadsController;
@@ -58,6 +61,7 @@ export interface DIContainer {
     patent: PatentService;
     embeddings: EmbeddingsService;
     search: SearchService;
+    benchmark: BenchmarkService;
     rag: RagService;
     reports: ReportsService;
     uploads: UploadsService;
@@ -93,6 +97,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const patentService = new PatentService(patentsRepo, patentParserService);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
   const searchService = new SearchService(embeddingProvider, searchRepo);
+  const benchmarkService = new BenchmarkService(searchService);
   const ragService = new RagService(searchService, llmProvider);
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
@@ -104,7 +109,8 @@ export default fp(async (fastify: FastifyInstance) => {
   const usersController = new UsersController(usersService);
   const patentsController = new PatentsController(patentService);
   const embeddingsController = new EmbeddingsController(embeddingsService);
-  const searchController = new SearchController(searchService);
+  const benchmarkController = new BenchmarkController(benchmarkService);
+  const searchController = new SearchController(searchService, benchmarkController);
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
@@ -119,6 +125,7 @@ export default fp(async (fastify: FastifyInstance) => {
       patents: patentsController,
       embeddings: embeddingsController,
       search: searchController,
+      benchmark: benchmarkController,
       rag: ragController,
       reports: reportsController,
       uploads: uploadsController,
@@ -131,6 +138,7 @@ export default fp(async (fastify: FastifyInstance) => {
       patent: patentService,
       embeddings: embeddingsService,
       search: searchService,
+      benchmark: benchmarkService,
       rag: ragService,
       reports: reportsService,
       uploads: uploadsService,

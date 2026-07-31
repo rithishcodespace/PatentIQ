@@ -31,6 +31,10 @@ const envSchema = z.object({
   OLLAMA_LLM_MODEL: z.string().default('qwen2.5:3b'),
   STORAGE_TYPE: z.enum(['local', 's3']).default('local'),
   STORAGE_PATH: z.string().default('./storage/uploads'),
+  DEFAULT_TOP_K: z.coerce.number().default(10),
+  BENCHMARK_ITERATIONS: z.coerce.number().default(5),
+  ENABLE_QUERY_CACHE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  CACHE_TTL_SECONDS: z.coerce.number().default(300),
 });
 
 export const env = envSchema.parse(process.env);

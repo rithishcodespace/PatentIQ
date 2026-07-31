@@ -1,10 +1,14 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { ISearchService } from '../interfaces/search.interface.js';
+import type { BenchmarkController } from './benchmark.controller.js';
 import { SearchRequestDtoSchema, type SearchRequestDto } from '../dto/search.dto.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
 export class SearchController {
-  constructor(private readonly searchService: ISearchService) {}
+  constructor(
+    private readonly searchService: ISearchService,
+    public readonly benchmarkController?: BenchmarkController
+  ) {}
 
   /**
    * HTTP POST /api/search Handler.
@@ -42,11 +46,19 @@ export class SearchController {
   }
 
   /**
+   * Endpoint Handler: POST /api/search/benchmark
+   */
+  async benchmark(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (this.benchmarkController) {
+      return this.benchmarkController.benchmark(request, reply);
+    }
+    throw new BadRequestError('Benchmark feature is not available');
+  }
+
+  /**
    * Backward-compatible handler for POST /api/v1/search/prior-art.
    */
   async searchPriorArt(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     await this.search(request, reply);
   }
 }
-
-
