@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { motion } from "framer-motion";
 
 interface PatentFormProps {
   onSearch: (data: {
@@ -8,78 +9,77 @@ interface PatentFormProps {
   }) => void;
 }
 
+const fieldClass =
+  "w-full rounded-lg border border-slate-100 bg-paper px-4 py-3 font-body text-ink placeholder:text-slate/60 transition focus:border-indigo focus:outline-none focus:ring-2 focus:ring-indigo/15";
+
+const FieldLabel = ({ index, children }: { index: string; children: string }) => (
+  <label className="mb-2 flex items-baseline gap-2 font-body text-sm font-semibold text-ink">
+    <span className="font-mono text-xs text-amber">{index}</span>
+    {children}
+  </label>
+);
+
 const PatentForm = ({ onSearch }: PatentFormProps) => {
   const [title, setTitle] = useState("");
   const [abstract, setAbstract] = useState("");
   const [claims, setClaims] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-
-    onSearch({
-      title,
-      abstract,
-      claims,
-    });
+    onSearch({ title, abstract, claims });
   };
 
   return (
-    <form
+    <motion.form
       onSubmit={handleSubmit}
-      className="bg-white shadow-lg rounded-2xl p-8 space-y-6"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+      className="space-y-7 rounded-2xl border border-slate-100 bg-white p-8 shadow-[0_1px_2px_rgba(11,17,32,0.04),0_12px_32px_-16px_rgba(11,17,32,0.12)]"
     >
       <div>
-        <label className="block mb-2 font-semibold text-gray-700">
-          Patent Title
-        </label>
-
+        <FieldLabel index="01">Patent title</FieldLabel>
         <input
           type="text"
-          placeholder="Enter patent title..."
+          placeholder="e.g. Solar-assisted grain dryer for small farms"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={fieldClass}
           required
         />
       </div>
 
       <div>
-        <label className="block mb-2 font-semibold text-gray-700">
-          Abstract
-        </label>
-
+        <FieldLabel index="02">Abstract</FieldLabel>
         <textarea
           rows={5}
-          placeholder="Enter patent abstract..."
+          placeholder="Summarize the invention in plain terms — what it does and the problem it solves."
           value={abstract}
           onChange={(e) => setAbstract(e.target.value)}
-          className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`${fieldClass} resize-none`}
           required
         />
       </div>
 
       <div>
-        <label className="block mb-2 font-semibold text-gray-700">
-          Claims
-        </label>
-
+        <FieldLabel index="03">Claims</FieldLabel>
         <textarea
-          rows={6}
-          placeholder="Enter patent claims..."
+          rows={7}
+          placeholder="List what's novel — the specific mechanism, method, or configuration you're claiming."
           value={claims}
           onChange={(e) => setClaims(e.target.value)}
-          className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`${fieldClass} resize-none`}
           required
         />
       </div>
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition"
+        className="w-full rounded-lg bg-indigo-600 py-3.5 font-body text-sm font-semibold text-white transition hover:bg-indigo-500"
       >
-        Search Patents
+        Search patents
       </button>
-    </form>
+    </motion.form>
   );
 };
 

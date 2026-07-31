@@ -1,28 +1,34 @@
+import { AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
+
 interface AlertProps {
   message: string;
-  onRetry: () => void;
+  onRetry?: () => void;
 }
 
 const Alert = ({ message, onRetry }: AlertProps) => {
   return (
-    <div className="bg-red-50 border border-red-300 rounded-xl p-6 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col items-center gap-4 rounded-2xl border border-amber/30 bg-amber/5 px-8 py-10 text-center"
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber/15">
+        <AlertTriangle size={18} className="text-amber" strokeWidth={2.2} />
+      </div>
 
-      <h2 className="text-xl font-semibold text-red-600">
-        Something went wrong
-      </h2>
+      <p className="max-w-sm font-body text-sm text-ink">{message}</p>
 
-      <p className="text-gray-600 mt-2">
-        {message}
-      </p>
-
-      <button
-        onClick={onRetry}
-        className="mt-5 px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-      >
-        Try Again
-      </button>
-
-    </div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="rounded-lg border border-slate-100 px-5 py-2.5 font-body text-sm font-medium text-indigo transition hover:border-indigo"
+        >
+          Try again
+        </button>
+      )}
+    </motion.div>
   );
 };
 
