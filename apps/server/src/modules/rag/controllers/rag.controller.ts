@@ -13,7 +13,7 @@ export class RagController {
 
   /**
    * Endpoint Handler: POST /api/rag/analyze
-   * Performs semantic retrieval of prior art and generates grounded 7-section AI novelty analysis via Ollama (Qwen).
+   * Performs semantic retrieval, 7-section novelty analysis, and section/claim overlap analysis via Ollama (Qwen).
    */
   async analyze(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     // 1. Zod Validation
@@ -33,7 +33,7 @@ export class RagController {
     const metrics = response.metrics;
     const retrievedCount = response.retrievedPatents ? response.retrievedPatents.length : (metrics?.retrievedCount ?? 0);
     request.log.info(
-      `[RagAPI] query="${response.query}" | retrievedCount=${retrievedCount} | retrievalMs=${metrics?.retrievalTimeMs ?? 0}ms | promptMs=${metrics?.promptTimeMs ?? 0}ms | llmMs=${metrics?.llmInferenceTimeMs ?? 0}ms | totalMs=${metrics?.totalTimeMs ?? 0}ms`
+      `[RagAPI] query="${response.query}" | retrievedCount=${retrievedCount} | overlappingClaims=${metrics?.overlappingClaimsCount ?? 0} | retrievalMs=${metrics?.retrievalTimeMs ?? 0}ms | promptMs=${metrics?.promptTimeMs ?? 0}ms | llmMs=${metrics?.llmInferenceTimeMs ?? 0}ms | totalMs=${metrics?.totalTimeMs ?? 0}ms`
     );
 
     // 4. Return JSON response payload
@@ -42,6 +42,10 @@ export class RagController {
       query: response.query,
       analysis: response.analysis,
     };
+
+    if (response.overlapAnalysis) {
+      responsePayload.overlapAnalysis = response.overlapAnalysis;
+    }
 
     if (response.retrievedPatents && response.retrievedPatents.length > 0) {
       responsePayload.retrievedPatents = response.retrievedPatents;

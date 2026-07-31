@@ -6,6 +6,9 @@ import type {
   RagRetrievedPatent,
   SimilarPatentItem,
   FeatureComparison,
+  RelevantSection,
+  OverlappingClaim,
+  OverlapAnalysisItem,
 } from '../interfaces/rag.interface.js';
 
 /**
@@ -82,6 +85,41 @@ export const NoveltyAnalysisResultDtoSchema = z.object({
 export type NoveltyAnalysisResultDto = z.infer<typeof NoveltyAnalysisResultDtoSchema>;
 
 /**
+ * Zod schema for relevant section item.
+ */
+export const RelevantSectionDtoSchema = z.object({
+  section: z.string(),
+  reason: z.string(),
+});
+
+export type RelevantSectionDto = z.infer<typeof RelevantSectionDtoSchema>;
+
+/**
+ * Zod schema for overlapping claim item.
+ */
+export const OverlappingClaimDtoSchema = z.object({
+  claimNumber: z.union([z.number(), z.string()]).optional(),
+  summary: z.string(),
+  reason: z.string(),
+  overlapStrength: z.enum(['High', 'Medium', 'Low']),
+});
+
+export type OverlappingClaimDto = z.infer<typeof OverlappingClaimDtoSchema>;
+
+/**
+ * Zod schema for overlap analysis item per retrieved patent.
+ */
+export const OverlapAnalysisItemDtoSchema = z.object({
+  patentId: z.string(),
+  title: z.string(),
+  similarityScore: z.number(),
+  relevantSections: z.array(RelevantSectionDtoSchema),
+  overlappingClaims: z.array(OverlappingClaimDtoSchema),
+});
+
+export type OverlapAnalysisItemDto = z.infer<typeof OverlapAnalysisItemDtoSchema>;
+
+/**
  * Zod schema for full RAG response payload.
  */
 export const RagAnalysisResponseDtoSchema = z.object({
@@ -89,6 +127,7 @@ export const RagAnalysisResponseDtoSchema = z.object({
   query: z.string(),
   retrievedPatents: z.array(RagRetrievedPatentDtoSchema).optional(),
   analysis: NoveltyAnalysisResultDtoSchema,
+  overlapAnalysis: z.array(OverlapAnalysisItemDtoSchema).optional(),
 });
 
 export type RagAnalysisResponseDto = z.infer<typeof RagAnalysisResponseDtoSchema>;
@@ -100,6 +139,9 @@ export type {
   RagRetrievedPatent,
   SimilarPatentItem,
   FeatureComparison,
+  RelevantSection,
+  OverlappingClaim,
+  OverlapAnalysisItem,
 };
 
 /**

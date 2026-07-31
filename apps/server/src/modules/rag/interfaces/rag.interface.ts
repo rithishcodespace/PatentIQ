@@ -1,7 +1,8 @@
 import type { HybridRankingDto, RankedPatentCandidate } from '../dto/rag.dto.js';
+import type { SearchResult } from '../../search/interfaces/search.interface.js';
 
 /**
- * Incoming request payload for RAG novelty analysis.
+ * Incoming request payload for RAG novelty & section/claim overlap analysis.
  */
 export interface RagAnalysisRequest {
   query: string;
@@ -53,6 +54,35 @@ export interface NoveltyAnalysisResult {
 export type RagAnalysisResult = NoveltyAnalysisResult;
 
 /**
+ * Section-level relevance contributing to semantic similarity.
+ */
+export interface RelevantSection {
+  section: string;
+  reason: string;
+}
+
+/**
+ * Individual overlapping claim analysis item with overlap strength classification.
+ */
+export interface OverlappingClaim {
+  claimNumber?: number | string | undefined;
+  summary: string;
+  reason: string;
+  overlapStrength: 'High' | 'Medium' | 'Low';
+}
+
+/**
+ * Complete section and claim overlap analysis payload for a single retrieved patent.
+ */
+export interface OverlapAnalysisItem {
+  patentId: string;
+  title: string;
+  similarityScore: number;
+  relevantSections: RelevantSection[];
+  overlappingClaims: OverlappingClaim[];
+}
+
+/**
  * Execution latency metrics for the RAG pipeline.
  */
 export interface RagMetrics {
@@ -61,6 +91,7 @@ export interface RagMetrics {
   llmInferenceTimeMs: number;
   totalTimeMs: number;
   retrievedCount: number;
+  overlappingClaimsCount?: number | undefined;
 }
 
 /**
@@ -71,6 +102,7 @@ export interface RagAnalysisResponse {
   query: string;
   retrievedPatents?: RagRetrievedPatent[] | undefined;
   analysis: NoveltyAnalysisResult;
+  overlapAnalysis?: OverlapAnalysisItem[] | undefined;
   metrics?: RagMetrics | undefined;
 }
 
@@ -79,7 +111,7 @@ export interface RagAnalysisResponse {
  */
 export interface IRagService {
   /**
-   * Performs retrieval-augmented generation novelty analysis on a user invention query.
+   * Performs retrieval-augmented generation novelty and section/claim overlap analysis.
    */
   analyze(request: RagAnalysisRequest): Promise<RagAnalysisResponse>;
 
@@ -99,4 +131,11 @@ export interface IRagService {
  */
 export interface INoveltyAnalysisService {
   analyzeNovelty(request: RagAnalysisRequest): Promise<RagAnalysisResponse>;
+}
+
+/**
+ * Overlap Analysis Service Contract.
+ */
+export interface IOverlapAnalysisService {
+  analyzeOverlap(request: RagAnalysisRequest, searchResults?: SearchResult[]): Promise<OverlapAnalysisItem[]>;
 }
