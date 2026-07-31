@@ -13,6 +13,20 @@ export interface PineconeVectorMetadata extends RecordMetadata {
   publicationDate?: string;
   owner?: string;
   assignee?: string;
+  country?: string;
+}
+
+/**
+ * Metadata search filter criteria for Pinecone queries.
+ */
+export interface SearchFilter {
+  ipc?: string | undefined;
+  country?: string | undefined;
+  publicationDate?: string | undefined;
+  publicationDateFrom?: string | undefined;
+  publicationDateTo?: string | undefined;
+  owner?: string | undefined;
+  section?: 'title' | 'abstract' | 'claims' | undefined;
 }
 
 /**
@@ -38,8 +52,9 @@ export interface SearchResult {
   abstract: string;
   ipc: string;
   score: number;
-  publicationDate?: string;
-  owner?: string;
+  country?: string | undefined;
+  publicationDate?: string | undefined;
+  owner?: string | undefined;
 }
 
 /**
@@ -47,7 +62,8 @@ export interface SearchResult {
  */
 export interface SearchRequest {
   query: string;
-  topK?: number;
+  topK?: number | undefined;
+  filters?: SearchFilter | undefined;
 }
 
 /**
@@ -57,8 +73,9 @@ export interface SearchResponse {
   success: boolean;
   query: string;
   count: number;
+  filters?: SearchFilter | undefined;
   results: SearchResult[];
-  metrics?: SearchMetrics;
+  metrics?: SearchMetrics | undefined;
 }
 
 /**
@@ -78,12 +95,16 @@ export interface ISearchService {
   /**
    * Main search method handling request validation and execution.
    */
-  search(input: string | SearchRequest, topK?: number): Promise<SearchResponse>;
+  search(input: string | SearchRequest, topK?: number, filters?: SearchFilter): Promise<SearchResponse>;
 
   /**
    * End-to-end execution returning detailed results and execution metrics.
    */
-  executeSearch(query: string, topK?: number): Promise<{ results: SearchResult[]; metrics: SearchMetrics }>;
+  executeSearch(
+    query: string,
+    topK?: number,
+    filters?: SearchFilter
+  ): Promise<{ results: SearchResult[]; metrics: SearchMetrics }>;
 
   /**
    * Generates embedding for query text via Ollama nomic-embed-text.
@@ -91,9 +112,13 @@ export interface ISearchService {
   generateEmbedding(query: string): Promise<{ embedding: number[]; durationMs: number }>;
 
   /**
-   * Queries Pinecone index using vector embedding.
+   * Queries Pinecone index using vector embedding and optional metadata filter.
    */
-  searchVectors(vector: number[], topK: number): Promise<{ matches: PineconeMatchResult[]; durationMs: number }>;
+  searchVectors(
+    vector: number[],
+    topK?: number,
+    filter?: Record<string, any>
+  ): Promise<{ matches: PineconeMatchResult[]; durationMs: number }>;
 
   /**
    * Formats raw Pinecone matches into clean SearchResult DTOs.
@@ -110,5 +135,9 @@ export interface ISearchService {
  * Search Repository Contract.
  */
 export interface ISearchRepository {
-  querySimilarity(vector: number[], topK: number): Promise<PineconeMatchResult[]>;
+  querySimilarity(
+    vector: number[],
+    topK: number,
+    filter?: Record<string, any>
+  ): Promise<PineconeMatchResult[]>;
 }

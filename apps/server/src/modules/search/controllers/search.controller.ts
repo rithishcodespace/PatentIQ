@@ -28,10 +28,11 @@ export class SearchController {
     // 2. Call service layer
     const response = await this.searchService.search(validatedDto);
 
-    // 3. Log performance metrics via Fastify logger
+    // 3. Log performance metrics and applied filters via Fastify logger
     if (response.metrics) {
+      const filterLog = response.filters ? ` | Filters: ${JSON.stringify(response.filters)}` : '';
       request.log.info(
-        `[SearchAPI] Query: "${response.query}" | Matches: ${response.count} | Total: ${response.metrics.totalExecutionTimeMs}ms | Embedding: ${response.metrics.queryEmbeddingTimeMs}ms | Pinecone: ${response.metrics.pineconeSearchTimeMs}ms`
+        `[SearchAPI] Query: "${response.query}"${filterLog} | Matches: ${response.count} | Total: ${response.metrics.totalExecutionTimeMs}ms | Embedding: ${response.metrics.queryEmbeddingTimeMs}ms | Pinecone: ${response.metrics.pineconeSearchTimeMs}ms`
       );
     }
 

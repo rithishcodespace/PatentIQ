@@ -82,15 +82,74 @@ async function runApiIntegrationTests() {
       `Got status ${resTopKLow.statusCode}`
     );
 
-    // 5. Execution Test: Search request
+    // 5. Validation Test: Invalid section enum
+    const resInvalidSection = await app.inject({
+      method: 'POST',
+      url: '/api/search',
+      payload: {
+        query: 'wireless charging',
+        filters: { section: 'invalid_section' },
+      },
+    });
+    assert(
+      resInvalidSection.statusCode === 400,
+      'Validation: Invalid section enum returns HTTP 400',
+      `Got status ${resInvalidSection.statusCode}`
+    );
+
+    // 6. Validation Test: Invalid ISO date format
+    const resInvalidDate = await app.inject({
+      method: 'POST',
+      url: '/api/search',
+      payload: {
+        query: 'wireless charging',
+        filters: { publicationDateFrom: 'not-a-date' },
+      },
+    });
+    assert(
+      resInvalidDate.statusCode === 400,
+      'Validation: Invalid ISO date string returns HTTP 400',
+      `Got status ${resInvalidDate.statusCode}`
+    );
+
+    // 7. Validation Test: publicationDateFrom > publicationDateTo
+    const resInvalidDateRange = await app.inject({
+      method: 'POST',
+      url: '/api/search',
+      payload: {
+        query: 'wireless charging',
+        filters: {
+          publicationDateFrom: '2024-12-31',
+          publicationDateTo: '2020-01-01',
+        },
+      },
+    });
+    assert(
+      resInvalidDateRange.statusCode === 400,
+      'Validation: publicationDateFrom > publicationDateTo returns HTTP 400',
+      `Got status ${resInvalidDateRange.statusCode}`
+    );
+
+    // 8. Execution Test: Search request with metadata filters
     const searchQuery = 'wireless charging for electric vehicles';
     const resValid = await app.inject({
       method: 'POST',
       url: '/api/search',
-      payload: { query: searchQuery, topK: 5 },
+      payload: {
+        query: searchQuery,
+        topK: 5,
+        filters: {
+          ipc: 'H01M',
+          country: 'US',
+          publicationDateFrom: '2020-01-01',
+          publicationDateTo: '2024-12-31',
+          owner: 'Samsung',
+          section: 'abstract',
+        },
+      },
     });
 
-    console.log(`\nResponse Status for POST /api/search: ${resValid.statusCode}`);
+    console.log(`\nResponse Status for POST /api/search with filters: ${resValid.statusCode}`);
     const validBody = JSON.parse(resValid.payload);
 
     if (resValid.statusCode === 200) {
@@ -98,6 +157,7 @@ async function runApiIntegrationTests() {
       assert(validBody.query === searchQuery, 'Response payload contains matching query string');
       assert(Array.isArray(validBody.results), 'Response payload contains results array');
       assert(typeof validBody.count === 'number', 'Response payload contains match count');
+      assert(validBody.filters && validBody.filters.ipc === 'H01M', 'Response echoes back applied filters');
 
       // Check sorting descending order
       if (validBody.results.length > 1) {
@@ -111,7 +171,7 @@ async function runApiIntegrationTests() {
         assert(isSorted, 'Results are sorted in descending order of similarity score');
       }
 
-      console.log('\nSample Search Result Payload:');
+      console.log('\nSample Filtered Search Result Payload:');
       console.log(JSON.stringify(validBody, null, 2));
     } else if (resValid.statusCode === 503) {
       console.log(`[INFO] Downstream dependency unavailable (Ollama / Pinecone): ${validBody.message}`);
