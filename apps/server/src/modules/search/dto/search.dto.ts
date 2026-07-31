@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SearchRequest, SearchResponse, SearchResult } from '../interfaces/search.interface.js';
 
 /**
  * Zod validation schema for POST /api/search request payload.
@@ -24,25 +25,11 @@ export const SearchRequestDtoSchema = z.object({
 export type SearchRequestDto = z.infer<typeof SearchRequestDtoSchema>;
 
 /**
- * Individual patent search result DTO.
+ * DTO aliases for clean type imports.
  */
-export interface SearchResultDto {
-  patentId: string;
-  title: string;
-  abstract: string;
-  ipc: string;
-  score: number;
-}
-
-/**
- * HTTP Response DTO for POST /api/search.
- */
-export interface SearchResponseDto {
-  success: boolean;
-  query: string;
-  count: number;
-  results: SearchResultDto[];
-}
+export type SearchResultDto = SearchResult;
+export type SearchResponseDto = SearchResponse;
+export type { SearchRequest, SearchResponse, SearchResult };
 
 /**
  * Legacy DTO interface for prior art searches (e.g., RAG integration).
@@ -57,7 +44,7 @@ export interface PriorArtMatchResult {
 }
 
 /**
- * Legacy DTO alias for compatibility.
+ * Legacy DTO schema alias for compatibility.
  */
 export const SearchQueryDtoSchema = SearchRequestDtoSchema;
 export type SearchQueryDto = SearchRequestDto;

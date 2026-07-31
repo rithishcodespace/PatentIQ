@@ -36,11 +36,11 @@ export class SearchRepository implements ISearchRepository {
   }
 
   /**
-   * Queries Pinecone index using input query vector.
+   * Queries Pinecone vector database using query vector.
    */
   async querySimilarity(queryVector: number[], topK: number): Promise<PineconeMatchResult[]> {
     if (!this.pineconeClient) {
-      throw new Error('Pinecone client is not initialized. Please verify PINECONE_API_KEY environment variable.');
+      throw new Error('Pinecone vector database is unavailable. PINECONE_API_KEY environment variable is missing.');
     }
 
     const index = this.pineconeClient.index<PineconeVectorMetadata>(this.indexName);

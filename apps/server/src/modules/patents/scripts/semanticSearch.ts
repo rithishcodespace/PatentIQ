@@ -1,20 +1,11 @@
-import type { RecordMetadata } from '@pinecone-database/pinecone';
 import { env } from '../../../config/env.config.js';
 import { SearchService } from '../../search/services/search.service.js';
 import { SearchRepository } from '../../search/repositories/search.repository.js';
 import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
+import type { SearchMetrics, SearchResult } from '../../search/interfaces/search.interface.js';
 
 /**
- * Interface representing vector section metadata stored in Pinecone.
- */
-export interface PatentVectorMetadata extends RecordMetadata {
-  patentId: string;
-  section: 'title' | 'abstract' | 'claims';
-  ipc: string;
-}
-
-/**
- * Interface representing a ranked semantic search result item.
+ * Interface representing a CLI ranked result item for printing.
  */
 export interface SearchResultItem {
   rank: number;
@@ -26,17 +17,12 @@ export interface SearchResultItem {
 }
 
 /**
- * Execution metrics for latency breakdown.
+ * Re-export SearchMetrics for script compatibility.
  */
-export interface SearchMetrics {
-  queryEmbeddingTimeMs: number;
-  pineconeSearchTimeMs: number;
-  totalExecutionTimeMs: number;
-  totalResults: number;
-}
+export type { SearchMetrics };
 
 /**
- * Logger utility for clean CLI feedback.
+ * Formatted CLI Logger.
  */
 class Logger {
   private static formatTime(): string {
@@ -45,14 +31,6 @@ class Logger {
 
   static info(message: string): void {
     console.log(`[${this.formatTime()}] [INFO]  ${message}`);
-  }
-
-  static success(message: string): void {
-    console.log(`[${this.formatTime()}] [OK]    ${message}`);
-  }
-
-  static warn(message: string): void {
-    console.warn(`[${this.formatTime()}] [WARN]  ${message}`);
   }
 
   static error(message: string, error?: unknown): void {
@@ -64,8 +42,8 @@ class Logger {
 }
 
 /**
- * CLI Testing Utility for Patent Semantic Search.
- * Reuses the core SearchService to execute search pipeline.
+ * Thin CLI testing wrapper for Patent Semantic Search.
+ * Contains zero business logic; delegates search execution to SearchService.
  */
 export class PatentSemanticSearcher {
   private searchService: SearchService;
@@ -90,17 +68,15 @@ export class PatentSemanticSearcher {
   }
 
   /**
-   * Delegates end-to-end search to SearchService.
+   * Delegates search execution to SearchService.
    */
   public async executeSearch(
     queryText: string,
     topK = 100
   ): Promise<{ results: SearchResultItem[]; metrics: SearchMetrics }> {
-    const startTime = Date.now();
-    const response = await this.searchService.search({ query: queryText, topK });
-    const durationMs = Date.now() - startTime;
+    const { results, metrics } = await this.searchService.executeSearch(queryText, topK);
 
-    const results: SearchResultItem[] = response.results.map((res, index) => ({
+    const formattedItems: SearchResultItem[] = results.map((res: SearchResult, index: number) => ({
       rank: index + 1,
       patentId: res.patentId,
       section: res.title ? 'title' : res.abstract ? 'abstract' : 'general',
@@ -109,18 +85,11 @@ export class PatentSemanticSearcher {
       vectorId: `${res.patentId}_${index}`,
     }));
 
-    const metrics: SearchMetrics = {
-      queryEmbeddingTimeMs: Math.round(durationMs * 0.4),
-      pineconeSearchTimeMs: Math.round(durationMs * 0.6),
-      totalExecutionTimeMs: durationMs,
-      totalResults: results.length,
-    };
-
-    return { results, metrics };
+    return { results: formattedItems, metrics };
   }
 
   /**
-   * Formats and prints search results to stdout.
+   * Prints formatted search results to stdout.
    */
   public printResults(queryText: string, results: SearchResultItem[], metrics: SearchMetrics): void {
     console.log('\n========================================================================================');
@@ -144,7 +113,9 @@ export class PatentSemanticSearcher {
     console.log('----------------------------------------------------------------------------------------');
     console.log('                                  PERFORMANCE METRICS                                   ');
     console.log('----------------------------------------------------------------------------------------');
-    console.log(`Vector Search Latency:           ${metrics.totalExecutionTimeMs} ms`);
+    console.log(`Query Embedding Time (Ollama):   ${metrics.queryEmbeddingTimeMs} ms`);
+    console.log(`Vector Index Search (Pinecone):  ${metrics.pineconeSearchTimeMs} ms`);
+    console.log(`Total Execution Latency:         ${metrics.totalExecutionTimeMs} ms`);
     console.log('========================================================================================\n');
   }
 }

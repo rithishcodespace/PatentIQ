@@ -1,5 +1,13 @@
-import type { ISearchService, ISearchRepository, SearchMetrics } from '../interfaces/search.interface.js';
-import type { SearchRequestDto, SearchResponseDto, SearchResultDto, PriorArtMatchResult } from '../dto/search.dto.js';
+import type {
+  ISearchService,
+  ISearchRepository,
+  PineconeMatchResult,
+  SearchMetrics,
+  SearchRequest,
+  SearchResponse,
+  SearchResult,
+} from '../interfaces/search.interface.js';
+import type { PriorArtMatchResult } from '../dto/search.dto.js';
 import type { IEmbeddingProvider } from '../../../providers/embedding/embedding-provider.interface.js';
 import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
 import { SearchRepository } from '../repositories/search.repository.js';
@@ -18,51 +26,62 @@ export class SearchService implements ISearchService {
   }
 
   /**
-   * Main semantic patent search method.
+   * Generates embedding for query prompt via Ollama (nomic-embed-text).
+   * Measures embedding generation latency and handles Ollama errors.
    */
-  async search(dto: SearchRequestDto): Promise<SearchResponseDto> {
-    const totalStart = Date.now();
-
-    const queryText = dto.query ? dto.query.trim() : '';
-    if (!queryText) {
-      throw new BadRequestError('Search query cannot be empty.');
+  async generateEmbedding(query: string): Promise<{ embedding: number[]; durationMs: number }> {
+    const trimmed = query ? query.trim() : '';
+    if (!trimmed) {
+      throw new BadRequestError('Search query cannot be empty. Please specify a search prompt.');
     }
 
-    const topK = dto.topK ?? 10;
-
-    console.log(`[SearchService] [INFO] Query received: "${queryText}" (topK=${topK})`);
-
-    // 1. Generate embedding using Ollama nomic-embed-text
-    const embedStart = Date.now();
-    let queryVector: number[];
+    const startTime = Date.now();
     try {
-      queryVector = await this.embeddingProvider.generateEmbedding(queryText);
+      const embedding = await this.embeddingProvider.generateEmbedding(trimmed);
+      const durationMs = Date.now() - startTime;
+      return { embedding, durationMs };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[SearchService] [ERROR] Embedding generation failed: ${msg}`, err);
-      throw new InternalServerError(`Embedding generation failed: ${msg}`);
+      console.error(`[SearchService] [ERROR] Ollama embedding generation failed: ${msg}`, err);
+      throw new InternalServerError(`Ollama embedding generation failed: ${msg}`);
     }
-    const queryEmbeddingTimeMs = Date.now() - embedStart;
-    console.log(`[SearchService] [INFO] Embedding generated (${queryVector.length} dims) in ${queryEmbeddingTimeMs}ms`);
+  }
 
-    // 2. Query Pinecone Vector Index
-    const pineconeStart = Date.now();
-    let matches;
+  /**
+   * Queries vector index repository using query vector embedding.
+   * Measures Pinecone search latency.
+   */
+  async searchVectors(
+    vector: number[],
+    topK: number = 10
+  ): Promise<{ matches: PineconeMatchResult[]; durationMs: number }> {
+    if (!vector || !Array.isArray(vector) || vector.length === 0) {
+      throw new BadRequestError('Vector embedding array cannot be empty.');
+    }
+    if (topK < 1 || topK > 100) {
+      throw new BadRequestError('topK must be an integer between 1 and 100.');
+    }
+
+    const startTime = Date.now();
     try {
-      matches = await this.searchRepository.querySimilarity(queryVector, topK);
+      const matches = await this.searchRepository.querySimilarity(vector, topK);
+      const durationMs = Date.now() - startTime;
+      return { matches, durationMs };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[SearchService] [ERROR] Pinecone search failed: ${msg}`, err);
-      throw new InternalServerError(`Vector database query failed: ${msg}`);
+      console.error(`[SearchService] [ERROR] Pinecone vector search failed: ${msg}`, err);
+      throw new InternalServerError(`Pinecone vector database search failed: ${msg}`);
     }
-    const pineconeSearchTimeMs = Date.now() - pineconeStart;
-    console.log(`[SearchService] [INFO] Pinecone query completed in ${pineconeSearchTimeMs}ms (${matches.length} matches)`);
+  }
 
-    // 3. Sort matches descending by similarity score
-    const sortedMatches = [...matches].sort((a, b) => b.score - a.score);
+  /**
+   * Sorts raw Pinecone matches descending by similarity score
+   * and transforms match metadata into clean SearchResult DTO objects.
+   */
+  formatResults(matches: PineconeMatchResult[]): SearchResult[] {
+    const sorted = [...matches].sort((a, b) => b.score - a.score);
 
-    // 4. Transform Pinecone matches into SearchResultDto format
-    const results: SearchResultDto[] = sortedMatches.map((match) => {
+    return sorted.map((match) => {
       const meta = match.metadata;
       const patentId = meta?.patentId || match.id.split('_')[0] || '';
       const ipc = meta?.ipc || '';
@@ -77,6 +96,30 @@ export class SearchService implements ISearchService {
         score: parseFloat((match.score ?? 0).toFixed(4)),
       };
     });
+  }
+
+  /**
+   * Performs end-to-end semantic search pipeline returning results and timing metrics.
+   */
+  async executeSearch(
+    queryText: string,
+    topK: number = 100
+  ): Promise<{ results: SearchResult[]; metrics: SearchMetrics }> {
+    const totalStart = Date.now();
+
+    const trimmed = queryText ? queryText.trim() : '';
+    if (!trimmed) {
+      throw new BadRequestError('Search query cannot be empty.');
+    }
+
+    // 1. Generate Query Embedding
+    const { embedding, durationMs: queryEmbeddingTimeMs } = await this.generateEmbedding(trimmed);
+
+    // 2. Query Vector Store (Pinecone)
+    const { matches, durationMs: pineconeSearchTimeMs } = await this.searchVectors(embedding, topK);
+
+    // 3. Format and Sort Matches
+    const results = this.formatResults(matches);
 
     const totalExecutionTimeMs = Date.now() - totalStart;
 
@@ -87,23 +130,46 @@ export class SearchService implements ISearchService {
       totalResults: results.length,
     };
 
+    return { results, metrics };
+  }
+
+  /**
+   * Primary search entry point accepting a SearchRequest or query string.
+   */
+  async search(input: string | SearchRequest, topKParam?: number): Promise<SearchResponse> {
+    const query = typeof input === 'string' ? input : input.query;
+    const topK = typeof input === 'string' ? (topKParam ?? 10) : (input.topK ?? 10);
+
+    const trimmedQuery = query ? query.trim() : '';
+    if (!trimmedQuery) {
+      throw new BadRequestError('query cannot be empty');
+    }
+    if (topK < 1 || topK > 100) {
+      throw new BadRequestError('maximum topK is 100');
+    }
+
+    console.log(`[SearchService] Executing semantic search for query: "${trimmedQuery}" (topK=${topK})`);
+
+    const { results, metrics } = await this.executeSearch(trimmedQuery, topK);
+
     console.log(
-      `[SearchService] [INFO] Search finished in ${metrics.totalExecutionTimeMs}ms | Returned ${results.length} results`
+      `[SearchService] Search finished in ${metrics.totalExecutionTimeMs}ms | Returned ${results.length} results`
     );
 
     return {
       success: true,
-      query: queryText,
+      query: trimmedQuery,
       count: results.length,
       results,
+      metrics,
     };
   }
 
   /**
-   * Backward-compatible helper method for RAG service prior art searches.
+   * Helper method for RAG module prior art searches.
    */
   async searchPriorArt(dto: { query: string; topK?: number }): Promise<PriorArtMatchResult[]> {
-    const response = await this.search(dto as SearchRequestDto);
+    const response = await this.search(dto.query, dto.topK ?? 100);
     return response.results.map((r, idx) => ({
       patentId: r.patentId,
       patentNumber: r.patentId,
