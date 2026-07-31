@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import csvParser from 'csv-parser';
 
 /**
@@ -233,17 +234,12 @@ export class PatentSectionExtractor {
  * CLI Main execution entry point.
  */
 async function main(): Promise<void> {
-  const projectRoot = process.cwd();
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const scriptsDir = path.dirname(currentFilePath);
+  const patentsModuleDir = path.resolve(scriptsDir, '..');
 
-  const defaultInputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/clean/grant_grant_clean.csv')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/clean/grant_grant_clean.csv');
-
-  const defaultOutputPath =
-    path.isAbsolute(projectRoot) && projectRoot.endsWith('server')
-      ? path.resolve(projectRoot, 'src/modules/patents/dataset/processed/patents.json')
-      : path.resolve(projectRoot, 'apps/server/src/modules/patents/dataset/processed/patents.json');
+  const defaultInputPath = path.resolve(patentsModuleDir, 'dataset/clean/grant_grant_clean.csv');
+  const defaultOutputPath = path.resolve(patentsModuleDir, 'dataset/processed/patents.json');
 
   const args = process.argv.slice(2);
   let inputPath = defaultInputPath;
