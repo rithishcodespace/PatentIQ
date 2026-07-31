@@ -65,10 +65,38 @@ export const SearchRequestDtoSchema = z.object({
 export type SearchRequestDto = z.infer<typeof SearchRequestDtoSchema>;
 
 /**
- * DTO aliases for clean type imports.
+ * Zod validation schema for individual search result items.
  */
-export type SearchResultDto = SearchResult;
-export type SearchResponseDto = SearchResponse;
+export const SearchResultDtoSchema = z.object({
+  rank: z.number().int().min(1, 'rank must be a positive integer'),
+  score: z.number({ message: 'score must be a number' }),
+  patentId: z.string(),
+  title: z.string(),
+  abstract: z.string(),
+  claims: z.string().optional(),
+  ipc: z.string(),
+  country: z.string().optional(),
+  owner: z.string().optional(),
+  publicationDate: z.string().optional(),
+  section: z.string().optional(),
+  vectorId: z.string().optional(),
+});
+
+export type SearchResultDto = z.infer<typeof SearchResultDtoSchema>;
+
+/**
+ * Zod validation schema for top-level search response payload.
+ */
+export const SearchResponseDtoSchema = z.object({
+  success: z.boolean(),
+  query: z.string(),
+  count: z.number(),
+  filters: SearchFilterDtoSchema.optional(),
+  results: z.array(SearchResultDtoSchema),
+});
+
+export type SearchResponseDto = z.infer<typeof SearchResponseDtoSchema>;
+
 export type { SearchRequest, SearchResponse, SearchResult, SearchFilter };
 
 /**

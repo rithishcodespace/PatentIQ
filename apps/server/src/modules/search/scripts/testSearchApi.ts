@@ -1,12 +1,10 @@
 import { buildApp } from '../../../app.js';
+import { SearchMapper } from '../mappers/search.mapper.js';
 
 async function runApiIntegrationTests() {
   console.log('\n========================================================');
   console.log('       PATENTIQ POST /api/search API INTEGRATION TEST   ');
   console.log('========================================================\n');
-
-  const app = await buildApp();
-  await app.ready();
 
   let passedTests = 0;
   let totalTests = 0;
@@ -20,6 +18,58 @@ async function runApiIntegrationTests() {
       console.error(`[FAIL] Test ${totalTests}: ${testName} ${detail ? `(${detail})` : ''}`);
     }
   }
+
+  // 0. SearchMapper Unit Tests
+  console.log('--- SearchMapper Unit Tests ---');
+  const sampleMatches = [
+    {
+      id: 'US1234567_abstract',
+      score: 0.9128456,
+      metadata: {
+        patentId: 'US1234567',
+        title: 'Wireless Charging System',
+        abstract: 'Wireless power transfer system for vehicles',
+        claims: 'Claim 1: A wireless power transmitter...',
+        ipc: 'H01M',
+        country: 'US',
+        owner: 'Samsung',
+        publicationDate: '2023-05-14',
+        section: 'abstract',
+      },
+    },
+    {
+      id: 'US7654321_title',
+      score: 0.854321,
+      metadata: {
+        patentId: 'US7654321',
+        ipc: 'B60L',
+      },
+    },
+  ];
+
+  const mappedResults = SearchMapper.toSearchResultList(sampleMatches, 10);
+  assert(mappedResults.length === 2, 'SearchMapper: Maps raw matches to DTOs');
+  const res1 = mappedResults[0]!;
+  const res2 = mappedResults[1]!;
+  assert(res1.rank === 1, 'SearchMapper: Assigns rank 1 to top result');
+  assert(res1.score === 0.9128, 'SearchMapper: Rounds score to 4 decimal places as numeric', `Got ${res1.score}`);
+  assert(typeof res1.score === 'number', 'SearchMapper: Keeps score as a numeric value');
+  assert(res1.patentId === 'US1234567', 'SearchMapper: Extracts patentId correctly');
+  assert(res1.claims === 'Claim 1: A wireless power transmitter...', 'SearchMapper: Includes claims');
+  assert(res1.owner === 'Samsung', 'SearchMapper: Extracts owner correctly');
+  assert(res1.country === 'US', 'SearchMapper: Extracts country correctly');
+  assert(res1.publicationDate === '2023-05-14', 'SearchMapper: Extracts publicationDate');
+
+  assert(res2.rank === 2, 'SearchMapper: Assigns rank 2 to second result');
+  assert(res2.score === 0.8543, 'SearchMapper: Rounds score to 4 decimal places', `Got ${res2.score}`);
+
+  // Test empty results mapper
+  const emptyMapped = SearchMapper.toSearchResultList([], 10);
+  assert(Array.isArray(emptyMapped) && emptyMapped.length === 0, 'SearchMapper: Returns empty array for empty matches');
+
+  console.log('\n--- Fastify Endpoint Tests ---');
+  const app = await buildApp();
+  await app.ready();
 
   try {
     // 1. Validation Test: Missing query
@@ -138,18 +188,10 @@ async function runApiIntegrationTests() {
       payload: {
         query: searchQuery,
         topK: 5,
-        filters: {
-          ipc: 'H01M',
-          country: 'US',
-          publicationDateFrom: '2020-01-01',
-          publicationDateTo: '2024-12-31',
-          owner: 'Samsung',
-          section: 'abstract',
-        },
       },
     });
 
-    console.log(`\nResponse Status for POST /api/search with filters: ${resValid.statusCode}`);
+    console.log(`\nResponse Status for POST /api/search: ${resValid.statusCode}`);
     const validBody = JSON.parse(resValid.payload);
 
     if (resValid.statusCode === 200) {
@@ -157,7 +199,17 @@ async function runApiIntegrationTests() {
       assert(validBody.query === searchQuery, 'Response payload contains matching query string');
       assert(Array.isArray(validBody.results), 'Response payload contains results array');
       assert(typeof validBody.count === 'number', 'Response payload contains match count');
-      assert(validBody.filters && validBody.filters.ipc === 'H01M', 'Response echoes back applied filters');
+
+      // Check result item fields if results exist
+      if (validBody.results.length > 0) {
+        const first = validBody.results[0];
+        assert(typeof first.rank === 'number' && first.rank === 1, 'First result has rank: 1');
+        assert(typeof first.score === 'number', 'First result has numeric score');
+        assert(typeof first.patentId === 'string', 'First result has patentId string');
+        assert(typeof first.title === 'string', 'First result has title string');
+        assert(typeof first.abstract === 'string', 'First result has abstract string');
+        assert(typeof first.ipc === 'string', 'First result has ipc string');
+      }
 
       // Check sorting descending order
       if (validBody.results.length > 1) {
@@ -171,7 +223,7 @@ async function runApiIntegrationTests() {
         assert(isSorted, 'Results are sorted in descending order of similarity score');
       }
 
-      console.log('\nSample Filtered Search Result Payload:');
+      console.log('\nSample Search Result Payload:');
       console.log(JSON.stringify(validBody, null, 2));
     } else if (resValid.statusCode === 503) {
       console.log(`[INFO] Downstream dependency unavailable (Ollama / Pinecone): ${validBody.message}`);

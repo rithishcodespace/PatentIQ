@@ -10,6 +10,7 @@ export interface PineconeVectorMetadata extends RecordMetadata {
   ipc: string;
   title?: string;
   abstract?: string;
+  claims?: string;
   publicationDate?: string;
   owner?: string;
   assignee?: string;
@@ -47,14 +48,18 @@ export type PineconeMatch = PineconeMatchResult;
  * Interface representing a formatted patent search result.
  */
 export interface SearchResult {
+  rank: number;
+  score: number;
   patentId: string;
   title: string;
   abstract: string;
+  claims?: string | undefined;
   ipc: string;
-  score: number;
   country?: string | undefined;
-  publicationDate?: string | undefined;
   owner?: string | undefined;
+  publicationDate?: string | undefined;
+  section?: string | undefined;
+  vectorId?: string | undefined;
 }
 
 /**

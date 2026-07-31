@@ -12,6 +12,7 @@ import type { PriorArtMatchResult } from '../dto/search.dto.js';
 import type { IEmbeddingProvider } from '../../../providers/embedding/embedding-provider.interface.js';
 import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
 import { SearchRepository } from '../repositories/search.repository.js';
+import { SearchMapper } from '../mappers/search.mapper.js';
 import {
   BadRequestError,
   InternalServerError,
@@ -101,40 +102,12 @@ export class SearchService implements ISearchService {
     }
   }
 
-
   /**
-   * Sorts raw Pinecone matches descending by similarity score
-   * and transforms match metadata into clean SearchResult DTO objects.
+   * Delegates match transformation, score sorting, score rounding (4 decimal places),
+   * and 1-based ranking position assignment to SearchMapper.
    */
   formatResults(matches: PineconeMatchResult[]): SearchResult[] {
-    const sorted = [...matches].sort((a, b) => b.score - a.score);
-
-    return sorted.map((match) => {
-      const meta = match.metadata as PineconeVectorMetadata | undefined;
-      const patentId = meta?.patentId || match.id.split('_')[0] || '';
-      const ipc = meta?.ipc || '';
-      const title = meta?.title || (meta?.section === 'title' ? `Patent ${patentId}` : '');
-      const abstract = meta?.abstract || (meta?.section === 'abstract' ? `Abstract for patent ${patentId}` : '');
-      const publicationDate = meta?.publicationDate || (meta as any)?.date || undefined;
-      const owner = meta?.owner || meta?.assignee || undefined;
-
-      const result: SearchResult = {
-        patentId,
-        title,
-        abstract,
-        ipc,
-        score: parseFloat((match.score ?? 0).toFixed(4)),
-      };
-
-      if (publicationDate) {
-        result.publicationDate = String(publicationDate);
-      }
-      if (owner) {
-        result.owner = String(owner);
-      }
-
-      return result;
-    });
+    return SearchMapper.toSearchResultList(matches);
   }
 
   /**
@@ -157,8 +130,8 @@ export class SearchService implements ISearchService {
     // 2. Query Vector Store (Pinecone)
     const { matches, durationMs: pineconeSearchTimeMs } = await this.searchVectors(embedding, topK);
 
-    // 3. Format and Sort Matches
-    const results = this.formatResults(matches);
+    // 3. Format, Sort, Rank, and Round Matches via SearchMapper
+    const results = SearchMapper.toSearchResultList(matches, topK);
 
     const totalExecutionTimeMs = Date.now() - totalStart;
 
@@ -178,6 +151,7 @@ export class SearchService implements ISearchService {
   async search(input: string | SearchRequest, topKParam?: number): Promise<SearchResponse> {
     const query = typeof input === 'string' ? input : input.query;
     const topK = typeof input === 'string' ? (topKParam ?? 10) : (input.topK ?? 10);
+    const filters = typeof input === 'object' ? input.filters : undefined;
 
     const trimmedQuery = query ? query.trim() : '';
     if (!trimmedQuery) {
@@ -187,21 +161,27 @@ export class SearchService implements ISearchService {
       throw new BadRequestError('maximum topK is 100');
     }
 
-    console.log(`[SearchService] Executing semantic search for query: "${trimmedQuery}" (topK=${topK})`);
-
     const { results, metrics } = await this.executeSearch(trimmedQuery, topK);
 
+    const highestScore = results.length > 0 ? results[0]?.score ?? 0 : 0;
+
     console.log(
-      `[SearchService] Search finished in ${metrics.totalExecutionTimeMs}ms | Embedding: ${metrics.queryEmbeddingTimeMs}ms | Pinecone: ${metrics.pineconeSearchTimeMs}ms | Results: ${results.length}`
+      `[SearchService] Search execution completed | query="${trimmedQuery}" | topK=${topK} | count=${results.length} | highestScore=${highestScore} | latency=${metrics.totalExecutionTimeMs}ms`
     );
 
-    return {
+    const response: SearchResponse = {
       success: true,
       query: trimmedQuery,
       count: results.length,
       results,
       metrics,
     };
+
+    if (filters) {
+      response.filters = filters;
+    }
+
+    return response;
   }
 
   /**
