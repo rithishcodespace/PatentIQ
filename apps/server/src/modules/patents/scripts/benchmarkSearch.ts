@@ -3,6 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { PatentSemanticSearcher } from './semanticSearch.js';
 import { env } from '../../../config/env.config.js';
+import type { ISearchService } from '../../search/interfaces/search.interface.js';
+import { SearchService } from '../../search/services/search.service.js';
+import { SearchRepository } from '../../search/repositories/search.repository.js';
+import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
 
 /**
  * Individual benchmark result for a single search query.
@@ -96,12 +100,13 @@ export const DEFAULT_BENCHMARK_QUERIES: string[] = [
 
 /**
  * Patent Semantic Search Benchmarker Service.
+ * Uses SearchService directly to run benchmarks.
  */
 export class PatentSearchBenchmarker {
-  private searcher: PatentSemanticSearcher;
+  private searchService: ISearchService;
 
-  constructor(searcher: PatentSemanticSearcher) {
-    this.searcher = searcher;
+  constructor(searchService: ISearchService) {
+    this.searchService = searchService;
   }
 
   /**
@@ -118,7 +123,7 @@ export class PatentSearchBenchmarker {
       Logger.info(`[${i + 1}/${queries.length}] Benchmarking query: "${query}"`);
 
       try {
-        const { results, metrics } = await this.searcher.executeSearch(query, topK);
+        const { results, metrics } = await this.searchService.executeSearch(query, topK);
 
         const highestSimilarityScore =
           results.length > 0 ? Math.max(...results.map((r) => r.score)) : 0;
@@ -281,7 +286,6 @@ async function main(): Promise<void> {
 
   const args = process.argv.slice(2);
   let outputPath = defaultOutputPath;
-  let mockMode = false;
   let topK = 100;
 
   for (let i = 0; i < args.length; i++) {
@@ -290,8 +294,6 @@ async function main(): Promise<void> {
     if (arg === '--output' && nextArg) {
       outputPath = path.resolve(nextArg);
       i++;
-    } else if (arg === '--mock') {
-      mockMode = true;
     } else if (arg === '--top-k' && nextArg) {
       topK = parseInt(nextArg, 10) || 100;
       i++;
@@ -303,22 +305,11 @@ async function main(): Promise<void> {
   const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || env.OLLAMA_BASE_URL || 'http://localhost:11434';
   const embeddingModel = process.env.OLLAMA_EMBEDDING_MODEL || env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text';
 
-  if (!apiKey && !mockMode) {
-    Logger.warn('PINECONE_API_KEY environment variable is not set. Switching to --mock mode for offline benchmark.');
-    mockMode = true;
-  }
+  const embeddingProvider = new OllamaEmbeddingProvider(ollamaBaseUrl, embeddingModel);
+  const searchRepo = new SearchRepository(apiKey, indexName);
+  const searchService = new SearchService(embeddingProvider, searchRepo);
 
-  // Reuse existing PatentSemanticSearcher instance
-  const searcher = new PatentSemanticSearcher(
-    ollamaBaseUrl,
-    embeddingModel,
-    apiKey,
-    indexName,
-    3,
-    mockMode
-  );
-
-  const benchmarker = new PatentSearchBenchmarker(searcher);
+  const benchmarker = new PatentSearchBenchmarker(searchService);
 
   try {
     const report = await benchmarker.runBenchmark(DEFAULT_BENCHMARK_QUERIES, topK);

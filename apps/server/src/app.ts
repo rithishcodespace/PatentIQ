@@ -47,6 +47,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => patentsRoutes(instance, controllers.patents), { prefix: '/api/v1/patents' });
   await app.register(async (instance) => embeddingsRoutes(instance, controllers.embeddings), { prefix: '/api/v1/embeddings' });
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/v1/search' });
+  await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/search' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/v1/rag' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
   await app.register(async (instance) => uploadsRoutes(instance, controllers.uploads), { prefix: '/api/v1/uploads' });

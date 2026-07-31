@@ -12,6 +12,7 @@ import { AuthRepository } from '../modules/auth/repositories/auth.repository.js'
 import { UsersRepository } from '../modules/users/repositories/users.repository.js';
 import { PatentsRepository } from '../modules/patents/repositories/patents.repository.js';
 import { ReportsRepository } from '../modules/reports/repositories/reports.repository.js';
+import { SearchRepository } from '../modules/search/repositories/search.repository.js';
 
 // Services
 import { AuthService } from '../modules/auth/services/auth.service.js';
@@ -83,6 +84,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const usersRepo = new UsersRepository();
   const patentsRepo = new PatentsRepository();
   const reportsRepo = new ReportsRepository();
+  const searchRepo = new SearchRepository();
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
   const authService = new AuthService(authRepo);
@@ -90,7 +92,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const patentParserService = new PatentParserService();
   const patentService = new PatentService(patentsRepo, patentParserService);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
-  const searchService = new SearchService(embeddingProvider, vectorStoreProvider, patentsRepo);
+  const searchService = new SearchService(embeddingProvider, searchRepo);
   const ragService = new RagService(searchService, llmProvider);
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
