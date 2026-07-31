@@ -22,6 +22,8 @@ export const SearchRequestDtoSchema = z.object({
     .default(10),
 });
 
+
+
 export type SearchRequestDto = z.infer<typeof SearchRequestDtoSchema>;
 
 /**

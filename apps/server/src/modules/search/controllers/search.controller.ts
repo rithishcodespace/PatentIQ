@@ -10,6 +10,10 @@ export class SearchController {
    * HTTP POST /api/search Handler.
    */
   async search(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (!request.body || typeof request.body !== 'object') {
+      throw new BadRequestError('query is required');
+    }
+
     // 1. Validate request payload using Zod schema
     const parseResult = SearchRequestDtoSchema.safeParse(request.body);
 
@@ -24,14 +28,23 @@ export class SearchController {
     // 2. Call service layer
     const response = await this.searchService.search(validatedDto);
 
-    // 3. Return JSON response
+    // 3. Log performance metrics via Fastify logger
+    if (response.metrics) {
+      request.log.info(
+        `[SearchAPI] Query: "${response.query}" | Matches: ${response.count} | Total: ${response.metrics.totalExecutionTimeMs}ms | Embedding: ${response.metrics.queryEmbeddingTimeMs}ms | Pinecone: ${response.metrics.pineconeSearchTimeMs}ms`
+      );
+    }
+
+    // 4. Return JSON response
     reply.status(200).send(response);
   }
 
   /**
    * Backward-compatible handler for POST /api/v1/search/prior-art.
    */
-  async searchPriorArt(request: FastifyRequest<{ Body: SearchRequestDto }>, reply: FastifyReply): Promise<void> {
+  async searchPriorArt(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     await this.search(request, reply);
   }
 }
+
+

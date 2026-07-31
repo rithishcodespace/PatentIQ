@@ -35,3 +35,16 @@ export class InternalServerError extends AppError {
     super(message, 500);
   }
 }
+
+export class ServiceUnavailableError extends AppError {
+  constructor(message: string = 'Service unavailable') {
+    super(message, 503);
+  }
+}
+
+export class GatewayTimeoutError extends AppError {
+  constructor(message: string = 'Gateway timeout') {
+    super(message, 504);
+  }
+}
+

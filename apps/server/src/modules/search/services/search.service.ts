@@ -6,12 +6,18 @@ import type {
   SearchRequest,
   SearchResponse,
   SearchResult,
+  PineconeVectorMetadata,
 } from '../interfaces/search.interface.js';
 import type { PriorArtMatchResult } from '../dto/search.dto.js';
 import type { IEmbeddingProvider } from '../../../providers/embedding/embedding-provider.interface.js';
 import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
 import { SearchRepository } from '../repositories/search.repository.js';
-import { BadRequestError, InternalServerError } from '../../../common/errors/http-errors.js';
+import {
+  BadRequestError,
+  InternalServerError,
+  ServiceUnavailableError,
+  GatewayTimeoutError,
+} from '../../../common/errors/http-errors.js';
 
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
@@ -32,7 +38,7 @@ export class SearchService implements ISearchService {
   async generateEmbedding(query: string): Promise<{ embedding: number[]; durationMs: number }> {
     const trimmed = query ? query.trim() : '';
     if (!trimmed) {
-      throw new BadRequestError('Search query cannot be empty. Please specify a search prompt.');
+      throw new BadRequestError('query cannot be empty');
     }
 
     const startTime = Date.now();
@@ -41,8 +47,22 @@ export class SearchService implements ISearchService {
       const durationMs = Date.now() - startTime;
       return { embedding, durationMs };
     } catch (err: unknown) {
+      if (
+        err instanceof BadRequestError ||
+        err instanceof ServiceUnavailableError ||
+        err instanceof GatewayTimeoutError
+      ) {
+        throw err;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[SearchService] [ERROR] Ollama embedding generation failed: ${msg}`, err);
+
+      if (msg.includes('ECONNREFUSED') || msg.toLowerCase().includes('fetch failed') || msg.toLowerCase().includes('connect')) {
+        throw new ServiceUnavailableError(`Ollama service is unavailable: ${msg}`);
+      }
+      if (msg.includes('ETIMEDOUT') || msg.toLowerCase().includes('timeout')) {
+        throw new GatewayTimeoutError(`Ollama embedding generation timed out: ${msg}`);
+      }
       throw new InternalServerError(`Ollama embedding generation failed: ${msg}`);
     }
   }
@@ -59,7 +79,7 @@ export class SearchService implements ISearchService {
       throw new BadRequestError('Vector embedding array cannot be empty.');
     }
     if (topK < 1 || topK > 100) {
-      throw new BadRequestError('topK must be an integer between 1 and 100.');
+      throw new BadRequestError('maximum topK is 100');
     }
 
     const startTime = Date.now();
@@ -68,11 +88,19 @@ export class SearchService implements ISearchService {
       const durationMs = Date.now() - startTime;
       return { matches, durationMs };
     } catch (err: unknown) {
+      if (
+        err instanceof BadRequestError ||
+        err instanceof ServiceUnavailableError ||
+        err instanceof GatewayTimeoutError
+      ) {
+        throw err;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[SearchService] [ERROR] Pinecone vector search failed: ${msg}`, err);
       throw new InternalServerError(`Pinecone vector database search failed: ${msg}`);
     }
   }
+
 
   /**
    * Sorts raw Pinecone matches descending by similarity score
@@ -82,19 +110,30 @@ export class SearchService implements ISearchService {
     const sorted = [...matches].sort((a, b) => b.score - a.score);
 
     return sorted.map((match) => {
-      const meta = match.metadata;
+      const meta = match.metadata as PineconeVectorMetadata | undefined;
       const patentId = meta?.patentId || match.id.split('_')[0] || '';
       const ipc = meta?.ipc || '';
       const title = meta?.title || (meta?.section === 'title' ? `Patent ${patentId}` : '');
       const abstract = meta?.abstract || (meta?.section === 'abstract' ? `Abstract for patent ${patentId}` : '');
+      const publicationDate = meta?.publicationDate || (meta as any)?.date || undefined;
+      const owner = meta?.owner || meta?.assignee || undefined;
 
-      return {
+      const result: SearchResult = {
         patentId,
         title,
         abstract,
         ipc,
         score: parseFloat((match.score ?? 0).toFixed(4)),
       };
+
+      if (publicationDate) {
+        result.publicationDate = String(publicationDate);
+      }
+      if (owner) {
+        result.owner = String(owner);
+      }
+
+      return result;
     });
   }
 
@@ -112,7 +151,7 @@ export class SearchService implements ISearchService {
       throw new BadRequestError('Search query cannot be empty.');
     }
 
-    // 1. Generate Query Embedding
+    // 1. Generate Query Embedding via Ollama
     const { embedding, durationMs: queryEmbeddingTimeMs } = await this.generateEmbedding(trimmed);
 
     // 2. Query Vector Store (Pinecone)
@@ -153,7 +192,7 @@ export class SearchService implements ISearchService {
     const { results, metrics } = await this.executeSearch(trimmedQuery, topK);
 
     console.log(
-      `[SearchService] Search finished in ${metrics.totalExecutionTimeMs}ms | Returned ${results.length} results`
+      `[SearchService] Search finished in ${metrics.totalExecutionTimeMs}ms | Embedding: ${metrics.queryEmbeddingTimeMs}ms | Pinecone: ${metrics.pineconeSearchTimeMs}ms | Results: ${results.length}`
     );
 
     return {

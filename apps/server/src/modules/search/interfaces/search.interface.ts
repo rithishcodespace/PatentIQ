@@ -10,6 +10,9 @@ export interface PineconeVectorMetadata extends RecordMetadata {
   ipc: string;
   title?: string;
   abstract?: string;
+  publicationDate?: string;
+  owner?: string;
+  assignee?: string;
 }
 
 /**
@@ -35,6 +38,8 @@ export interface SearchResult {
   abstract: string;
   ipc: string;
   score: number;
+  publicationDate?: string;
+  owner?: string;
 }
 
 /**
