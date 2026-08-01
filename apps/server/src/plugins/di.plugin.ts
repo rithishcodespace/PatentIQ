@@ -45,6 +45,11 @@ import { AnalyticsController } from '../modules/analytics/controllers/analytics.
 import { AdminController } from '../modules/admin/controllers/admin.controller.js';
 import { HistoryController } from '../modules/history/controllers/history.controller.js';
 
+// Upload Module
+import { UploadRepository } from '../modules/upload/repositories/upload.repository.js';
+import { UploadService } from '../modules/upload/services/upload.service.js';
+import { UploadController } from '../modules/upload/controllers/upload.controller.js';
+
 export interface DIContainer {
   controllers: {
     auth: AuthController;
@@ -56,6 +61,7 @@ export interface DIContainer {
     rag: RagController;
     reports: ReportsController;
     uploads: UploadsController;
+    upload: UploadController;
     analytics: AnalyticsController;
     admin: AdminController;
     history: HistoryController;
@@ -70,6 +76,7 @@ export interface DIContainer {
     rag: RagService;
     reports: ReportsService;
     uploads: UploadsService;
+    upload: UploadService;
     analytics: AnalyticsService;
     admin: AdminService;
     history: HistoryService;
@@ -97,6 +104,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const reportsRepo = new ReportsRepository();
   const searchRepo = new SearchRepository();
   const historyRepo = new HistoryRepository(fastify.prisma);
+  const uploadRepo = new UploadRepository(fastify.prisma);
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
   const confidenceService = new ConfidenceService();
@@ -118,6 +126,7 @@ export default fp(async (fastify: FastifyInstance) => {
   );
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
+  const uploadService = new UploadService(uploadRepo);
   const analyticsService = new AnalyticsService();
   const adminService = new AdminService(vectorStoreProvider, llmProvider);
 
@@ -131,6 +140,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
+  const uploadController = new UploadController(uploadService);
   const analyticsController = new AnalyticsController(analyticsService);
   const adminController = new AdminController(adminService);
   const historyController = new HistoryController(historyService);
@@ -147,6 +157,7 @@ export default fp(async (fastify: FastifyInstance) => {
       rag: ragController,
       reports: reportsController,
       uploads: uploadsController,
+      upload: uploadController,
       analytics: analyticsController,
       admin: adminController,
       history: historyController,
@@ -161,6 +172,7 @@ export default fp(async (fastify: FastifyInstance) => {
       rag: ragService,
       reports: reportsService,
       uploads: uploadsService,
+      upload: uploadService,
       analytics: analyticsService,
       admin: adminService,
       history: historyService,
@@ -168,3 +180,4 @@ export default fp(async (fastify: FastifyInstance) => {
     },
   });
 });
+

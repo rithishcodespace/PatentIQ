@@ -400,3 +400,31 @@ export const HealthStatusSchema = {
     },
   },
 };
+
+export const DocumentUploadSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    document: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+        originalFileName: { type: 'string', example: 'Patent_Application_Draft.pdf' },
+        storedFileName: { type: 'string', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab.pdf' },
+        mimeType: { type: 'string', example: 'application/pdf' },
+        size: { type: 'integer', example: 102345 },
+        status: { type: 'string', enum: ['Uploaded', 'Processing', 'Completed', 'Failed'], example: 'Uploaded' },
+        uploadedAt: { type: 'string', format: 'date-time', example: '2026-08-01T18:00:00.000Z' },
+      },
+    },
+  },
+};
+
+export const DocumentDeleteSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    message: { type: 'string', example: 'Document deleted successfully' },
+  },
+};
+

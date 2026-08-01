@@ -21,6 +21,7 @@ import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
 import { adminRoutes } from './modules/admin/routes/admin.routes.js';
 import { historyRoutes } from './modules/history/routes/history.routes.js';
+import { uploadRoutes } from './modules/upload/routes/upload.routes.js';
 import { HealthStatusSchema, standardErrorResponses } from './common/schemas/swagger.schemas.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -59,6 +60,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/rag' });
   await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/v1/history' });
   await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/history' });
+  await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/upload' });
+  await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/v1/upload' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
   await app.register(async (instance) => uploadsRoutes(instance, controllers.uploads), { prefix: '/api/v1/uploads' });
   await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/v1/analytics' });
