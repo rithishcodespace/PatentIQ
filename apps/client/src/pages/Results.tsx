@@ -53,106 +53,106 @@ const Results = () => {
           />
 
           <Modal
-    isOpen={selectedPatent !== null}
-    onClose={() => setSelectedPatent(null)}
->
+           isOpen={selectedPatent !== null}
+           onClose={() => setSelectedPatent(null)}
+        >
+        
+           {selectedPatent && (
 
-    {selectedPatent && (
+               <div>
 
-        <div>
+                   <h1 className="text-3xl font-bold mb-6">
 
-            <h1 className="text-3xl font-bold mb-6">
+                       {selectedPatent.title}
 
-                {selectedPatent.title}
+                   </h1>
 
-            </h1>
+                   <div className="space-y-4">
 
-            <div className="space-y-4">
+                       <p>
 
-                <p>
+                           <strong>Patent ID :</strong>
 
-                    <strong>Patent ID :</strong>
+                           #{selectedPatent.id}
 
-                    #{selectedPatent.id}
+                       </p>
 
-                </p>
+                       <p>
 
-                <p>
+                           <strong>IPC :</strong>
 
-                    <strong>IPC :</strong>
+                           {selectedPatent.ipc}
 
-                    {selectedPatent.ipc}
+                       </p>
 
-                </p>
+                       <p>
 
-                <p>
+                           <strong>Similarity :</strong>
 
-                    <strong>Similarity :</strong>
+                           {selectedPatent.similarity}%
 
-                    {selectedPatent.similarity}%
+                       </p>
 
-                </p>
+                       <div>
 
-                <div>
+                           <h2 className="font-semibold text-lg">
 
-                    <h2 className="font-semibold text-lg">
+                               Abstract
 
-                        Abstract
+                           </h2>
 
-                    </h2>
+                           <p className="text-gray-600">
 
-                    <p className="text-gray-600">
+                               {selectedPatent.abstract}
 
-                        {selectedPatent.abstract}
+                           </p>
 
-                    </p>
+                       </div>
 
-                </div>
+                       <div>
 
-                <div>
+                           <h2 className="font-semibold text-lg">
 
-                    <h2 className="font-semibold text-lg">
+                               Claims
 
-                        Claims
+                           </h2>
 
-                    </h2>
+                           <p className="text-gray-600">
 
-                    <p className="text-gray-600">
+                               {selectedPatent.claims}
 
-                        {selectedPatent.claims}
+                           </p>
 
-                    </p>
+                       </div>
 
-                </div>
+                       <div className="bg-blue-50 rounded-xl p-4">
 
-                <div className="bg-blue-50 rounded-xl p-4">
+                           <h2 className="font-semibold mb-2">
 
-                    <h2 className="font-semibold mb-2">
+                               AI Similarity Explanation
 
-                        AI Similarity Explanation
+                           </h2>
 
-                    </h2>
+                           <p className="text-gray-700">
 
-                    <p className="text-gray-700">
+                               This patent is considered similar because the
+                               invention focuses on AI-assisted monitoring,
+                               semantic image analysis and automated
+                               decision-making. The retrieved document shares
+                               common technical concepts and functional
+                               objectives.
 
-                        This patent is considered similar because the
-                        invention focuses on AI-assisted monitoring,
-                        semantic image analysis and automated
-                        decision-making. The retrieved document shares
-                        common technical concepts and functional
-                        objectives.
+                           </p>
 
-                    </p>
+                       </div>
 
-                </div>
+                   </div>
 
-            </div>
+               </div>
 
-        </div>
+            )}
 
-    )}
-
-</Modal>
+        </Modal>
 
         </div>
 

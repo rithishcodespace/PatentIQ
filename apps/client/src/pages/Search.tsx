@@ -4,63 +4,44 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import PatentForm from "../components/search/PatentForm";
 import Loader from "../components/common/Loader";
-import { searchPatent } from "../services/api";
 import SearchProgress from "../components/search/SearchProgress";
 import Alert from "../components/ui/Alert";
+import { useSearch } from "../hooks/useSearch";
+import type { PatentSearchPayload } from "../types/search";
 
 const Search = () => {
   const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(false);
+  const { loading, error, runSearch, resetError } = useSearch();
   const [step, setStep] = useState(0);
-  const [error, setError] = useState("");
 
-  const handleSearch = async (data: {
-    title: string;
-    abstract: string;
-    claims: string;
-  }) => {
-    try {
-      setLoading(true);
-      setError("");
+  const handleSearch = async (data: PatentSearchPayload) => {
+    setStep(0);
+    setTimeout(() => setStep(1), 400);
+    setTimeout(() => setStep(2), 800);
+    setTimeout(() => setStep(3), 1200);
+    setTimeout(() => setStep(4), 1700);
 
-      setStep(0);
+    const response = await runSearch(data);
 
-      setTimeout(() => setStep(1), 400);
-      setTimeout(() => setStep(2), 800);
-      setTimeout(() => setStep(3), 1200);
-      setTimeout(() => setStep(4), 1700);
-
-      const response = await searchPatent(data);
-
-      navigate("/results", {
-        state: response,
-      });
-    } catch (err) {
-      setError(
-        "We couldn't reach the search index. Check your connection and try again."
-      );
-    } finally {
-      setLoading(false);
+    if (response) {
+      navigate("/results", { state: response });
     }
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-14">
+    <div className="mx-auto w-full max-w-4xl">
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-        className="mb-10 text-center"
+        transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+        className="mb-6 text-center"
       >
-        <p className="code-chip mb-4 inline-block bg-indigo-50 text-indigo-600">
+        <p className="code-chip mb-2 inline-block bg-indigo/5 text-indigo">
           STEP 01 · DESCRIBE THE INVENTION
         </p>
-        <h1 className="font-display text-4xl font-semibold text-ink">
-          Search prior art
-        </h1>
-        <p className="mt-3 font-body text-slate">
-          The more specific your abstract and claims, the sharper the match.
+        <p className="mt-1.5 font-body text-sm text-slate">
+          Fill in the details, paste a draft, or upload a PDF — however your
+          invention is documented right now.
         </p>
       </motion.div>
 
@@ -71,7 +52,7 @@ const Search = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="space-y-8"
+            className="space-y-6"
           >
             <Loader />
             <SearchProgress step={step} />
@@ -83,7 +64,7 @@ const Search = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <Alert message={error} onRetry={() => setError("")} />
+            <Alert message={error} onRetry={resetError} />
           </motion.div>
         ) : (
           <motion.div

@@ -1,3 +1,7 @@
+import { motion } from "framer-motion";
+import { Card } from "../ui/Card";
+import { getSimilarityRisk } from "../../utils/similarityRisk";
+
 interface ResultCardProps {
   patent: {
     id: number;
@@ -9,82 +13,56 @@ interface ResultCardProps {
 }
 
 const ResultCard = ({ patent, onView }: ResultCardProps) => {
-
-  const getColor = (score: number) => {
-    if (score >= 90) return "bg-green-500";
-    if (score >= 75) return "bg-yellow-500";
-    return "bg-red-500";
-  };
+  const risk = getSimilarityRisk(patent.similarity);
 
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6">
-
-      <div className="flex justify-between items-start">
-
-        <div>
-
-          <h2 className="text-xl font-bold text-gray-800">
+    <Card className="transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(11,17,32,0.06),0_20px_40px_-16px_rgba(11,17,32,0.18)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold leading-snug text-ink">
             {patent.title}
           </h2>
 
-          <p className="text-sm text-gray-500 mt-2">
-            Patent ID : #{patent.id}
-          </p>
-
-          <p className="text-sm text-gray-500">
-            IPC Classification : {patent.ipc}
-          </p>
-
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="code-chip">#{patent.id}</span>
+            <span className="code-chip">{patent.ipc}</span>
+          </div>
         </div>
 
-        <div className="text-right">
-
-          <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-bold">
-            {patent.similarity}%
-          </span>
-
-        </div>
-
+        <span
+          className={`shrink-0 rounded-full px-3 py-1 font-mono text-xs font-semibold ${risk.bg} ${risk.text}`}
+        >
+          {risk.label}
+        </span>
       </div>
 
-      {/* Similarity Progress */}
-
+      {/* Similarity meter */}
       <div className="mt-6">
-
-        <div className="flex justify-between text-sm mb-2">
-
-          <span>Semantic Similarity</span>
-
-          <span>{patent.similarity}%</span>
-
+        <div className="mb-2 flex items-center justify-between font-body text-sm text-slate">
+          <span>Semantic similarity</span>
+          <span className="font-mono text-ink">{patent.similarity}%</span>
         </div>
-
-        <div className="w-full bg-gray-200 rounded-full h-3">
-
-          <div
-            className={`h-3 rounded-full ${getColor(
-              patent.similarity
-            )}`}
-            style={{ width: `${patent.similarity}%` }}
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${patent.similarity}%` }}
+            transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
+            className={`h-2 rounded-full ${risk.fill}`}
           />
-
         </div>
-
       </div>
 
       <div className="mt-6 flex justify-end">
-
-       <button
-        onClick={() => onView?.(patent)}
-        disabled={!onView}
-        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg"
-        >
-          View Details
-        </button>
-
-      </div>
-
-    </div>
+  <button
+    onClick={() => onView?.(patent)}
+    disabled={!onView}
+    className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 transition-all duration-200 transform hover:scale-105 hover:gap-2 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:scale-100"
+  >
+    View Details
+    <span className="text-base">{">>"}</span>
+  </button>
+</div>  
+    </Card>
   );
 };
 

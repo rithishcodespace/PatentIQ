@@ -1,12 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 @import "tailwindcss";
 
 
 /* ==========================================================================
-   PatentAI — Design Tokens
-   Fonts: Fraunces (display) · Inter (body/UI) · IBM Plex Mono (codes/data)
-   ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  PatentAI — Design Tokens
+  Fonts: Fraunces (display) · Inter (body/UI) · IBM Plex Mono (codes/data)
+  ========================================================================== */
 
 :root {
   /* Color */

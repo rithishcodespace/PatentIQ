@@ -1,85 +1,106 @@
 import { useState, type FormEvent } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+import InputMethodTabs from "./InputMethodTabs";
+import FillFormFields, { type FillFormValues } from "./inputs/FillFormFields";
+import PasteTextField from "./inputs/PasteTextField";
+import UploadPdfField from "./inputs/UploadPdfField";
+import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
+import {
+  DEFAULT_ADVANCED_OPTIONS,
+  type InputMethod,
+  type PatentSearchPayload,
+} from "../../types/search";
 
 interface PatentFormProps {
-  onSearch: (data: {
-    title: string;
-    abstract: string;
-    claims: string;
-  }) => void;
+  onSearch: (data: PatentSearchPayload) => void;
 }
 
-const fieldClass =
-  "w-full rounded-lg border border-slate-100 bg-paper px-4 py-3 font-body text-ink placeholder:text-slate/60 transition focus:border-indigo focus:outline-none focus:ring-2 focus:ring-indigo/15";
-
-const FieldLabel = ({ index, children }: { index: string; children: string }) => (
-  <label className="mb-2 flex items-baseline gap-2 font-body text-sm font-semibold text-ink">
-    <span className="font-mono text-xs text-amber">{index}</span>
-    {children}
-  </label>
-);
+const EMPTY_FORM: FillFormValues = {
+  title: "",
+  abstract: "",
+  claims: "",
+  keywords: "",
+};
 
 const PatentForm = ({ onSearch }: PatentFormProps) => {
-  const [title, setTitle] = useState("");
-  const [abstract, setAbstract] = useState("");
-  const [claims, setClaims] = useState("");
+  const [method, setMethod] = useState<InputMethod>("form");
+
+  const [formValues, setFormValues] = useState<FillFormValues>(EMPTY_FORM);
+  const [pastedText, setPastedText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [advanced, setAdvanced] = useState(DEFAULT_ADVANCED_OPTIONS);
+
+  const isValid =
+    method === "form"
+      ? formValues.title.trim() &&
+        formValues.abstract.trim() &&
+        formValues.claims.trim()
+      : method === "paste"
+      ? pastedText.trim().length > 0
+      : file !== null;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSearch({ title, abstract, claims });
+    if (!isValid) return;
+
+    const base = { method, advanced };
+
+    if (method === "form") {
+      onSearch({ ...base, ...formValues });
+    } else if (method === "paste") {
+      onSearch({ ...base, pastedText });
+    } else {
+      onSearch({ ...base, file: file! });
+    }
   };
 
   return (
-    <motion.form
-      onSubmit={handleSubmit}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-      className="space-y-7 rounded-2xl border border-slate-100 bg-white p-8 shadow-[0_1px_2px_rgba(11,17,32,0.04),0_12px_32px_-16px_rgba(11,17,32,0.12)]"
-    >
-      <div>
-        <FieldLabel index="01">Patent title</FieldLabel>
-        <input
-          type="text"
-          placeholder="e.g. Solar-assisted grain dryer for small farms"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={fieldClass}
-          required
-        />
-      </div>
-
-      <div>
-        <FieldLabel index="02">Abstract</FieldLabel>
-        <textarea
-          rows={5}
-          placeholder="Summarize the invention in plain terms — what it does and the problem it solves."
-          value={abstract}
-          onChange={(e) => setAbstract(e.target.value)}
-          className={`${fieldClass} resize-none`}
-          required
-        />
-      </div>
-
-      <div>
-        <FieldLabel index="03">Claims</FieldLabel>
-        <textarea
-          rows={7}
-          placeholder="List what's novel — the specific mechanism, method, or configuration you're claiming."
-          value={claims}
-          onChange={(e) => setClaims(e.target.value)}
-          className={`${fieldClass} resize-none`}
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="w-full rounded-lg bg-indigo-600 py-3.5 font-body text-sm font-semibold text-white transition hover:bg-indigo-500"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+        className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_2px_rgba(11,17,32,0.04),0_12px_32px_-16px_rgba(11,17,32,0.12)] sm:p-6"
       >
-        Search patents
-      </button>
-    </motion.form>
+        <div className="mb-5">
+          <InputMethodTabs active={method} onChange={setMethod} />
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={method}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+          >
+            {method === "form" && (
+              <FillFormFields values={formValues} onChange={setFormValues} />
+            )}
+            {method === "paste" && (
+              <PasteTextField value={pastedText} onChange={setPastedText} />
+            )}
+            {method === "upload" && (
+              <UploadPdfField file={file} onChange={setFile} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      <AdvancedOptionsPanel value={advanced} onChange={setAdvanced} />
+
+      <motion.button
+        type="submit"
+        disabled={!isValid}
+        // whileTap={isValid ? { scale: 0.98 } : undefined}
+        whileHover={isValid ? { y: -1 } : undefined}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="w-full rounded-lg bg-indigo-500 py-3 font-body text-sm font-semibold text-paper transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate"
+      >
+        Search prior art
+      </motion.button>
+    </form>
   );
 };
 
