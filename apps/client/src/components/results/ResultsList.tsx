@@ -1,16 +1,9 @@
 import { motion, type Variants } from "framer-motion";  
 import ResultCard from "./ResultCard";
 
-interface Patent {
-  id: number;
-  title: string;
-  similarity: number;
-  ipc: string;
-}
-
 interface ResultsListProps {
-  results: Patent[];
-  onView?: (patent: Patent) => void;
+  results: any[];
+  onView?: (patent: any) => void;
 }
 
 const container: Variants = {
@@ -31,7 +24,7 @@ const item: Variants = {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.4,
+      duration: 0.3,
       ease: "easeOut",
     },
   },
@@ -43,10 +36,10 @@ const ResultsList = ({ results, onView }: ResultsListProps) => {
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-5"
+      className="space-y-4"
     >
-      {results.map((patent) => (
-        <motion.div key={patent.id} variants={item}>
+      {results.map((patent, index) => (
+        <motion.div key={patent.patentId || patent.id || index} variants={item}>
           <ResultCard patent={patent} onView={onView} />
         </motion.div>
       ))}
