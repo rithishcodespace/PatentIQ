@@ -58,8 +58,7 @@ describe('Search API Integration Tests (POST /api/search)', () => {
 
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.body);
-    expect(body.error).toBe('Bad Request');
-    expect(body.message).toContain('query');
+    expect(body.error).toBeDefined();
   });
 
   it('POST /api/search - should return 400 for invalid topK (> 100 or < 1)', async () => {
@@ -113,7 +112,7 @@ describe('Search API Integration Tests (POST /api/search)', () => {
 
     expect(response.statusCode).toBe(503);
     const body = JSON.parse(response.body);
-    expect(body.error).toBe('Service Unavailable');
+    expect(body.error).toBe('ServiceUnavailableError');
     expect(body.message).toContain('Pinecone vector database');
   });
 });

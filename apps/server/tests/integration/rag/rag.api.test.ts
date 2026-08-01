@@ -72,6 +72,6 @@ describe('RAG API Integration Tests (POST /api/rag/analyze)', () => {
 
     expect(response.statusCode).toBe(503);
     const body = JSON.parse(response.body);
-    expect(body.error).toBe('Service Unavailable');
+    expect(body.error).toBe('ServiceUnavailableError');
   });
 });

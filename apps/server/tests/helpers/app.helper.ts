@@ -38,34 +38,36 @@ export async function createTestApp(): Promise<{
   };
 
   const mockHistoryService = {
-    getHistory: vi.fn().mockResolvedValue({
-      history: [mockHistoryRecord],
-      pagination: { page: 1, limit: 10, totalItems: 1, totalPages: 1 },
+    listHistory: vi.fn().mockResolvedValue({
+      success: true,
+      data: [mockHistoryRecord],
+      meta: { page: 1, limit: 10, totalItems: 1, totalPages: 1 },
     }),
     getHistoryById: vi.fn().mockResolvedValue(mockHistoryRecord),
-    deleteHistoryRecord: vi.fn().mockResolvedValue({
+    deleteHistory: vi.fn().mockResolvedValue({
       success: true,
       message: `Search history record '${mockHistoryRecord.id}' successfully deleted`,
     }),
     findReusableAnalysis: vi.fn().mockResolvedValue(null),
     saveSearchHistory: vi.fn().mockResolvedValue({ id: mockHistoryRecord.id }),
-    saveSearchAndAnalysisAtomically: vi.fn().mockResolvedValue({ id: mockHistoryRecord.id }),
+    saveNoveltyAnalysis: vi.fn().mockResolvedValue({ id: mockHistoryRecord.id }),
+    saveCompleteSearchAndAnalysis: vi.fn().mockResolvedValue({ id: mockHistoryRecord.id }),
   };
 
   if (app.diContainer) {
-    app.diContainer.services.searchService = mockSearchService;
-    app.diContainer.services.ragService = mockRagService;
-    app.diContainer.services.historyService = mockHistoryService;
+    app.diContainer.services.search = mockSearchService as any;
+    app.diContainer.services.rag = mockRagService as any;
+    app.diContainer.services.history = mockHistoryService as any;
 
     if (app.diContainer.controllers) {
       if (app.diContainer.controllers.search) {
-        app.diContainer.controllers.search['searchService'] = mockSearchService;
+        app.diContainer.controllers.search['searchService'] = mockSearchService as any;
       }
       if (app.diContainer.controllers.rag) {
-        app.diContainer.controllers.rag['ragService'] = mockRagService;
+        app.diContainer.controllers.rag['ragService'] = mockRagService as any;
       }
       if (app.diContainer.controllers.history) {
-        app.diContainer.controllers.history['historyService'] = mockHistoryService;
+        app.diContainer.controllers.history['historyService'] = mockHistoryService as any;
       }
     }
   }
