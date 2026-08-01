@@ -78,7 +78,13 @@ export interface SearchResponse {
   success: boolean;
   query: string;
   count: number;
+  searchHistoryId?: string | undefined;
   filters?: SearchFilter | undefined;
+  confidence?: {
+    retrieval: { score: number; level: string };
+    analysis?: { score: number; level: string };
+    overall?: { score: number; level: string };
+  } | undefined;
   results: SearchResult[];
   metrics?: SearchMetrics | undefined;
 }

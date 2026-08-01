@@ -13,6 +13,7 @@ import { UsersRepository } from '../modules/users/repositories/users.repository.
 import { PatentsRepository } from '../modules/patents/repositories/patents.repository.js';
 import { ReportsRepository } from '../modules/reports/repositories/reports.repository.js';
 import { SearchRepository } from '../modules/search/repositories/search.repository.js';
+import { HistoryRepository } from '../modules/history/repositories/history.repository.js';
 
 // Services
 import { AuthService } from '../modules/auth/services/auth.service.js';
@@ -21,11 +22,14 @@ import { PatentParserService } from '../modules/patents/services/patent-parser.s
 import { PatentService } from '../modules/patents/services/patent.service.js';
 import { EmbeddingsService } from '../modules/embeddings/services/embeddings.service.js';
 import { SearchService } from '../modules/search/services/search.service.js';
+import { BenchmarkService } from '../modules/search/services/benchmark.service.js';
 import { RagService } from '../modules/rag/services/rag.service.js';
 import { ReportsService } from '../modules/reports/services/reports.service.js';
 import { UploadsService } from '../modules/uploads/services/uploads.service.js';
 import { AnalyticsService } from '../modules/analytics/services/analytics.service.js';
 import { AdminService } from '../modules/admin/services/admin.service.js';
+import { HistoryService } from '../modules/history/services/history.service.js';
+import { ConfidenceService } from '../modules/confidence/services/confidence.service.js';
 
 // Controllers
 import { AuthController } from '../modules/auth/controllers/auth.controller.js';
@@ -33,11 +37,13 @@ import { UsersController } from '../modules/users/controllers/users.controller.j
 import { PatentsController } from '../modules/patents/controllers/patents.controller.js';
 import { EmbeddingsController } from '../modules/embeddings/controllers/embeddings.controller.js';
 import { SearchController } from '../modules/search/controllers/search.controller.js';
+import { BenchmarkController } from '../modules/search/controllers/benchmark.controller.js';
 import { RagController } from '../modules/rag/controllers/rag.controller.js';
 import { ReportsController } from '../modules/reports/controllers/reports.controller.js';
 import { UploadsController } from '../modules/uploads/controllers/uploads.controller.js';
 import { AnalyticsController } from '../modules/analytics/controllers/analytics.controller.js';
 import { AdminController } from '../modules/admin/controllers/admin.controller.js';
+import { HistoryController } from '../modules/history/controllers/history.controller.js';
 
 export interface DIContainer {
   controllers: {
@@ -46,11 +52,13 @@ export interface DIContainer {
     patents: PatentsController;
     embeddings: EmbeddingsController;
     search: SearchController;
+    benchmark: BenchmarkController;
     rag: RagController;
     reports: ReportsController;
     uploads: UploadsController;
     analytics: AnalyticsController;
     admin: AdminController;
+    history: HistoryController;
   };
   services: {
     auth: AuthService;
@@ -58,11 +66,14 @@ export interface DIContainer {
     patent: PatentService;
     embeddings: EmbeddingsService;
     search: SearchService;
+    benchmark: BenchmarkService;
     rag: RagService;
     reports: ReportsService;
     uploads: UploadsService;
     analytics: AnalyticsService;
     admin: AdminService;
+    history: HistoryService;
+    confidence: ConfidenceService;
   };
 }
 
@@ -85,15 +96,26 @@ export default fp(async (fastify: FastifyInstance) => {
   const patentsRepo = new PatentsRepository();
   const reportsRepo = new ReportsRepository();
   const searchRepo = new SearchRepository();
+  const historyRepo = new HistoryRepository(fastify.prisma);
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
+  const confidenceService = new ConfidenceService();
   const authService = new AuthService(authRepo);
   const usersService = new UsersService(usersRepo);
   const patentParserService = new PatentParserService();
   const patentService = new PatentService(patentsRepo, patentParserService);
+  const historyService = new HistoryService(historyRepo);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
-  const searchService = new SearchService(embeddingProvider, searchRepo);
-  const ragService = new RagService(searchService, llmProvider);
+  const searchService = new SearchService(embeddingProvider, searchRepo, historyService, confidenceService);
+  const benchmarkService = new BenchmarkService(searchService);
+  const ragService = new RagService(
+    searchService,
+    llmProvider,
+    undefined,
+    undefined,
+    historyService,
+    confidenceService
+  );
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
   const analyticsService = new AnalyticsService();
@@ -104,12 +126,14 @@ export default fp(async (fastify: FastifyInstance) => {
   const usersController = new UsersController(usersService);
   const patentsController = new PatentsController(patentService);
   const embeddingsController = new EmbeddingsController(embeddingsService);
-  const searchController = new SearchController(searchService);
+  const benchmarkController = new BenchmarkController(benchmarkService);
+  const searchController = new SearchController(searchService, benchmarkController);
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
   const analyticsController = new AnalyticsController(analyticsService);
   const adminController = new AdminController(adminService);
+  const historyController = new HistoryController(historyService);
 
   // 5. Decorate Fastify Instance with DI Container
   fastify.decorate('diContainer', {
@@ -119,11 +143,13 @@ export default fp(async (fastify: FastifyInstance) => {
       patents: patentsController,
       embeddings: embeddingsController,
       search: searchController,
+      benchmark: benchmarkController,
       rag: ragController,
       reports: reportsController,
       uploads: uploadsController,
       analytics: analyticsController,
       admin: adminController,
+      history: historyController,
     },
     services: {
       auth: authService,
@@ -131,11 +157,14 @@ export default fp(async (fastify: FastifyInstance) => {
       patent: patentService,
       embeddings: embeddingsService,
       search: searchService,
+      benchmark: benchmarkService,
       rag: ragService,
       reports: reportsService,
       uploads: uploadsService,
       analytics: analyticsService,
       admin: adminService,
+      history: historyService,
+      confidence: confidenceService,
     },
   });
 });

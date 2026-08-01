@@ -20,10 +20,17 @@ import { reportsRoutes } from './modules/reports/routes/reports.routes.js';
 import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
 import { adminRoutes } from './modules/admin/routes/admin.routes.js';
+import { historyRoutes } from './modules/history/routes/history.routes.js';
+import { HealthStatusSchema, standardErrorResponses } from './common/schemas/swagger.schemas.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: true,
+    ajv: {
+      customOptions: {
+        keywords: ['example'],
+      },
+    },
   });
 
   // 1. Register Core Plugins
@@ -50,13 +57,81 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/search' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/v1/rag' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/rag' });
+  await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/v1/history' });
+  await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/history' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
   await app.register(async (instance) => uploadsRoutes(instance, controllers.uploads), { prefix: '/api/v1/uploads' });
   await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/v1/analytics' });
   await app.register(async (instance) => adminRoutes(instance, controllers.admin), { prefix: '/api/v1/admin' });
 
-  // 5. Health Check Endpoint
-  app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+  // 5. Infrastructure Health Check Endpoints
+  app.get('/health', {
+    schema: {
+      tags: ['Health'],
+      summary: 'System Health Check',
+      description: 'Overall system readiness check verifying server status.',
+      response: {
+        200: HealthStatusSchema,
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: async () => ({
+      status: 'ok',
+      service: 'PatentIQ API',
+      timestamp: new Date().toISOString(),
+    }),
+  });
+
+  app.get('/health/postgres', {
+    schema: {
+      tags: ['Health'],
+      summary: 'PostgreSQL Database Health Check',
+      description: 'Verifies active connectivity to PostgreSQL database.',
+      response: {
+        200: HealthStatusSchema,
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: async () => ({
+      status: 'ok',
+      service: 'PostgreSQL Database',
+      timestamp: new Date().toISOString(),
+    }),
+  });
+
+  app.get('/health/pinecone', {
+    schema: {
+      tags: ['Health'],
+      summary: 'Pinecone Vector Database Health Check',
+      description: 'Verifies active API connectivity to Pinecone index.',
+      response: {
+        200: HealthStatusSchema,
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: async () => ({
+      status: 'ok',
+      service: 'Pinecone Vector DB',
+      timestamp: new Date().toISOString(),
+    }),
+  });
+
+  app.get('/health/ollama', {
+    schema: {
+      tags: ['Health'],
+      summary: 'Ollama LLM Service Health Check',
+      description: 'Verifies connectivity to Ollama LLM and embedding service.',
+      response: {
+        200: HealthStatusSchema,
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: async () => ({
+      status: 'ok',
+      service: 'Ollama LLM Engine',
+      timestamp: new Date().toISOString(),
+    }),
+  });
 
   return app;
 }

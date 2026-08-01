@@ -20,16 +20,26 @@ import {
   GatewayTimeoutError,
 } from '../../../common/errors/http-errors.js';
 
+import type { IHistoryService } from '../../history/interfaces/history.interface.js';
+import type { IConfidenceService } from '../../confidence/interfaces/confidence.interface.js';
+import { ConfidenceService } from '../../confidence/services/confidence.service.js';
+
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
   private readonly searchRepository: ISearchRepository;
+  private readonly historyService?: IHistoryService | undefined;
+  private readonly confidenceService: IConfidenceService;
 
   constructor(
     embeddingProvider?: IEmbeddingProvider,
-    searchRepository?: ISearchRepository
+    searchRepository?: ISearchRepository,
+    historyService?: IHistoryService,
+    confidenceService?: IConfidenceService
   ) {
     this.embeddingProvider = embeddingProvider || new OllamaEmbeddingProvider();
     this.searchRepository = searchRepository || new SearchRepository();
+    this.historyService = historyService;
+    this.confidenceService = confidenceService || new ConfidenceService();
   }
 
   /**
@@ -169,16 +179,48 @@ export class SearchService implements ISearchService {
       `[SearchService] Search execution completed | query="${trimmedQuery}" | topK=${topK} | count=${results.length} | highestScore=${highestScore} | latency=${metrics.totalExecutionTimeMs}ms`
     );
 
+    const retrievalConfidence = this.confidenceService.calculateRetrievalConfidence(results, topK);
+
     const response: SearchResponse = {
       success: true,
       query: trimmedQuery,
       count: results.length,
+      confidence: {
+        retrieval: retrievalConfidence,
+      },
       results,
       metrics,
     };
 
     if (filters) {
       response.filters = filters;
+    }
+
+    if (this.historyService) {
+      try {
+        const historyRecord = await this.historyService.saveSearchHistory({
+          searchQuery: trimmedQuery,
+          topK,
+          appliedFilters: filters ? (filters as any) : null,
+          totalResults: results.length,
+          searchLatency: metrics.totalExecutionTimeMs,
+          retrievedPatents: results.map((r) => ({
+            patentId: r.patentId,
+            title: r.title || `Patent ${r.patentId}`,
+            similarityScore: r.score,
+            ipc: r.ipc,
+            country: r.country,
+            publicationDate: r.publicationDate,
+            owner: r.owner,
+            metadata: { section: r.section, abstract: r.abstract },
+          })),
+        });
+        if (historyRecord?.id) {
+          response.searchHistoryId = historyRecord.id;
+        }
+      } catch (err: any) {
+        console.warn(`[SearchService] Failed to persist search history: ${err.message}`);
+      }
     }
 
     return response;

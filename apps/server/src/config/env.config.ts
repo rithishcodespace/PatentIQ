@@ -22,7 +22,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   DATABASE_URL: z
     .string()
-    .default('postgresql://postgres:postgres@localhost:5432/patentiq?schema=public'),
+    .default('postgresql://postgres:Rithish@2006@localhost:5432/patent_iq?schema=public'),
   JWT_SECRET: z.string().default('patentiq_super_secret_jwt_key_2026'),
   PINECONE_API_KEY: z.string().default(''),
   PINECONE_INDEX_NAME: z.string().default('patent-embeddings'),
@@ -31,6 +31,10 @@ const envSchema = z.object({
   OLLAMA_LLM_MODEL: z.string().default('qwen2.5:3b'),
   STORAGE_TYPE: z.enum(['local', 's3']).default('local'),
   STORAGE_PATH: z.string().default('./storage/uploads'),
+  DEFAULT_TOP_K: z.coerce.number().default(10),
+  BENCHMARK_ITERATIONS: z.coerce.number().default(5),
+  ENABLE_QUERY_CACHE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  CACHE_TTL_SECONDS: z.coerce.number().default(300),
 });
 
 export const env = envSchema.parse(process.env);

@@ -14,20 +14,28 @@ import { NoveltyAnalysisService } from './novelty-analysis.service.js';
 import { OverlapAnalysisService } from './overlap-analysis.service.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
+import type { IHistoryService } from '../../history/interfaces/history.interface.js';
+import type { IConfidenceService } from '../../confidence/interfaces/confidence.interface.js';
+import { ConfidenceService } from '../../confidence/services/confidence.service.js';
+
 export class RagService implements IRagService {
   private readonly noveltyAnalysisService: INoveltyAnalysisService;
   private readonly overlapAnalysisService: IOverlapAnalysisService;
+  private readonly confidenceService: IConfidenceService;
 
   constructor(
     private readonly searchService: ISearchService,
     private readonly llmProvider: ILLMProvider,
     noveltyAnalysisService?: INoveltyAnalysisService,
-    overlapAnalysisService?: IOverlapAnalysisService
+    overlapAnalysisService?: IOverlapAnalysisService,
+    historyService?: IHistoryService,
+    confidenceService?: IConfidenceService
   ) {
     this.noveltyAnalysisService =
-      noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider);
+      noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider, historyService);
     this.overlapAnalysisService =
       overlapAnalysisService || new OverlapAnalysisService(searchService, llmProvider);
+    this.confidenceService = confidenceService || new ConfidenceService();
   }
 
   /**
@@ -82,6 +90,13 @@ export class RagService implements IRagService {
       0
     );
 
+    const confidence = this.confidenceService.computeFullConfidence(
+      results,
+      noveltyResponse.analysis,
+      topK,
+      overlappingClaimsCount
+    );
+
     const metrics: RagMetrics = {
       retrievalTimeMs,
       promptTimeMs: noveltyResponse.metrics?.promptTimeMs ?? 0,
@@ -94,6 +109,11 @@ export class RagService implements IRagService {
     return {
       success: true,
       query,
+      confidence: {
+        retrieval: confidence.retrieval,
+        analysis: confidence.analysis,
+        overall: confidence.overall,
+      },
       retrievedPatents,
       analysis: noveltyResponse.analysis,
       overlapAnalysis: overlapItems,
