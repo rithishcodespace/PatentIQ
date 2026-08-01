@@ -119,12 +119,16 @@ export const OverlapAnalysisItemDtoSchema = z.object({
 
 export type OverlapAnalysisItemDto = z.infer<typeof OverlapAnalysisItemDtoSchema>;
 
-/**
- * Zod schema for full RAG response payload.
- */
+export const RagConfidenceBlockDtoSchema = z.object({
+  retrieval: z.object({ score: z.number(), level: z.string() }),
+  analysis: z.object({ score: z.number(), level: z.string() }),
+  overall: z.object({ score: z.number(), level: z.string() }),
+});
+
 export const RagAnalysisResponseDtoSchema = z.object({
   success: z.boolean(),
   query: z.string(),
+  confidence: RagConfidenceBlockDtoSchema.optional(),
   retrievedPatents: z.array(RagRetrievedPatentDtoSchema).optional(),
   analysis: NoveltyAnalysisResultDtoSchema,
   overlapAnalysis: z.array(OverlapAnalysisItemDtoSchema).optional(),

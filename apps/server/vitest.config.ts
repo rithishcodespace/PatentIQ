@@ -16,6 +16,8 @@ export default defineConfig({
         'src/modules/rag/services/novelty-analysis.service.ts',
         'src/modules/rag/services/rag.service.ts',
         'src/modules/rag/prompts/novelty-analysis.prompt.ts',
+        'src/modules/confidence/services/confidence.service.ts',
+        'src/modules/confidence/utils/confidence-calculator.util.ts',
       ],
       exclude: [
         'node_modules/**',

@@ -29,6 +29,7 @@ import { UploadsService } from '../modules/uploads/services/uploads.service.js';
 import { AnalyticsService } from '../modules/analytics/services/analytics.service.js';
 import { AdminService } from '../modules/admin/services/admin.service.js';
 import { HistoryService } from '../modules/history/services/history.service.js';
+import { ConfidenceService } from '../modules/confidence/services/confidence.service.js';
 
 // Controllers
 import { AuthController } from '../modules/auth/controllers/auth.controller.js';
@@ -72,6 +73,7 @@ export interface DIContainer {
     analytics: AnalyticsService;
     admin: AdminService;
     history: HistoryService;
+    confidence: ConfidenceService;
   };
 }
 
@@ -97,15 +99,23 @@ export default fp(async (fastify: FastifyInstance) => {
   const historyRepo = new HistoryRepository(fastify.prisma);
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
+  const confidenceService = new ConfidenceService();
   const authService = new AuthService(authRepo);
   const usersService = new UsersService(usersRepo);
   const patentParserService = new PatentParserService();
   const patentService = new PatentService(patentsRepo, patentParserService);
   const historyService = new HistoryService(historyRepo);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
-  const searchService = new SearchService(embeddingProvider, searchRepo, historyService);
+  const searchService = new SearchService(embeddingProvider, searchRepo, historyService, confidenceService);
   const benchmarkService = new BenchmarkService(searchService);
-  const ragService = new RagService(searchService, llmProvider, undefined, undefined, historyService);
+  const ragService = new RagService(
+    searchService,
+    llmProvider,
+    undefined,
+    undefined,
+    historyService,
+    confidenceService
+  );
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
   const analyticsService = new AnalyticsService();
@@ -154,6 +164,7 @@ export default fp(async (fastify: FastifyInstance) => {
       analytics: analyticsService,
       admin: adminService,
       history: historyService,
+      confidence: confidenceService,
     },
   });
 });

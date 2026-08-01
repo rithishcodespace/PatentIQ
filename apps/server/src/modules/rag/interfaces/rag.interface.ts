@@ -94,12 +94,19 @@ export interface RagMetrics {
   overlappingClaimsCount?: number | undefined;
 }
 
+export interface RagConfidenceBlock {
+  retrieval: { score: number; level: string };
+  analysis: { score: number; level: string };
+  overall: { score: number; level: string };
+}
+
 /**
  * Full response payload returned by POST /api/rag/analyze.
  */
 export interface RagAnalysisResponse {
   success: boolean;
   query: string;
+  confidence?: RagConfidenceBlock | undefined;
   retrievedPatents?: RagRetrievedPatent[] | undefined;
   analysis: NoveltyAnalysisResult;
   overlapAnalysis?: OverlapAnalysisItem[] | undefined;

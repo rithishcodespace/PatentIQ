@@ -92,6 +92,13 @@ export const SearchResponseDtoSchema = z.object({
   query: z.string(),
   count: z.number(),
   filters: SearchFilterDtoSchema.optional(),
+  confidence: z
+    .object({
+      retrieval: z.object({ score: z.number(), level: z.string() }),
+      analysis: z.object({ score: z.number(), level: z.string() }).optional(),
+      overall: z.object({ score: z.number(), level: z.string() }).optional(),
+    })
+    .optional(),
   results: z.array(SearchResultDtoSchema),
 });
 
