@@ -20,6 +20,7 @@ import { reportsRoutes } from './modules/reports/routes/reports.routes.js';
 import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
 import { adminRoutes } from './modules/admin/routes/admin.routes.js';
+import { historyRoutes } from './modules/history/routes/history.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -50,6 +51,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/search' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/v1/rag' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/rag' });
+  await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/v1/history' });
+  await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/history' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
   await app.register(async (instance) => uploadsRoutes(instance, controllers.uploads), { prefix: '/api/v1/uploads' });
   await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/v1/analytics' });

@@ -5,3 +5,56 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model SearchHistory {
+  id             String            @id @default(uuid())
+  userId         String?
+  searchQuery    String            @map("search_query")
+  topK           Int               @map("top_k")
+  appliedFilters Json?             @map("applied_filters")
+  totalResults   Int               @map("total_results")
+  searchLatency  Int               @map("search_latency")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  retrievedPatents RetrievedPatent[]
+  noveltyAnalysis  NoveltyAnalysis?
+
+  @@index([searchQuery])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("search_histories")
+}
+
+model RetrievedPatent {
+  id              String        @id @default(uuid())
+  searchHistoryId String        @map("search_history_id")
+  searchHistory   SearchHistory @relation(fields: [searchHistoryId], references: [id], onDelete: Cascade)
+  patentId        String        @map("patent_id")
+  title           String
+  similarityScore Float         @map("similarity_score")
+  ipc             String?
+  country         String?
+  publicationDate DateTime?     @map("publication_date")
+  owner           String?
+  metadata        Json?
+
+  @@index([searchHistoryId])
+  @@index([patentId])
+  @@map("retrieved_patents")
+}
+
+model NoveltyAnalysis {
+  id                String        @id @default(uuid())
+  searchHistoryId   String        @unique @map("search_history_id")
+  searchHistory     SearchHistory @relation(fields: [searchHistoryId], references: [id], onDelete: Cascade)
+  summary           String        @db.Text
+  novelty           String        @db.Text
+  overlappingClaims Json          @map("overlapping_claims")
+  recommendations   Json
+  confidenceScore   Float         @map("confidence_score")
+  rawLLMResponse    String        @db.Text @map("raw_llm_response")
+  generatedAt       DateTime      @default(now()) @map("generated_at")
+
+  @@map("novelty_analyses")
+}
+

@@ -14,6 +14,8 @@ import { NoveltyAnalysisService } from './novelty-analysis.service.js';
 import { OverlapAnalysisService } from './overlap-analysis.service.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
+import type { IHistoryService } from '../../history/interfaces/history.interface.js';
+
 export class RagService implements IRagService {
   private readonly noveltyAnalysisService: INoveltyAnalysisService;
   private readonly overlapAnalysisService: IOverlapAnalysisService;
@@ -22,10 +24,11 @@ export class RagService implements IRagService {
     private readonly searchService: ISearchService,
     private readonly llmProvider: ILLMProvider,
     noveltyAnalysisService?: INoveltyAnalysisService,
-    overlapAnalysisService?: IOverlapAnalysisService
+    overlapAnalysisService?: IOverlapAnalysisService,
+    historyService?: IHistoryService
   ) {
     this.noveltyAnalysisService =
-      noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider);
+      noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider, historyService);
     this.overlapAnalysisService =
       overlapAnalysisService || new OverlapAnalysisService(searchService, llmProvider);
   }

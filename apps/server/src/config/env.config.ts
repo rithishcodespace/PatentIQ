@@ -22,7 +22,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   DATABASE_URL: z
     .string()
-    .default('postgresql://postgres:postgres@localhost:5432/patentiq?schema=public'),
+    .default('postgresql://postgres:Rithish@2006@localhost:5432/patent_iq?schema=public'),
   JWT_SECRET: z.string().default('patentiq_super_secret_jwt_key_2026'),
   PINECONE_API_KEY: z.string().default(''),
   PINECONE_INDEX_NAME: z.string().default('patent-embeddings'),

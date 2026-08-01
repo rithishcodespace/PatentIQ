@@ -13,6 +13,7 @@ import { UsersRepository } from '../modules/users/repositories/users.repository.
 import { PatentsRepository } from '../modules/patents/repositories/patents.repository.js';
 import { ReportsRepository } from '../modules/reports/repositories/reports.repository.js';
 import { SearchRepository } from '../modules/search/repositories/search.repository.js';
+import { HistoryRepository } from '../modules/history/repositories/history.repository.js';
 
 // Services
 import { AuthService } from '../modules/auth/services/auth.service.js';
@@ -27,6 +28,7 @@ import { ReportsService } from '../modules/reports/services/reports.service.js';
 import { UploadsService } from '../modules/uploads/services/uploads.service.js';
 import { AnalyticsService } from '../modules/analytics/services/analytics.service.js';
 import { AdminService } from '../modules/admin/services/admin.service.js';
+import { HistoryService } from '../modules/history/services/history.service.js';
 
 // Controllers
 import { AuthController } from '../modules/auth/controllers/auth.controller.js';
@@ -40,6 +42,7 @@ import { ReportsController } from '../modules/reports/controllers/reports.contro
 import { UploadsController } from '../modules/uploads/controllers/uploads.controller.js';
 import { AnalyticsController } from '../modules/analytics/controllers/analytics.controller.js';
 import { AdminController } from '../modules/admin/controllers/admin.controller.js';
+import { HistoryController } from '../modules/history/controllers/history.controller.js';
 
 export interface DIContainer {
   controllers: {
@@ -54,6 +57,7 @@ export interface DIContainer {
     uploads: UploadsController;
     analytics: AnalyticsController;
     admin: AdminController;
+    history: HistoryController;
   };
   services: {
     auth: AuthService;
@@ -67,6 +71,7 @@ export interface DIContainer {
     uploads: UploadsService;
     analytics: AnalyticsService;
     admin: AdminService;
+    history: HistoryService;
   };
 }
 
@@ -89,16 +94,18 @@ export default fp(async (fastify: FastifyInstance) => {
   const patentsRepo = new PatentsRepository();
   const reportsRepo = new ReportsRepository();
   const searchRepo = new SearchRepository();
+  const historyRepo = new HistoryRepository(fastify.prisma);
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
   const authService = new AuthService(authRepo);
   const usersService = new UsersService(usersRepo);
   const patentParserService = new PatentParserService();
   const patentService = new PatentService(patentsRepo, patentParserService);
+  const historyService = new HistoryService(historyRepo);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
-  const searchService = new SearchService(embeddingProvider, searchRepo);
+  const searchService = new SearchService(embeddingProvider, searchRepo, historyService);
   const benchmarkService = new BenchmarkService(searchService);
-  const ragService = new RagService(searchService, llmProvider);
+  const ragService = new RagService(searchService, llmProvider, undefined, undefined, historyService);
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
   const analyticsService = new AnalyticsService();
@@ -116,6 +123,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const uploadsController = new UploadsController(uploadsService);
   const analyticsController = new AnalyticsController(analyticsService);
   const adminController = new AdminController(adminService);
+  const historyController = new HistoryController(historyService);
 
   // 5. Decorate Fastify Instance with DI Container
   fastify.decorate('diContainer', {
@@ -131,6 +139,7 @@ export default fp(async (fastify: FastifyInstance) => {
       uploads: uploadsController,
       analytics: analyticsController,
       admin: adminController,
+      history: historyController,
     },
     services: {
       auth: authService,
@@ -144,6 +153,7 @@ export default fp(async (fastify: FastifyInstance) => {
       uploads: uploadsService,
       analytics: analyticsService,
       admin: adminService,
+      history: historyService,
     },
   });
 });

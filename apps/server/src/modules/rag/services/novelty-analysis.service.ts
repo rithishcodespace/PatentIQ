@@ -11,10 +11,13 @@ import type { ILLMProvider } from '../../../providers/llm/llm-provider.interface
 import { NoveltyAnalysisPromptBuilder } from '../prompts/novelty-analysis.prompt.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
+import type { IHistoryService } from '../../history/interfaces/history.interface.js';
+
 export class NoveltyAnalysisService implements INoveltyAnalysisService {
   constructor(
     private readonly searchService: ISearchService,
-    private readonly llmProvider: ILLMProvider
+    private readonly llmProvider: ILLMProvider,
+    private readonly historyService?: IHistoryService | undefined
   ) {}
 
   /**
@@ -32,6 +35,56 @@ export class NoveltyAnalysisService implements INoveltyAnalysisService {
     const topK = request.topK ?? 10;
     if (topK < 1 || topK > 100) {
       throw new BadRequestError('maximum topK is 100');
+    }
+
+    // 0. Reuse Check: Check if an analysis for exact search query already exists
+    if (this.historyService) {
+      const existingHistory = await this.historyService.findReusableAnalysis(query);
+      if (existingHistory && existingHistory.noveltyAnalysis) {
+        const na = existingHistory.noveltyAnalysis;
+        let parsedNovelty: any = {};
+        try {
+          parsedNovelty = JSON.parse(na.novelty);
+        } catch {
+          parsedNovelty = { details: na.novelty };
+        }
+
+        const reconstructedAnalysis: NoveltyAnalysisResult = {
+          summary: na.summary,
+          similarPatents: parsedNovelty.similarPatents || [],
+          featureComparison: parsedNovelty.featureComparison || { commonFeatures: [], uniqueFeatures: [], partialOverlap: [] },
+          novelAspects: parsedNovelty.novelAspects || [],
+          overlappingClaims: Array.isArray(na.overlappingClaims) ? (na.overlappingClaims as string[]) : [],
+          risks: parsedNovelty.risks || [],
+          recommendations: Array.isArray(na.recommendations) ? (na.recommendations as string[]) : [],
+        };
+
+        const totalTimeMs = Date.now() - totalStart;
+        console.log(
+          `[NoveltyAnalysisService] Reused existing analysis from database | query="${query}" | historyId=${existingHistory.id}`
+        );
+
+        return {
+          success: true,
+          query,
+          retrievedPatents: (existingHistory.retrievedPatents || []).map((p: any) => ({
+            patentId: p.patentId,
+            title: p.title,
+            score: p.similarityScore,
+            ipc: p.ipc,
+            abstract: p.metadata?.abstract || '',
+            section: p.metadata?.section || 'full',
+          })),
+          analysis: reconstructedAnalysis,
+          metrics: {
+            retrievalTimeMs: 0,
+            promptTimeMs: 0,
+            llmInferenceTimeMs: 0,
+            totalTimeMs,
+            retrievedCount: existingHistory.retrievedPatents?.length || 0,
+          },
+        };
+      }
     }
 
     // 1. Retrieval Phase: Query SearchService for Top-K patents
@@ -105,6 +158,46 @@ export class NoveltyAnalysisService implements INoveltyAnalysisService {
       totalTimeMs,
       retrievedCount: retrievedPatents.length,
     };
+
+    // 5. Persist complete search history & novelty analysis atomically in database
+    if (this.historyService) {
+      try {
+        const noveltyPayload = {
+          similarPatents: analysis.similarPatents,
+          featureComparison: analysis.featureComparison,
+          novelAspects: analysis.novelAspects,
+          risks: analysis.risks,
+        };
+
+        await this.historyService.saveCompleteSearchAndAnalysis({
+          searchQuery: query,
+          topK,
+          appliedFilters: searchResponse.filters ? (searchResponse.filters as any) : null,
+          totalResults: results.length,
+          searchLatency: totalTimeMs,
+          retrievedPatents: results.map((p) => ({
+            patentId: p.patentId,
+            title: p.title || `Patent ${p.patentId}`,
+            similarityScore: p.score,
+            ipc: p.ipc,
+            country: p.country,
+            publicationDate: p.publicationDate,
+            owner: p.owner,
+            metadata: { section: p.section, abstract: p.abstract },
+          })),
+          noveltyAnalysis: {
+            summary: analysis.summary,
+            novelty: JSON.stringify(noveltyPayload),
+            overlappingClaims: analysis.overlappingClaims,
+            recommendations: analysis.recommendations,
+            confidenceScore: 0.92,
+            rawLLMResponse: rawLlmOutput,
+          },
+        });
+      } catch (err: any) {
+        console.warn(`[NoveltyAnalysisService] Failed to persist complete search and analysis: ${err.message}`);
+      }
+    }
 
     console.log(
       `[NoveltyAnalysisService] Novelty Analysis completed | query="${query}" | retrievedCount=${retrievedPatents.length} | retrievalMs=${retrievalTimeMs}ms | promptMs=${promptTimeMs}ms | llmMs=${llmInferenceTimeMs}ms | totalMs=${totalTimeMs}ms`

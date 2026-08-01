@@ -78,6 +78,7 @@ export interface SearchResponse {
   success: boolean;
   query: string;
   count: number;
+  searchHistoryId?: string | undefined;
   filters?: SearchFilter | undefined;
   results: SearchResult[];
   metrics?: SearchMetrics | undefined;
