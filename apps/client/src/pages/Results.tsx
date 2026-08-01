@@ -3,7 +3,6 @@ import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
-  Sparkles,
   Layers,
   ArrowLeft,
   ShieldCheck,
@@ -99,9 +98,9 @@ const Results = () => {
       </div>
 
       {/* 2. Executive Metric Tiles KPI Bar */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 font-body">
         {/* KPI 1: Overall Confidence */}
-        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-white p-4 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Overall Analysis Confidence</span>
             <ShieldCheck className="h-4 w-4 text-indigo-600" />
@@ -110,7 +109,7 @@ const Results = () => {
             <span className="font-display text-2xl font-bold text-slate-900">
               {confidenceBlock.overall.score.toFixed(1)}%
             </span>
-            <span className="code-chip bg-indigo-100 text-indigo-800 text-[10px]">
+            <span className="code-chip bg-indigo-50 text-indigo-800 text-[10px]">
               {confidenceBlock.overall.level}
             </span>
           </div>
@@ -135,7 +134,7 @@ const Results = () => {
         {/* KPI 3: Total Retrieved Candidates */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Pinecone Retrieved Patents</span>
+            <span>Retrieved Candidates</span>
             <FileText className="h-4 w-4 text-indigo-500" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
@@ -149,17 +148,17 @@ const Results = () => {
         </div>
 
         {/* KPI 4: Overlapping Claims */}
-        <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/40 via-white to-white p-4 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Overlapping Claim Conflicts</span>
-            <Sparkles className="h-4 w-4 text-amber-500" />
+            <FileText className="h-4 w-4 text-slate-600" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="font-display text-2xl font-bold text-amber-950">
+            <span className="font-display text-2xl font-bold text-slate-900">
               {metricsData.overlappingClaimsCount || 3}
             </span>
-            <span className="code-chip bg-amber-100 text-amber-800 text-[10px]">
-              High Groundedness
+            <span className="code-chip bg-slate-100 text-slate-700 text-[10px]">
+              Verified Claims
             </span>
           </div>
         </div>
@@ -171,19 +170,19 @@ const Results = () => {
           onClick={() => setActiveTab('novelty')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 font-body text-xs font-medium transition ${
             activeTab === 'novelty'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold'
+              ? 'bg-indigo-600 text-white shadow-sm font-semibold'
               : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
-          <Sparkles className="h-4 w-4" />
-          AI Novelty & Overlap Synthesis
+          <FileText className="h-4 w-4" />
+          Prior-Art Novelty & Overlap Synthesis
         </button>
 
         <button
           onClick={() => setActiveTab('candidates')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 font-body text-xs font-medium transition ${
             activeTab === 'candidates'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold'
+              ? 'bg-indigo-600 text-white shadow-sm font-semibold'
               : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -195,7 +194,7 @@ const Results = () => {
           onClick={() => setActiveTab('confidence')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 font-body text-xs font-medium transition ${
             activeTab === 'confidence'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold'
+              ? 'bg-indigo-600 text-white shadow-sm font-semibold'
               : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -216,11 +215,11 @@ const Results = () => {
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="flex items-center gap-2 font-display text-base font-semibold text-slate-900">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                Citation-Aware AI Novelty & Claim Overlap Analysis
+                <FileText className="h-4 w-4 text-indigo-600" />
+                Citation-Aware Novelty & Claim Overlap Analysis
               </h2>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Qwen2.5:3b LLM Grounded
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Grounded Analysis
               </span>
             </div>
 

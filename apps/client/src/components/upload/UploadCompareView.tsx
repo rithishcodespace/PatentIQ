@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Cpu,
   ArrowRightLeft,
-  Sparkles,
   Layers,
   Zap,
 } from 'lucide-react';
@@ -316,7 +315,7 @@ const UploadCompareView = () => {
             {/* Citation-Aware RAG Novelty Report */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
               <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-slate-900 mb-4">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+                <FileText className="h-5 w-5 text-indigo-600" />
                 Comparison Novelty & Overlap Analysis
               </h3>
               <CitationReport

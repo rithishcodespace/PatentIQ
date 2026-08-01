@@ -6,10 +6,10 @@ const Footer = () => {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
         <div>
           <p className="font-display font-semibold text-slate-900 text-sm">
-            Patent<span className="text-amber-500">IQ</span> Engine v1.2 AI
+            Patent<span className="text-amber-500">IQ</span> Enterprise Engine v1.2
           </p>
           <p className="font-body text-xs text-slate-500 mt-0.5">
-            Automated Patent Prior-Art Search & RAG Novelty Analysis Platform
+            Automated Patent Prior-Art Search & Grounded Analysis Platform
           </p>
         </div>
 

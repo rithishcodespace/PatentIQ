@@ -7,10 +7,10 @@ import {
   ExternalLink,
   Search,
   Filter,
-  Sparkles,
   Calendar,
   Layers,
   Clock,
+  FileText,
 } from 'lucide-react';
 import type { SearchHistoryRecord } from '../../types/history';
 import { getLevelBadgeStyle } from '../results/ConfidenceDashboard';
@@ -202,10 +202,10 @@ const HistoryView = ({ historyRecords, onSelectRecord, onDeleteRecord }: History
                   {rec.noveltyAnalysis && (
                     <button
                       onClick={() => onSelectRecord?.(rec)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 font-body text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 px-3 py-1.5 font-body text-xs font-semibold text-indigo-700 hover:bg-slate-100 transition"
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                      Reuse Cached Novelty Report
+                      <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                      Open Persisted Report
                       <ExternalLink className="h-3 w-3 opacity-70" />
                     </button>
                   )}

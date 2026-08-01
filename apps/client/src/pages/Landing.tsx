@@ -43,9 +43,9 @@ const Landing = () => {
           variants={item}
           className="mt-6 max-w-md font-body text-lg leading-8 text-slate"
         >
-          PatentAI reads your invention the way an examiner would, then
-          searches millions of filings by meaning, not keywords —
-          built for MSME innovators who can't afford a slow first opinion.
+          PatentIQ evaluates your invention draft the way a patent examiner does,
+          searching millions of prior-art filings by technical meaning and IPC classification —
+          built for enterprise innovators and patent attorneys.
         </motion.p>
 
         <motion.div variants={item} className="mt-10 flex items-center gap-4">
@@ -56,12 +56,12 @@ const Landing = () => {
             Start a search
             <span aria-hidden>→</span>
           </Link>
-          <a
-            href="#how-it-works"
+          <Link
+            to="/how-it-works"
             className="font-body text-sm font-medium text-slate hover:text-indigo"
           >
-            How it works
-          </a>
+            How search works
+          </Link>
         </motion.div>
 
         <motion.div
