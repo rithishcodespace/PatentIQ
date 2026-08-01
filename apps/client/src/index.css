@@ -1,28 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
+@theme {
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --color-ink: #0b1120;
+  --color-paper: #faf9f5;
+  --color-indigo-brand: #1e2a78;
+  --color-amber-brand: #e8a33d;
+  --color-slate-brand: #5b6472;
+}
 
 /* ==========================================================================
-  PatentAI — Design Tokens
+  PatentAI — Global Font Typography & Token Setup
   Fonts: Fraunces (display) · Inter (body/UI) · IBM Plex Mono (codes/data)
   ========================================================================== */
 
 :root {
-  /* Color */
-  --ink: #0b1120;        /* near-black navy — dark sections */
-  --paper: #faf9f5;      /* warm off-white — light sections */
-  --indigo: #1e2a78;     /* primary brand */
-  --indigo-soft: #2f3d94;
-  --amber: #e8a33d;      /* signature accent — patent-seal gold, used sparingly */
-  --slate: #5b6472;      /* body text on paper */
-  --slate-100: #eef0f4;
-  --emerald: #1f9d6c;    /* novelty / clear signal */
-
   /* Type */
   --font-display: 'Fraunces', ui-serif, Georgia, serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Color */
+  --ink: #0b1120;
+  --paper: #faf9f5;
+  --indigo: #1e2a78;
+  --amber: #e8a33d;
+  --slate: #5b6472;
+  --slate-100: #eef0f4;
+  --emerald: #1f9d6c;
 
   /* Motion */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -37,13 +48,32 @@
   }
 }
 
-body {
+html, body {
   font-family: var(--font-body);
   color: var(--ink);
-  background: var(--paper);
+  background-color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Blueprint grid texture — used behind the constellation hero */
+/* Global typography overrides */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono, code, pre, .code-chip {
+  font-family: var(--font-mono);
+}
+
+/* Blueprint grid texture */
 .blueprint-grid {
   background-image:
     linear-gradient(rgba(30, 42, 120, 0.08) 1px, transparent 1px),
