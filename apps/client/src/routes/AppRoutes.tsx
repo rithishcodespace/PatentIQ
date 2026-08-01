@@ -5,6 +5,9 @@ import MainLayout from "../layouts/MainLayout";
 import Landing from "../pages/Landing";
 import Search from "../pages/Search";
 import Results from "../pages/Results";
+import HistoryPage from "../pages/HistoryPage";
+import UploadPage from "../pages/UploadPage";
+import DocsPage from "../pages/DocsPage";
 import NotFound from "../pages/NotFound";
 
 const AppRoutes = () => {
@@ -15,6 +18,9 @@ const AppRoutes = () => {
           <Route index element={<Landing />} />
           <Route path="search" element={<Search />} />
           <Route path="results" element={<Results />} />
+          <Route path="upload" element={<UploadPage />} />
+          <Route path="history" element={<HistoryPage />} />
+          <Route path="docs-preview" element={<DocsPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
