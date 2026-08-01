@@ -204,11 +204,10 @@ const HowItWorksPage = () => {
               <button
                 key={step.id}
                 onClick={() => setActiveStep(step.id)}
-                className={`relative flex flex-col items-start p-4 rounded-2xl border transition text-left ${
-                  isActive
+                className={`relative flex flex-col items-start p-4 rounded-2xl border transition text-left ${isActive
                     ? 'border-indigo-600 bg-indigo-50/70 shadow-sm ring-2 ring-indigo-600/20'
                     : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-3">
                   <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded">

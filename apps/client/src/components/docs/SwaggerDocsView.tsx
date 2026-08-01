@@ -101,13 +101,12 @@ const SwaggerDocsView = () => {
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold ${
-                    ep.method === 'POST'
+                  className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold ${ep.method === 'POST'
                       ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                       : ep.method === 'GET'
-                      ? 'bg-slate-100 text-slate-800 border border-slate-200'
-                      : 'bg-slate-200 text-slate-800'
-                  }`}
+                        ? 'bg-slate-100 text-slate-800 border border-slate-200'
+                        : 'bg-slate-200 text-slate-800'
+                    }`}
                 >
                   {ep.method}
                 </span>
