@@ -65,9 +65,9 @@ describe('SearchService Unit Tests', () => {
       expect(response.success).toBe(true);
       expect(response.count).toBe(2);
       expect(response.results).toHaveLength(2);
-      expect(response.results[0].rank).toBe(1);
-      expect(response.results[0].score).toBe(0.92);
-      expect(response.results[0].patentId).toBe('US-10112233-B2');
+      expect(response.results[0]?.rank).toBe(1);
+      expect(response.results[0]?.score).toBe(0.92);
+      expect(response.results[0]?.patentId).toBe('US-10112233-B2');
 
       expect(mockSearchRepository.querySimilarity).toHaveBeenCalledWith(
         mockVectorEmbedding,
@@ -83,7 +83,7 @@ describe('SearchService Unit Tests', () => {
       expect(response.success).toBe(true);
       expect(response.count).toBe(0);
       expect(response.results).toEqual([]);
-      expect(response.metrics.totalResults).toBe(0);
+      expect(response.metrics?.totalResults).toBe(0);
     });
 
     it('should save search history automatically when historyService is injected', async () => {
@@ -108,8 +108,8 @@ describe('SearchService Unit Tests', () => {
       const candidates = await searchService.searchPriorArt(mockSearchRequest);
 
       expect(candidates).toHaveLength(2);
-      expect(candidates[0].patentId).toBe('US-10112233-B2');
-      expect(candidates[0].similarityScore).toBe(0.92);
+      expect(candidates[0]?.patentId).toBe('US-10112233-B2');
+      expect(candidates[0]?.similarityScore).toBe(0.92);
     });
   });
 });

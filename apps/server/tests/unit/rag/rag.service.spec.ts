@@ -60,7 +60,7 @@ describe('RagService Unit Tests', () => {
       expect(response.query).toBe(mockSearchQuery);
       expect(response.analysis).toBeDefined();
       expect(response.overlapAnalysis).toHaveLength(1);
-      expect(response.metrics.totalTimeMs).toBeGreaterThanOrEqual(0);
+      expect(response.metrics?.totalTimeMs).toBeGreaterThanOrEqual(0);
 
       expect(mockNoveltyAnalysisService.analyzeNovelty).toHaveBeenCalledWith({
         query: mockSearchQuery,
@@ -79,7 +79,7 @@ describe('RagService Unit Tests', () => {
 
       expect(ranked).toBeDefined();
       expect(ranked.length).toBeGreaterThan(0);
-      expect(ranked[0].patentId).toBe('US-10112233-B2');
+      expect(ranked[0]?.patentId).toBe('US-10112233-B2');
     });
   });
 });

@@ -229,7 +229,7 @@ export class SearchService implements ISearchService {
   /**
    * Helper method for RAG module prior art searches.
    */
-  async searchPriorArt(dto: { query: string; topK?: number }): Promise<PriorArtMatchResult[]> {
+  async searchPriorArt(dto: { query: string; topK?: number | undefined }): Promise<PriorArtMatchResult[]> {
     const response = await this.search(dto.query, dto.topK ?? 100);
     return response.results.map((r, idx) => ({
       patentId: r.patentId,

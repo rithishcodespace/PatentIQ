@@ -71,8 +71,8 @@ export class ConfidenceCalculatorUtil {
     if (!scores || scores.length === 0) return 0;
     if (scores.length === 1) return 100;
 
-    const topScore = scores[0];
-    const lastScore = scores[scores.length - 1];
+    const topScore = scores[0] ?? 0;
+    const lastScore = scores[scores.length - 1] ?? 0;
     const scoreRange = topScore - lastScore;
 
     // Small drop-off (0.0 - 0.25) implies strong relevance consistency among candidates

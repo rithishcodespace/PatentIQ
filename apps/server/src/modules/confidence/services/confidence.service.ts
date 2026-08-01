@@ -94,7 +94,7 @@ export class ConfidenceService implements IConfidenceService {
     retrievalConfidence: number;
     retrievedPatents: SearchResult[];
     noveltyAnalysis: NoveltyAnalysisResult;
-    overlappingClaimsCount?: number;
+    overlappingClaimsCount?: number | undefined;
   }): ConfidenceScoreItem {
     try {
       const { retrievalConfidence, retrievedPatents, noveltyAnalysis, overlappingClaimsCount } = params;

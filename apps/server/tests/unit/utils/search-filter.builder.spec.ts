@@ -36,10 +36,10 @@ describe('SearchMapper Utility Unit Tests', () => {
     it('should sort Pinecone match items by score descending and assign 1-based ranks', () => {
       const results = SearchMapper.toSearchResultList(mockPineconeMatches, 10);
       expect(results).toHaveLength(2);
-      expect(results[0].rank).toBe(1);
-      expect(results[0].score).toBe(0.92);
-      expect(results[1].rank).toBe(2);
-      expect(results[1].score).toBe(0.84);
+      expect(results[0]?.rank).toBe(1);
+      expect(results[0]?.score).toBe(0.92);
+      expect(results[1]?.rank).toBe(2);
+      expect(results[1]?.score).toBe(0.84);
     });
 
     it('should handle empty or null matches array gracefully', () => {

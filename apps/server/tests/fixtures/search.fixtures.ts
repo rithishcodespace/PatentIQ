@@ -18,6 +18,7 @@ export const mockPineconeMatches = [
     id: 'US-10112233-B2_abstract',
     score: 0.92,
     metadata: {
+      patentId: 'US-10112233-B2',
       patent_id: 'US-10112233-B2',
       title: 'Dual-sensor UAV obstacle detection system using LiDAR and optical flow',
       abstract: 'An autonomous navigation method combining LiDAR depth mapping and optical flow velocity measurement for GPS-denied environments.',
@@ -33,6 +34,7 @@ export const mockPineconeMatches = [
     id: 'US-99887766-B1_claims',
     score: 0.84,
     metadata: {
+      patentId: 'US-99887766-B1',
       patent_id: 'US-99887766-B1',
       title: 'LiDAR-assisted optical flow sensor fusion for quadcopters',
       abstract: 'A sensor fusion algorithm for micro aerial vehicles.',

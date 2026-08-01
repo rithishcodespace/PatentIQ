@@ -58,7 +58,7 @@ export interface IConfidenceService {
     retrievalConfidence: number;
     retrievedPatents: SearchResult[];
     noveltyAnalysis: NoveltyAnalysisResult;
-    overlappingClaimsCount?: number;
+    overlappingClaimsCount?: number | undefined;
   }): ConfidenceScoreItem;
 
   /**

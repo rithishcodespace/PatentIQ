@@ -139,7 +139,7 @@ export interface ISearchService {
   /**
    * Backward-compatible search method for prior art / RAG module.
    */
-  searchPriorArt(dto: { query: string; topK?: number }): Promise<PriorArtMatchResult[]>;
+  searchPriorArt(dto: { query: string; topK?: number | undefined }): Promise<PriorArtMatchResult[]>;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { NoveltyAnalysisReport, RagAnalysisResult } from '../../src/modules/rag/interfaces/rag.interface.js';
+import type { NoveltyAnalysisResult, RagAnalysisResponse } from '../../src/modules/rag/interfaces/rag.interface.js';
 import { mockSearchResults } from './search.fixtures.js';
 
 export const mockLLMRawResponse = JSON.stringify({
@@ -21,7 +21,7 @@ export const mockLLMRawResponse = JSON.stringify({
   recommendations: ['Narrow claim 1 to specifically cover dynamic adaptive switching during optical reflection loss.'],
 });
 
-export const mockNoveltyAnalysisReport: NoveltyAnalysisReport = {
+export const mockNoveltyAnalysisReport: NoveltyAnalysisResult = {
   summary: 'The proposed invention combines LiDAR depth estimation and optical flow velocity sensing to provide dual-sensor redundancy for autonomous drone navigation in GPS-denied environments.',
   similarPatents: [
     { patentId: 'US-10112233-B2', reason: 'Shares combined LiDAR and optical flow architecture for drone obstacle avoidance.' },
@@ -41,7 +41,7 @@ export const mockNoveltyAnalysisReport: NoveltyAnalysisReport = {
   recommendations: ['Narrow claim 1 to specifically cover dynamic adaptive switching during optical reflection loss.'],
 };
 
-export const mockRagAnalysisResult: RagAnalysisResult = {
+export const mockRagAnalysisResult: RagAnalysisResponse = {
   success: true,
   query: 'Autonomous drone navigation using LiDAR and optical flow sensors',
   retrievedPatents: mockSearchResults,
@@ -51,11 +51,18 @@ export const mockRagAnalysisResult: RagAnalysisResult = {
       patentId: 'US-10112233-B2',
       title: 'Dual-sensor UAV obstacle detection system using LiDAR and optical flow',
       similarityScore: 0.92,
+      relevantSections: [
+        {
+          section: 'abstract',
+          reason: 'Dual-sensor UAV obstacle detection system using LiDAR and optical flow',
+        },
+      ],
       overlappingClaims: [
         {
           claimNumber: 1,
           summary: 'Sensor fusion claim',
           overlapStrength: 'High',
+          reason: 'Direct overlap on dual-sensor obstacle detection system',
         },
       ],
     },

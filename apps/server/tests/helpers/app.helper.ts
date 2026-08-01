@@ -61,13 +61,13 @@ export async function createTestApp(): Promise<{
 
     if (app.diContainer.controllers) {
       if (app.diContainer.controllers.search) {
-        app.diContainer.controllers.search['searchService'] = mockSearchService as any;
+        (app.diContainer.controllers.search as any).searchService = mockSearchService;
       }
       if (app.diContainer.controllers.rag) {
-        app.diContainer.controllers.rag['ragService'] = mockRagService as any;
+        (app.diContainer.controllers.rag as any).ragService = mockRagService;
       }
       if (app.diContainer.controllers.history) {
-        app.diContainer.controllers.history['historyService'] = mockHistoryService as any;
+        (app.diContainer.controllers.history as any).historyService = mockHistoryService;
       }
     }
   }
