@@ -45,14 +45,14 @@ const ResultCard = ({ patent, onView }: ResultCardProps) => {
         </div>
 
         <span
-          className={`shrink-0 rounded-full px-3 py-1 font-mono text-xs font-semibold ${risk.bg} ${risk.text} border border-current/20`}
+          className="shrink-0 rounded-full px-3 py-1 font-mono text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200"
         >
           {risk.label} ({similarityScore}%)
         </span>
       </div>
 
       {patent.abstract && (
-        <p className="mt-3 font-body text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+        <p className="mt-3 font-body text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           {patent.abstract}
         </p>
       )}
@@ -61,7 +61,7 @@ const ResultCard = ({ patent, onView }: ResultCardProps) => {
       <div className="mt-4">
         <div className="mb-1.5 flex items-center justify-between font-body text-xs text-slate-500">
           <span className="flex items-center gap-1">
-            <Award className="h-3.5 w-3.5 text-indigo-500" />
+            <Award className="h-3.5 w-3.5 text-indigo-600" />
             Semantic Similarity Match
           </span>
           <span className="font-mono font-semibold text-slate-900">{similarityScore}%</span>
@@ -71,7 +71,7 @@ const ResultCard = ({ patent, onView }: ResultCardProps) => {
             initial={{ width: 0 }}
             animate={{ width: `${similarityScore}%` }}
             transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
-            className={`h-2 rounded-full ${risk.fill}`}
+            className="h-2 rounded-full bg-indigo-600"
           />
         </div>
       </div>

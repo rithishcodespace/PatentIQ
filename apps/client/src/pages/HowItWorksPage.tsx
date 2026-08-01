@@ -21,7 +21,6 @@ const pipelineSteps = [
     title: 'Ingestion & Text Extraction',
     icon: FileText,
     badge: 'PDF · DOCX · TXT',
-    color: 'from-blue-500/10 to-indigo-500/10 border-indigo-200 text-indigo-700',
     summary:
       'Parses unstructured patent specifications or manual invention drafts into structured sections (Title, Abstract, Claims, Keywords, and IPC candidate classifications).',
     technicalDetails: {
@@ -43,7 +42,6 @@ const pipelineSteps = [
     title: '768-Dim Vector Embedding Generation',
     icon: Cpu,
     badge: 'nomic-embed-text',
-    color: 'from-indigo-500/10 to-purple-500/10 border-indigo-200 text-indigo-700',
     summary:
       'Converts extracted patent text into a 768-dimensional dense vector space using Ollama nomic-embed-text embeddings to capture deep semantic intent rather than shallow keyword matching.',
     technicalDetails: {
@@ -64,7 +62,6 @@ const pipelineSteps = [
     title: 'Pinecone Vector Top-K Retrieval',
     icon: Layers,
     badge: 'Pinecone Cosine Distance',
-    color: 'from-purple-500/10 to-emerald-500/10 border-purple-200 text-purple-700',
     summary:
       'Queries millions of patent vector indices in Pinecone using Cosine similarity. Supports metadata filtering by IPC section, date range, ownership, and jurisdiction.',
     technicalDetails: {
@@ -86,7 +83,6 @@ const pipelineSteps = [
     title: 'Citation-Grounded Novelty Analysis',
     icon: FileText,
     badge: 'Grounded RAG',
-    color: 'from-amber-500/10 to-indigo-500/10 border-amber-200 text-amber-800',
     summary:
       'Synthesizes a 7-section novelty assessment comparing your draft against top retrieved candidates. Injects inline citation pills [US-10112233-B2] and computes claim overlap strength.',
     technicalDetails: {
@@ -107,7 +103,6 @@ const pipelineSteps = [
     title: 'Heuristic Confidence Evaluation',
     icon: ShieldCheck,
     badge: '3-Gauge Reliability Score',
-    color: 'from-emerald-500/10 to-teal-500/10 border-emerald-200 text-emerald-800',
     summary:
       'Computes multi-factor heuristic confidence scores for Retrieval Precision, Analysis Groundedness, and Overall System Reliability to give innovators clear trust metrics.',
     technicalDetails: {
@@ -128,7 +123,6 @@ const pipelineSteps = [
     title: 'PostgreSQL Relational Persistence',
     icon: Database,
     badge: 'Prisma Atomic DB Store',
-    color: 'from-blue-500/10 to-indigo-500/10 border-blue-200 text-blue-800',
     summary:
       'Atomically persists search queries, vector match metadata, confidence ratings, and AI novelty reports in PostgreSQL to allow instant history browsing and report reuse.',
     technicalDetails: {
@@ -278,7 +272,7 @@ const HowItWorksPage = () => {
               <div className="space-y-2 font-body text-xs">
                 {selectedPipeline.technicalDetails.features.map((feat, idx) => (
                   <div key={idx} className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 border border-slate-100">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0" />
                     <span className="font-medium text-slate-800">{feat}</span>
                   </div>
                 ))}
