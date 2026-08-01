@@ -1,67 +1,95 @@
 import { motion } from "framer-motion";
 import { Card } from "../ui/Card";
 import { getSimilarityRisk } from "../../utils/similarityRisk";
+import { ExternalLink, Layers, Award } from "lucide-react";
 
 interface ResultCardProps {
-  patent: {
-    id: number;
-    title: string;
-    similarity: number;
-    ipc: string;
-  };
-  onView?: (patent: ResultCardProps["patent"]) => void;
+  patent: any;
+  onView?: (patent: any) => void;
 }
 
 const ResultCard = ({ patent, onView }: ResultCardProps) => {
-  const risk = getSimilarityRisk(patent.similarity);
+  const patentId = patent.patentId || patent.id;
+  const similarityScore = typeof patent.similarityScore === 'number' 
+    ? (patent.similarityScore <= 1 ? Math.round(patent.similarityScore * 100) : Math.round(patent.similarityScore))
+    : (typeof patent.similarity === 'number' ? patent.similarity : 85);
+
+  const risk = getSimilarityRisk(similarityScore);
 
   return (
-    <Card className="transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(11,17,32,0.06),0_20px_40px_-16px_rgba(11,17,32,0.18)]">
+    <Card className="transition-all duration-300 hover:shadow-md hover:border-indigo-200 bg-white rounded-2xl border border-slate-200/80 p-5">
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold leading-snug text-ink">
-            {patent.title}
-          </h2>
-
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="code-chip">#{patent.id}</span>
-            <span className="code-chip">{patent.ipc}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <span className="code-chip bg-slate-100 text-slate-700 font-mono text-[11px]">
+              #{patentId}
+            </span>
+            <span className="code-chip bg-indigo-50 text-indigo-700 font-mono text-[11px]">
+              IPC: {patent.ipc || 'G06F 16/90'}
+            </span>
+            {patent.country && (
+              <span className="code-chip bg-slate-50 text-slate-600 text-[10px]">
+                {patent.country}
+              </span>
+            )}
+            {patent.owner && (
+              <span className="font-body text-[11px] text-slate-500 truncate max-w-[200px]">
+                Assignee: {patent.owner}
+              </span>
+            )}
           </div>
+
+          <h3 className="font-display text-base font-semibold leading-snug text-slate-900 hover:text-indigo-600 transition">
+            {patent.title}
+          </h3>
         </div>
 
         <span
-          className={`shrink-0 rounded-full px-3 py-1 font-mono text-xs font-semibold ${risk.bg} ${risk.text}`}
+          className={`shrink-0 rounded-full px-3 py-1 font-mono text-xs font-semibold ${risk.bg} ${risk.text} border border-current/20`}
         >
-          {risk.label}
+          {risk.label} ({similarityScore}%)
         </span>
       </div>
 
+      {patent.abstract && (
+        <p className="mt-3 font-body text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+          {patent.abstract}
+        </p>
+      )}
+
       {/* Similarity meter */}
-      <div className="mt-6">
-        <div className="mb-2 flex items-center justify-between font-body text-sm text-slate">
-          <span>Semantic similarity</span>
-          <span className="font-mono text-ink">{patent.similarity}%</span>
+      <div className="mt-4">
+        <div className="mb-1.5 flex items-center justify-between font-body text-xs text-slate-500">
+          <span className="flex items-center gap-1">
+            <Award className="h-3.5 w-3.5 text-indigo-500" />
+            Semantic Similarity Match
+          </span>
+          <span className="font-mono font-semibold text-slate-900">{similarityScore}%</span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${patent.similarity}%` }}
+            animate={{ width: `${similarityScore}%` }}
             transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
             className={`h-2 rounded-full ${risk.fill}`}
           />
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end">
-  <button
-    onClick={() => onView?.(patent)}
-    disabled={!onView}
-    className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 transition-all duration-200 transform hover:scale-105 hover:gap-2 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:scale-100"
-  >
-    View Details
-    <span className="text-base">{">>"}</span>
-  </button>
-</div>  
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+        <span className="font-body text-slate-400 text-[11px] flex items-center gap-1">
+          <Layers className="h-3 w-3 text-slate-400" />
+          Pinecone Vector ID
+        </span>
+        <button
+          onClick={() => onView?.(patent)}
+          disabled={!onView}
+          className="inline-flex items-center gap-1.5 font-body font-semibold text-indigo-600 hover:text-indigo-800 transition"
+        >
+          Inspect Full Specification
+          <ExternalLink className="h-3.5 w-3.5" />
+        </button>
+      </div>  
     </Card>
   );
 };
