@@ -330,3 +330,6 @@ npm run test:coverage
 
 This project is licensed under the **ISC License**.
 
+# PatentIQ
+Automated patent prior-art search engine using semantic similarity
+S
