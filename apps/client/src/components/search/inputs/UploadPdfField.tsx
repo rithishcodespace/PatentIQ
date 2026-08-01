@@ -23,8 +23,15 @@ const UploadPdfField = ({ file, onChange }: UploadPdfFieldProps) => {
   const validateAndSet = (candidate: File | undefined) => {
     if (!candidate) return;
 
-    if (candidate.type !== "application/pdf") {
-      setError("Only PDF files are supported.");
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ];
+    const isAllowedExt = candidate.name.endsWith(".pdf") || candidate.name.endsWith(".docx") || candidate.name.endsWith(".txt");
+
+    if (!allowedTypes.includes(candidate.type) && !isAllowedExt) {
+      setError("Supported file types: PDF, DOCX, or TXT documents.");
       return;
     }
     if (candidate.size > MAX_FILE_SIZE_BYTES) {
@@ -137,13 +144,13 @@ const UploadPdfField = ({ file, onChange }: UploadPdfFieldProps) => {
               </div>
 
               <p className="font-mono text-[11px] text-slate/70">
-                PDF ONLY · MAX {MAX_FILE_SIZE_MB} MB
+                PDF, DOCX, TXT · MAX {MAX_FILE_SIZE_MB} MB
               </p>
 
               <input
                 ref={inputRef}
                 type="file"
-                accept="application/pdf"
+                accept=".pdf,.docx,.txt"
                 className="sr-only"
                 onChange={(e) => validateAndSet(e.target.files?.[0])}
               />

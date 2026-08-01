@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, ChevronDown } from "lucide-react";
-import Toggle from "../ui/Toggle";
 import { fieldClass } from "./formStyles";
 import type { AdvancedSearchOptions } from "../../types/search";
 
-const ALL_DATABASES = ["Google Patents", "USPTO", "WIPO"] as const;
 const RESULT_OPTIONS = [10, 20, 50] as const;
 
 interface AdvancedOptionsPanelProps {
@@ -15,16 +13,6 @@ interface AdvancedOptionsPanelProps {
 
 const AdvancedOptionsPanel = ({ value, onChange }: AdvancedOptionsPanelProps) => {
   const [expanded, setExpanded] = useState(false);
-
-  const toggleDatabase = (db: string) => {
-    const has = value.databases.includes(db);
-    onChange({
-      ...value,
-      databases: has
-        ? value.databases.filter((d) => d !== db)
-        : [...value.databases, db],
-    });
-  };
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white">

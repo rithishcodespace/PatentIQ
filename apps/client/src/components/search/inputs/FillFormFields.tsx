@@ -18,7 +18,7 @@ const FieldLabel = ({
   children,
 }: {
   index: string;
-  children: string;
+  children: React.ReactNode;
 }) => (
   <label className={labelClass}>
     <span className="font-mono text-amber">{index}</span>
