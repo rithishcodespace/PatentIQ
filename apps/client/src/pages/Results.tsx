@@ -73,7 +73,7 @@ const Results = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 font-mono text-[11px] text-slate-500 bg-slate-100/70 px-2.5 py-1 rounded-lg">
-            <Zap className="h-3 w-3 text-amber-500" />
+            <Zap className="h-3 w-3 text-indigo-600" />
             {metricsData.totalTimeMs}ms
           </div>
         </div>
@@ -119,13 +119,13 @@ const Results = () => {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Top Prior-Art Match</span>
-            <Layers className="h-4 w-4 text-emerald-600" />
+            <Layers className="h-4 w-4 text-indigo-600" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="font-display text-2xl font-bold text-slate-900">
               {((data.results?.[0]?.similarityScore || 0.92) * 100).toFixed(0)}%
             </span>
-            <span className="code-chip bg-emerald-50 text-emerald-700 text-[10px]">
+            <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
               #{data.results?.[0]?.patentId || 'US-10112233-B2'}
             </span>
           </div>
@@ -218,8 +218,8 @@ const Results = () => {
                 <FileText className="h-4 w-4 text-indigo-600" />
                 Citation-Aware Novelty & Claim Overlap Analysis
               </h2>
-              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Grounded Analysis
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                <CheckCircle2 className="h-3 w-3 text-indigo-600" /> Grounded Analysis
               </span>
             </div>
 

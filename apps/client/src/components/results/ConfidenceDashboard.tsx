@@ -10,16 +10,13 @@ interface ConfidenceDashboardProps {
 export const getLevelBadgeStyle = (level: ConfidenceLevel) => {
   switch (level) {
     case 'Very High':
-      return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
     case 'High':
-      return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30';
+      return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
     case 'Medium':
-      return 'bg-amber-500/10 text-amber-600 border-amber-500/30';
     case 'Low':
-      return 'bg-orange-500/10 text-orange-600 border-orange-500/30';
     case 'Very Low':
     default:
-      return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
+      return 'bg-slate-100 text-slate-700 border border-slate-200';
   }
 };
 
@@ -137,35 +134,39 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
         {/* Gauge 3: Overall Confidence */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="relative overflow-hidden rounded-xl border border-indigo-200 bg-indigo-900 p-4 text-white shadow-md shadow-indigo-900/15"
+          className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
         >
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-body text-xs font-medium text-indigo-100">
-              <CheckCircle2 className="h-3.5 w-3.5 text-amber-300" />
+            <span className="flex items-center gap-1.5 font-body text-xs font-medium text-slate-500">
+              <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" />
               Overall System Confidence
             </span>
-            <span className="rounded-full bg-white/20 px-2 py-0.5 font-body text-[11px] font-semibold text-white backdrop-blur">
+            <span
+              className={`rounded-full border px-2 py-0.5 font-body text-[11px] font-semibold ${getLevelBadgeStyle(
+                confidence.overall.level
+              )}`}
+            >
               {confidence.overall.level}
             </span>
           </div>
 
           <div className="mt-3 flex items-baseline justify-between">
-            <div className="font-display text-3xl font-bold">
+            <div className="font-display text-3xl font-bold text-slate-900">
               {confidence.overall.score.toFixed(1)}
-              <span className="text-base font-medium opacity-80">%</span>
+              <span className="text-base font-medium text-slate-400">%</span>
             </div>
-            <span className="rounded bg-amber-400/20 px-2 py-0.5 font-body text-[10px] font-medium text-amber-200">
-              Weighted Combination
+            <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
+              Weighted Score
             </span>
           </div>
 
           {/* Progress bar */}
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-indigo-950/40">
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${confidence.overall.score}%` }}
               transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-              className="h-full bg-amber-300"
+              className="h-full bg-indigo-600"
             />
           </div>
         </motion.div>

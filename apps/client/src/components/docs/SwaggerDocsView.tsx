@@ -59,7 +59,7 @@ const SwaggerDocsView = () => {
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <span className="font-body text-xs font-medium text-slate-500 flex items-center gap-1.5">
-            <Shield className="h-4 w-4 text-emerald-600" />
+            <Shield className="h-4 w-4 text-indigo-600" />
             Authentication Scheme
           </span>
           <p className="font-display text-lg font-bold text-slate-900 mt-2">JWT Bearer Auth</p>
@@ -105,7 +105,7 @@ const SwaggerDocsView = () => {
                     ep.method === 'POST'
                       ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                       : ep.method === 'GET'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      ? 'bg-slate-100 text-slate-800 border border-slate-200'
                       : 'bg-slate-200 text-slate-800'
                   }`}
                 >

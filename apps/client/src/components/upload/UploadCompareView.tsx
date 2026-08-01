@@ -46,7 +46,7 @@ const UploadCompareView = () => {
               <span className="code-chip bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                 PATENT DOCUMENT INGESTION & COMPARISON
               </span>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-300 border border-emerald-500/30">
+              <span className="rounded-full bg-indigo-500/20 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
                 PDF · DOCX · TXT Supported
               </span>
             </div>

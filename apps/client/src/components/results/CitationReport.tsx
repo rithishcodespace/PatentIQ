@@ -218,7 +218,7 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 sm:grid-cols-3"
+          className="grid gap-4 sm:grid-cols-3 font-body"
         >
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <h5 className="font-body text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3">
@@ -234,28 +234,28 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
             </ul>
           </div>
 
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/20 p-4">
-            <h5 className="font-body text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <h5 className="font-body text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-3">
               Unique Patentable Features
             </h5>
-            <ul className="space-y-2 text-xs text-emerald-900 font-medium">
+            <ul className="space-y-2 text-xs text-slate-800 font-medium">
               {analysis.featureComparison.uniqueFeatures.map((f, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle className="h-3.5 w-3.5 text-indigo-600 shrink-0 mt-0.5" />
                   <span>{f}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-4">
-            <h5 className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider mb-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <h5 className="font-body text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3">
               Partial Overlaps
             </h5>
-            <ul className="space-y-2 text-xs text-amber-900">
+            <ul className="space-y-2 text-xs text-slate-700">
               {analysis.featureComparison.partialOverlap.map((f, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-3.5 w-3.5 text-slate-500 shrink-0 mt-0.5" />
                   <span>{f}</span>
                 </li>
               ))}
@@ -269,30 +269,30 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 sm:grid-cols-2"
+          className="grid gap-4 sm:grid-cols-2 font-body"
         >
-          <div className="rounded-xl border border-rose-200 bg-rose-50/30 p-5">
-            <h5 className="flex items-center gap-2 font-display text-sm font-semibold text-rose-900 mb-3">
-              <ShieldAlert className="h-4 w-4 text-rose-600" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <h5 className="flex items-center gap-2 font-display text-sm font-semibold text-slate-900 mb-3">
+              <ShieldAlert className="h-4 w-4 text-slate-700" />
               Identified Rejection Risks
             </h5>
             <div className="space-y-2.5">
               {analysis.risks.map((risk, idx) => (
-                <div key={idx} className="rounded-lg bg-white p-3 text-xs text-rose-950 border border-rose-100 shadow-xs">
+                <div key={idx} className="rounded-lg bg-slate-50 p-3 text-xs text-slate-800 border border-slate-200 shadow-2xs">
                   {renderTextWithCitations(risk, onSelectPatent)}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-5">
-            <h5 className="flex items-center gap-2 font-display text-sm font-semibold text-indigo-900 mb-3">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <h5 className="flex items-center gap-2 font-display text-sm font-semibold text-slate-900 mb-3">
+              <Lightbulb className="h-4 w-4 text-indigo-600" />
               Strategic Claim Amendment Advice
             </h5>
             <div className="space-y-2.5">
               {analysis.recommendations.map((rec, idx) => (
-                <div key={idx} className="rounded-lg bg-white p-3 text-xs text-indigo-950 border border-indigo-100 shadow-xs">
+                <div key={idx} className="rounded-lg bg-slate-50 p-3 text-xs text-slate-800 border border-slate-200 shadow-2xs">
                   {renderTextWithCitations(rec, onSelectPatent)}
                 </div>
               ))}
