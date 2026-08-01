@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Info, Sparkles, BarChart2, Layers, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Info, FileText, BarChart2, Layers, CheckCircle2 } from 'lucide-react';
 import type { FullConfidenceBlock, ConfidenceLevel } from '../../types/confidence';
 
 interface ConfidenceDashboardProps {
@@ -27,8 +27,8 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
   const [showFactors, setShowFactors] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-amber-50/20 p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-indigo-100/60 pb-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
             <ShieldCheck className="h-5 w-5" />
@@ -38,7 +38,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               Heuristic Confidence Evaluation
             </h3>
             <p className="font-body text-xs text-slate-500">
-              Multi-factor reliability scoring for retrieval precision & AI novelty synthesis
+              Multi-factor reliability scoring for retrieval precision & prior-art synthesis
             </p>
           </div>
         </div>
@@ -101,7 +101,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
         >
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-body text-xs font-medium text-slate-500">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <FileText className="h-3.5 w-3.5 text-indigo-600" />
               Novelty Analysis Confidence
             </span>
             <span
@@ -118,7 +118,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               {confidence.analysis.score.toFixed(1)}
               <span className="text-base font-medium text-slate-400">%</span>
             </div>
-            <span className="code-chip bg-amber-50 text-amber-700 text-[10px]">
+            <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
               7-Section Grounding
             </span>
           </div>
@@ -129,7 +129,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               initial={{ width: 0 }}
               animate={{ width: `${confidence.analysis.score}%` }}
               transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-              className="h-full bg-amber-500"
+              className="h-full bg-indigo-600"
             />
           </div>
         </motion.div>
@@ -137,7 +137,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
         {/* Gauge 3: Overall Confidence */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="relative overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-600 to-indigo-700 p-4 text-white shadow-md shadow-indigo-600/15"
+          className="relative overflow-hidden rounded-xl border border-indigo-200 bg-indigo-900 p-4 text-white shadow-md shadow-indigo-900/15"
         >
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-body text-xs font-medium text-indigo-100">
@@ -216,7 +216,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
 
               <div className="rounded-lg border border-slate-200 bg-white/80 p-3 text-xs">
                 <p className="font-semibold text-slate-800 flex items-center gap-1.5 mb-2">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  <FileText className="h-3.5 w-3.5 text-indigo-600" />
                   Novelty Analysis Factor Weights
                 </p>
                 <ul className="space-y-1 text-slate-600">

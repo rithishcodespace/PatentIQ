@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ExternalLink, Code2, Check, Copy, Shield, Sparkles } from 'lucide-react';
+import { BookOpen, ExternalLink, Code2, Check, Copy, Shield, FileText } from 'lucide-react';
 import { mockApiEndpoints } from '../../data/mockData';
 
 const SwaggerDocsView = () => {
@@ -68,7 +68,7 @@ const SwaggerDocsView = () => {
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
           <span className="font-body text-xs font-medium text-slate-500 flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-amber-500" />
+            <FileText className="h-4 w-4 text-indigo-600" />
             Schema Export
           </span>
           <p className="font-display text-lg font-bold text-slate-900 mt-2">GET /docs/json</p>

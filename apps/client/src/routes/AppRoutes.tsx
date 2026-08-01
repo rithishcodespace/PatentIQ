@@ -5,6 +5,7 @@ import MainLayout from "../layouts/MainLayout";
 import Landing from "../pages/Landing";
 import Search from "../pages/Search";
 import Results from "../pages/Results";
+import HowItWorksPage from "../pages/HowItWorksPage";
 import HistoryPage from "../pages/HistoryPage";
 import UploadPage from "../pages/UploadPage";
 import DocsPage from "../pages/DocsPage";
@@ -17,6 +18,7 @@ const AppRoutes = () => {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Landing />} />
           <Route path="search" element={<Search />} />
+          <Route path="how-it-works" element={<HowItWorksPage />} />
           <Route path="results" element={<Results />} />
           <Route path="upload" element={<UploadPage />} />
           <Route path="history" element={<HistoryPage />} />

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Shield, BookOpen, History, UploadCloud, Search } from 'lucide-react';
+import { User, Shield, BookOpen, History, UploadCloud, Search, Cpu } from 'lucide-react';
 import AuthModal from './AuthModal';
 import { mockCurrentUser } from '../../data/mockData';
 import type { UserProfile } from '../../types/auth';
@@ -9,6 +9,7 @@ import type { UserProfile } from '../../types/auth';
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/search', label: 'Search', icon: Search },
+  { to: '/how-it-works', label: 'How Search Works', icon: Cpu },
   { to: '/upload', label: 'Upload & Compare', icon: UploadCloud },
   { to: '/history', label: 'History', icon: History },
   { to: '/docs-preview', label: 'API Docs', icon: BookOpen },
@@ -30,7 +31,7 @@ const Navbar = () => {
             <span className="font-display text-2xl font-semibold text-slate-900">
               Patent<span className="text-amber-500">IQ</span>
             </span>
-            <span className="code-chip hidden sm:inline bg-indigo-50 text-indigo-700">v1.2 AI</span>
+            <span className="code-chip hidden sm:inline bg-slate-100 text-slate-700">Enterprise v1.2</span>
           </Link>
 
           {/* Navigation Items */}

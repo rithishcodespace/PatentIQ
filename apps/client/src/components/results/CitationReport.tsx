@@ -67,7 +67,7 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
           }`}
         >
           <FileText className="h-4 w-4" />
-          AI Novelty Synthesis
+          Executive Novelty Synthesis
         </button>
 
         <button
@@ -116,8 +116,8 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
         >
           <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
             <h4 className="flex items-center gap-2 font-display text-base font-semibold text-slate-900 mb-3">
-              <SparklesIcon className="h-4 w-4 text-amber-500" />
-              Executive Citation-Aware Novelty Summary
+              <FileText className="h-4 w-4 text-indigo-600" />
+              Citation-Grounded Novelty Assessment
             </h4>
             <div className="font-body text-sm leading-relaxed text-slate-700 bg-slate-50/70 p-4 rounded-xl border border-slate-100">
               {renderTextWithCitations(analysis.summary, onSelectPatent)}
@@ -303,11 +303,5 @@ const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationR
     </div>
   );
 };
-
-const SparklesIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />
-  </svg>
-);
 
 export default CitationReport;
