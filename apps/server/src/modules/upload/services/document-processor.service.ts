@@ -9,7 +9,7 @@ import type {
 import { PdfParser } from '../parsers/pdf.parser.js';
 import { DocxParser } from '../parsers/docx.parser.js';
 import { TxtParser } from '../parsers/txt.parser.js';
-import { TextNormalizer } from '../utils/text-normalizer.ts';
+import { TextNormalizer } from '../utils/text-normalizer.js';
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 const MIN_TEXT_LENGTH = 10;

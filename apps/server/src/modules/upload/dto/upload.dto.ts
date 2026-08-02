@@ -77,7 +77,7 @@ export interface ComparisonAnalysisSummary {
 export interface CompareDocumentResponseDto {
   success: boolean;
   document: {
-    id?: string;
+    id?: string | undefined;
     title: string;
   };
   retrieval: {
@@ -86,5 +86,5 @@ export interface CompareDocumentResponseDto {
   };
   matches: ComparisonPatentMatch[];
   analysis: ComparisonAnalysisSummary;
-  searchHistoryId?: string;
+  searchHistoryId?: string | undefined;
 }

@@ -101,10 +101,12 @@ export class TextNormalizer {
 
     // Fallback extraction when explicit section headers were not found
     const paragraphs = normalizedFullText.split('\n\n').filter((p) => p.trim().length > 0);
+    const firstParagraph = paragraphs[0] ?? '';
+    const secondParagraph = paragraphs[1] ?? '';
 
     if (!title) {
-      if (paragraphs.length > 0 && paragraphs[0].length < 200) {
-        title = paragraphs[0].trim();
+      if (firstParagraph.length > 0 && firstParagraph.length < 200) {
+        title = firstParagraph.trim();
       } else if (filenameHint) {
         // Strip extension from filename hint
         title = filenameHint.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
@@ -115,10 +117,10 @@ export class TextNormalizer {
 
     if (!abstract) {
       // Use first paragraph (or second if first was title) as abstract fallback
-      if (paragraphs.length > 1 && paragraphs[0].trim() === title) {
-        abstract = paragraphs[1].trim();
-      } else if (paragraphs.length > 0) {
-        abstract = paragraphs[0].trim();
+      if (paragraphs.length > 1 && firstParagraph.trim() === title) {
+        abstract = secondParagraph.trim();
+      } else if (firstParagraph.length > 0) {
+        abstract = firstParagraph.trim();
       } else {
         abstract = normalizedFullText.slice(0, 500);
       }

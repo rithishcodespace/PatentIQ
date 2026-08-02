@@ -102,6 +102,17 @@ export const Error500Schema = {
   },
 };
 
+export const Error503Schema = {
+  ...ErrorResponseSchema,
+  description: 'Service Unavailable - External service or LLM provider is unreachable',
+  example: {
+    statusCode: 503,
+    error: 'Service Unavailable',
+    message: 'Ollama embedding service is currently unreachable',
+    timestamp: '2026-08-01T12:00:00.000Z',
+  },
+};
+
 // Standard HTTP error responses map for reuse across endpoints
 export const standardErrorResponses = {
   400: Error400Schema,
@@ -112,6 +123,7 @@ export const standardErrorResponses = {
   422: Error422Schema,
   429: Error429Schema,
   500: Error500Schema,
+  503: Error503Schema,
 };
 
 // --- Model Schemas ---

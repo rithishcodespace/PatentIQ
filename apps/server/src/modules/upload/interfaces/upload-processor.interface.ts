@@ -21,9 +21,9 @@ export interface ProcessDocumentFileInput {
 }
 
 export interface ParsedDocumentResult {
-  title?: string;
+  title?: string | undefined;
   bodyText: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | undefined;
 }
 
 export interface IDocumentParser {

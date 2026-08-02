@@ -124,9 +124,13 @@ export class UploadComparisonService implements IUploadComparisonService {
           })),
           noveltyAnalysis: {
             summary: ragResponse.analysis.summary,
+            novelty: Array.isArray(ragResponse.analysis.novelAspects)
+              ? ragResponse.analysis.novelAspects.join('; ')
+              : String(ragResponse.analysis.novelAspects || ''),
+            overlappingClaims: ragResponse.analysis.overlappingClaims || [],
+            recommendations: ragResponse.analysis.recommendations || [],
             confidenceScore: ragResponse.confidence?.overall?.score ?? 80,
-            analysisModel: 'qwen2.5:3b',
-            rawAnalysisJson: ragResponse.analysis,
+            rawLLMResponse: JSON.stringify(ragResponse.analysis),
           },
         });
         if (historyRecord?.id) {
@@ -146,7 +150,7 @@ export class UploadComparisonService implements IUploadComparisonService {
     return {
       success: true,
       document: {
-        id: dto.documentId,
+        id: dto.documentId || undefined,
         title: targetDoc.title,
       },
       retrieval: {
