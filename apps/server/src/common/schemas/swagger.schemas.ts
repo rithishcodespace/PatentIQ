@@ -469,4 +469,29 @@ export const ProcessDocumentSuccessSchema = {
   },
 };
 
+export const EmbedDocumentRequestSchema = {
+  type: 'object',
+  properties: {
+    documentId: { type: 'string', format: 'uuid', description: 'ID of previously uploaded document', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+    document: StandardPatentDocumentSchema,
+  },
+};
+
+export const EmbedDocumentSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    embedding: {
+      type: 'object',
+      properties: {
+        model: { type: 'string', example: 'nomic-embed-text' },
+        dimensions: { type: 'integer', example: 768 },
+        sections: { type: 'array', items: { type: 'string' }, example: ['title', 'abstract', 'claims'] },
+        generatedAt: { type: 'string', format: 'date-time', example: '2026-08-02T09:09:22.000Z' },
+      },
+    },
+  },
+};
+
+
 

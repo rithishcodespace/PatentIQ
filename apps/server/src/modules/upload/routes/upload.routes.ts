@@ -5,6 +5,8 @@ import {
   DocumentDeleteSuccessSchema,
   ProcessDirectTextPayloadSchema,
   ProcessDocumentSuccessSchema,
+  EmbedDocumentRequestSchema,
+  EmbedDocumentSuccessSchema,
   standardErrorResponses,
 } from '../../../common/schemas/swagger.schemas.js';
 
@@ -58,6 +60,26 @@ export async function uploadRoutes(
       },
     },
     handler: (req: any, reply) => controller.processDirectText(req, reply),
+  });
+
+  // POST /api/upload/embed - Generate Patent Document Embeddings
+  fastify.post('/embed', {
+    schema: {
+      tags: ['Document Ingestion'],
+      summary: 'Generate Embeddings for Patent Document',
+      description:
+        'Generates section-wise embeddings (title, abstract, claims) using nomic-embed-text via Ollama for a processed document object or stored uploaded document ID.',
+      consumes: ['application/json'],
+      body: EmbedDocumentRequestSchema,
+      response: {
+        200: EmbedDocumentSuccessSchema,
+        400: standardErrorResponses[400],
+        404: standardErrorResponses[404],
+        500: standardErrorResponses[500],
+        503: standardErrorResponses[503],
+      },
+    },
+    handler: (req: any, reply) => controller.embedDocument(req, reply),
   });
 
   // POST /api/upload - Upload patent document (PDF, DOCX, TXT) metadata & storage

@@ -32,3 +32,20 @@ export interface ProcessDocumentResponseDto {
   success: boolean;
   data: StandardPatentDocument;
 }
+
+export interface EmbedDocumentRequestDto {
+  documentId?: string;
+  document?: StandardPatentDocument;
+}
+
+export interface EmbeddingMetadataDto {
+  model: string;
+  dimensions: number;
+  sections: string[];
+  generatedAt: string;
+}
+
+export interface EmbedDocumentResponseDto {
+  success: boolean;
+  embedding: EmbeddingMetadataDto;
+}

@@ -1,11 +1,15 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { BadRequestError } from '../../../common/errors/http-errors.js';
+import fs from 'fs/promises';
+import { BadRequestError, NotFoundError } from '../../../common/errors/http-errors.js';
 import type { IUploadService } from '../interfaces/upload.interface.js';
-import type { IDocumentProcessorService, DirectTextInput } from '../interfaces/upload-processor.interface.js';
+import type { IDocumentProcessorService, DirectTextInput, StandardPatentDocument } from '../interfaces/upload-processor.interface.js';
+import type { IEmbeddingsService } from '../../embeddings/interfaces/embeddings-service.interface.js';
 import type {
   UploadSuccessResponseDto,
   DeleteSuccessResponseDto,
   ProcessDocumentResponseDto,
+  EmbedDocumentRequestDto,
+  EmbedDocumentResponseDto,
 } from '../dto/upload.dto.js';
 import { DocumentProcessorService } from '../services/document-processor.service.js';
 
@@ -14,7 +18,8 @@ export class UploadController {
 
   constructor(
     private readonly uploadService: IUploadService,
-    documentProcessorService?: IDocumentProcessorService
+    documentProcessorService?: IDocumentProcessorService,
+    private readonly embeddingsService?: IEmbeddingsService
   ) {
     this.documentProcessorService = documentProcessorService || new DocumentProcessorService();
   }
@@ -82,6 +87,57 @@ export class UploadController {
     const responseDto: ProcessDocumentResponseDto = {
       success: true,
       data: processedDocument,
+    };
+
+    reply.status(200).send(responseDto);
+  }
+
+  async embedDocument(
+    request: FastifyRequest<{ Body: EmbedDocumentRequestDto }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    if (!this.embeddingsService) {
+      throw new BadRequestError('Embedding service is not configured.');
+    }
+
+    const body = request.body || {};
+    let targetDoc: StandardPatentDocument | undefined = body.document;
+
+    // If document ID was supplied, fetch stored document and extract text
+    if (!targetDoc && body.documentId) {
+      const record = await this.uploadService.getMetadata(body.documentId);
+      if (!record) {
+        throw new NotFoundError(`Uploaded document with ID '${body.documentId}' not found.`);
+      }
+
+      try {
+        const fileBuffer = await fs.readFile(record.storagePath);
+        targetDoc = await this.documentProcessorService.processFile({
+          filename: record.originalFileName,
+          mimetype: record.mimeType,
+          buffer: fileBuffer,
+          size: record.size,
+        });
+      } catch (err: any) {
+        if (err instanceof NotFoundError || err instanceof BadRequestError) throw err;
+        throw new BadRequestError(`Failed to read document file from disk: ${err.message}`);
+      }
+    }
+
+    if (!targetDoc) {
+      throw new BadRequestError('Must provide either a processed document object or a valid documentId in request body.');
+    }
+
+    const result = await this.embeddingsService.generatePatentDocumentEmbeddings(targetDoc);
+
+    const responseDto: EmbedDocumentResponseDto = {
+      success: true,
+      embedding: {
+        model: result.model,
+        dimensions: result.dimensions,
+        sections: result.sections,
+        generatedAt: result.generatedAt,
+      },
     };
 
     reply.status(200).send(responseDto);

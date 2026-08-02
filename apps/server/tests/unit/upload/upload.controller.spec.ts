@@ -8,6 +8,7 @@ describe('UploadController Unit Tests', () => {
   let uploadController: UploadController;
   let mockUploadService: any;
   let mockDocumentProcessorService: any;
+  let mockEmbeddingsService: any;
 
   const mockRecord: UploadedDocumentRecord = {
     id: 'doc-uuid-1234',
@@ -42,7 +43,21 @@ describe('UploadController Unit Tests', () => {
       processDirectText: vi.fn().mockResolvedValue(mockStandardDoc),
     };
 
-    uploadController = new UploadController(mockUploadService, mockDocumentProcessorService);
+    mockEmbeddingsService = {
+      generatePatentDocumentEmbeddings: vi.fn().mockResolvedValue({
+        model: 'nomic-embed-text',
+        dimensions: 768,
+        sections: ['title', 'abstract', 'claims'],
+        generatedAt: '2026-08-02T09:09:22.000Z',
+        vectors: {},
+      }),
+    };
+
+    uploadController = new UploadController(
+      mockUploadService,
+      mockDocumentProcessorService,
+      mockEmbeddingsService
+    );
   });
 
   describe('uploadFile HTTP Handler', () => {
@@ -162,6 +177,56 @@ describe('UploadController Unit Tests', () => {
         success: true,
         data: mockStandardDoc,
       });
+    });
+  });
+
+  describe('embedDocument HTTP Handler', () => {
+    it('should generate embeddings for inline standard document and return 200 OK metadata response', async () => {
+      const mockRequest: any = {
+        body: { document: mockStandardDoc },
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await uploadController.embedDocument(mockRequest, mockReply);
+
+      expect(mockEmbeddingsService.generatePatentDocumentEmbeddings).toHaveBeenCalledWith(mockStandardDoc);
+      expect(mockReply.status).toHaveBeenCalledWith(200);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        success: true,
+        embedding: {
+          model: 'nomic-embed-text',
+          dimensions: 768,
+          sections: ['title', 'abstract', 'claims'],
+          generatedAt: '2026-08-02T09:09:22.000Z',
+        },
+      });
+    });
+
+    it('should throw BadRequestError if neither document nor documentId is provided', async () => {
+      const mockRequest: any = { body: {} };
+      const mockReply: any = {};
+
+      await expect(uploadController.embedDocument(mockRequest, mockReply)).rejects.toThrow(
+        BadRequestError
+      );
+    });
+
+    it('should throw BadRequestError if embedding service is not configured', async () => {
+      const controllerWithoutEmbeddings = new UploadController(
+        mockUploadService,
+        mockDocumentProcessorService
+      );
+
+      const mockRequest: any = { body: { document: mockStandardDoc } };
+      const mockReply: any = {};
+
+      await expect(controllerWithoutEmbeddings.embedDocument(mockRequest, mockReply)).rejects.toThrow(
+        BadRequestError
+      );
     });
   });
 

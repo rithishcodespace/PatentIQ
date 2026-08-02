@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
-import { Ollama } from 'ollama';
+import { OllamaEmbeddingProvider } from '../../../providers/embedding/ollama-embedding.provider.js';
+import type { IEmbeddingProvider } from '../../../providers/embedding/embedding-provider.interface.js';
 
 /**
  * Interface representing input patent record from patents.json.
@@ -86,91 +87,35 @@ class Logger {
 }
 
 /**
- * Patent Section Embedding Generator using Ollama.
+ * Patent Section Embedding Generator reusing standard OllamaEmbeddingProvider.
  */
 export class PatentEmbeddingGenerator {
-  private ollama: Ollama;
+  private embeddingProvider: IEmbeddingProvider;
   private modelName: string;
-  private maxRetries: number;
 
-  constructor(baseUrl = 'http://localhost:11434', modelName = 'nomic-embed-text', maxRetries = 3) {
-    this.ollama = new Ollama({ host: baseUrl });
+  constructor(
+    baseUrl = 'http://localhost:11434',
+    modelName = 'nomic-embed-text',
+    maxRetries = 3,
+    provider?: IEmbeddingProvider
+  ) {
     this.modelName = modelName;
-    this.maxRetries = maxRetries;
+    this.embeddingProvider = provider || new OllamaEmbeddingProvider(baseUrl, modelName, maxRetries);
   }
 
   /**
-   * Retries an async operation with exponential backoff.
-   */
-  private async retryWithBackoff<T>(fn: () => Promise<T>): Promise<T> {
-    let lastError: unknown;
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (err) {
-        lastError = err;
-        if (attempt === this.maxRetries) break;
-        const delayMs = 500 * Math.pow(2, attempt - 1);
-        Logger.warn(`Ollama API attempt ${attempt} failed. Retrying in ${delayMs}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-    }
-    throw lastError;
-  }
-
-  /**
-   * Generates embeddings for an array of section text prompts via Ollama API.
-   * Handles empty prompts safely by returning empty array vectors.
-   */
-  public async generateSectionEmbeddingsBatch(texts: string[]): Promise<number[][]> {
-    if (texts.length === 0) return [];
-
-    // Identify non-empty prompts to send to Ollama API
-    const validIndices: number[] = [];
-    const validPrompts: string[] = [];
-
-    texts.forEach((text, index) => {
-      const trimmed = text ? text.trim() : '';
-      if (trimmed.length > 0) {
-        validIndices.push(index);
-        validPrompts.push(trimmed);
-      }
-    });
-
-    const results: number[][] = new Array(texts.length).fill([]);
-
-    if (validPrompts.length === 0) {
-      return results;
-    }
-
-    const response = await this.retryWithBackoff(async () => {
-      return await this.ollama.embed({
-        model: this.modelName,
-        input: validPrompts,
-      });
-    });
-
-    if (response && response.embeddings) {
-      validIndices.forEach((originalIndex, i) => {
-        results[originalIndex] = response.embeddings[i] || [];
-      });
-    }
-
-    return results;
-  }
-
-  /**
-   * Generates section-wise embeddings (title, abstract, claims) for a batch of patent records.
+   * Generates section-wise embeddings (title, abstract, claims) for a batch of patent records
+   * by delegating batch embedding generation to OllamaEmbeddingProvider.
    */
   public async processPatentBatch(patents: InputPatentRecord[]): Promise<PatentEmbeddingOutput[]> {
     const titles = patents.map((p) => p.title || '');
     const abstracts = patents.map((p) => p.abstract || '');
     const claims = patents.map((p) => p.claims || '');
 
-    // Generate section embeddings independently for title, abstract, and claims
-    const titleEmbeddings = await this.generateSectionEmbeddingsBatch(titles);
-    const abstractEmbeddings = await this.generateSectionEmbeddingsBatch(abstracts);
-    const claimsEmbeddings = await this.generateSectionEmbeddingsBatch(claims);
+    // Delegate batch embedding generation to shared OllamaEmbeddingProvider
+    const titleEmbeddings = await this.embeddingProvider.generateBatchEmbeddings(titles);
+    const abstractEmbeddings = await this.embeddingProvider.generateBatchEmbeddings(abstracts);
+    const claimsEmbeddings = await this.embeddingProvider.generateBatchEmbeddings(claims);
 
     return patents.map((patent, index) => ({
       patentId: patent.patentId || '',
