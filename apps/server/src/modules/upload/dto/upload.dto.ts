@@ -49,3 +49,42 @@ export interface EmbedDocumentResponseDto {
   success: boolean;
   embedding: EmbeddingMetadataDto;
 }
+
+export interface CompareDocumentRequestDto {
+  documentId?: string;
+  document?: StandardPatentDocument;
+  topK?: number;
+}
+
+export interface ComparisonPatentMatch {
+  rank: number;
+  patentId: string;
+  title: string;
+  similarityScore: number;
+  ipc?: string;
+  country?: string;
+  publicationDate?: string;
+  matchingSections: string[];
+}
+
+export interface ComparisonAnalysisSummary {
+  summary: string;
+  novelty: string;
+  overlappingClaims: string[];
+  recommendations: string[];
+}
+
+export interface CompareDocumentResponseDto {
+  success: boolean;
+  document: {
+    id?: string;
+    title: string;
+  };
+  retrieval: {
+    topK: number;
+    retrievalConfidence: number;
+  };
+  matches: ComparisonPatentMatch[];
+  analysis: ComparisonAnalysisSummary;
+  searchHistoryId?: string;
+}

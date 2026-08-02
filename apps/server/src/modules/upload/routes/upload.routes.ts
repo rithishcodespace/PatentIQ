@@ -7,6 +7,8 @@ import {
   ProcessDocumentSuccessSchema,
   EmbedDocumentRequestSchema,
   EmbedDocumentSuccessSchema,
+  CompareDocumentRequestSchema,
+  CompareDocumentSuccessSchema,
   standardErrorResponses,
 } from '../../../common/schemas/swagger.schemas.js';
 
@@ -80,6 +82,26 @@ export async function uploadRoutes(
       },
     },
     handler: (req: any, reply) => controller.embedDocument(req, reply),
+  });
+
+  // POST /api/upload/compare - Compare Invention Document Against Patent Database
+  fastify.post('/compare', {
+    schema: {
+      tags: ['Document Ingestion'],
+      summary: 'Compare Invention Document Against Patent Database',
+      description:
+        'Automatically compares an uploaded patent document or direct invention text against the existing patent database using embedding, semantic search, and RAG pipelines.',
+      consumes: ['application/json'],
+      body: CompareDocumentRequestSchema,
+      response: {
+        200: CompareDocumentSuccessSchema,
+        400: standardErrorResponses[400],
+        404: standardErrorResponses[404],
+        500: standardErrorResponses[500],
+        503: standardErrorResponses[503],
+      },
+    },
+    handler: (req: any, reply) => controller.compareDocument(req, reply),
   });
 
   // POST /api/upload - Upload patent document (PDF, DOCX, TXT) metadata & storage

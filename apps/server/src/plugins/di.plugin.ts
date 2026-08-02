@@ -92,6 +92,8 @@ declare module 'fastify' {
   }
 }
 
+import { UploadComparisonService } from '../modules/upload/services/upload-comparison.service.js';
+
 export default fp(async (fastify: FastifyInstance) => {
   // 1. Instantiate Providers
   const vectorStoreProvider = new PineconeVectorStoreProvider();
@@ -130,6 +132,14 @@ export default fp(async (fastify: FastifyInstance) => {
   const uploadsService = new UploadsService(storageProvider, patentService);
   const uploadService = new UploadService(uploadRepo);
   const documentProcessorService = new DocumentProcessorService();
+  const uploadComparisonService = new UploadComparisonService(
+    uploadService,
+    documentProcessorService,
+    embeddingsService,
+    searchService,
+    ragService,
+    historyService
+  );
   const analyticsService = new AnalyticsService();
   const adminService = new AdminService(vectorStoreProvider, llmProvider);
 
@@ -143,7 +153,12 @@ export default fp(async (fastify: FastifyInstance) => {
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
-  const uploadController = new UploadController(uploadService, documentProcessorService, embeddingsService);
+  const uploadController = new UploadController(
+    uploadService,
+    documentProcessorService,
+    embeddingsService,
+    uploadComparisonService
+  );
   const analyticsController = new AnalyticsController(analyticsService);
   const adminController = new AdminController(adminService);
   const historyController = new HistoryController(historyService);
