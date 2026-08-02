@@ -1,14 +1,23 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 import type { IUploadService } from '../interfaces/upload.interface.js';
+import type { IDocumentProcessorService, DirectTextInput } from '../interfaces/upload-processor.interface.js';
 import type {
   UploadSuccessResponseDto,
-  DocumentResponseDto,
   DeleteSuccessResponseDto,
+  ProcessDocumentResponseDto,
 } from '../dto/upload.dto.js';
+import { DocumentProcessorService } from '../services/document-processor.service.js';
 
 export class UploadController {
-  constructor(private readonly uploadService: IUploadService) {}
+  private readonly documentProcessorService: IDocumentProcessorService;
+
+  constructor(
+    private readonly uploadService: IUploadService,
+    documentProcessorService?: IDocumentProcessorService
+  ) {
+    this.documentProcessorService = documentProcessorService || new DocumentProcessorService();
+  }
 
   async uploadFile(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const data = await request.file();
@@ -39,6 +48,43 @@ export class UploadController {
     };
 
     reply.status(201).send(responseDto);
+  }
+
+  async processFileUpload(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const data = await request.file();
+    if (!data) {
+      throw new BadRequestError('No file uploaded in multipart request. Please provide a PDF, DOCX, or TXT document.');
+    }
+
+    const buffer = await data.toBuffer();
+    const processedDocument = await this.documentProcessorService.processFile({
+      filename: data.filename,
+      mimetype: data.mimetype,
+      buffer,
+      size: buffer.length,
+    });
+
+    const responseDto: ProcessDocumentResponseDto = {
+      success: true,
+      data: processedDocument,
+    };
+
+    reply.status(200).send(responseDto);
+  }
+
+  async processDirectText(
+    request: FastifyRequest<{ Body: DirectTextInput }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    const body = request.body;
+    const processedDocument = await this.documentProcessorService.processDirectText(body);
+
+    const responseDto: ProcessDocumentResponseDto = {
+      success: true,
+      data: processedDocument,
+    };
+
+    reply.status(200).send(responseDto);
   }
 
   async getMetadata(

@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UploadController } from '../../../src/modules/upload/controllers/upload.controller.js';
 import { BadRequestError, NotFoundError } from '../../../src/common/errors/http-errors.js';
 import type { UploadedDocumentRecord } from '../../../src/modules/upload/interfaces/upload.interface.js';
+import type { StandardPatentDocument } from '../../../src/modules/upload/interfaces/upload-processor.interface.js';
 
 describe('UploadController Unit Tests', () => {
   let uploadController: UploadController;
   let mockUploadService: any;
+  let mockDocumentProcessorService: any;
 
   const mockRecord: UploadedDocumentRecord = {
     id: 'doc-uuid-1234',
@@ -20,6 +22,14 @@ describe('UploadController Unit Tests', () => {
     status: 'Uploaded',
   };
 
+  const mockStandardDoc: StandardPatentDocument = {
+    title: 'Wireless Charging Drone',
+    abstract: 'Resonant inductive power transfer.',
+    claims: '1. A drone receiver.',
+    keywords: ['wireless', 'drone'],
+    fullText: 'Title: Wireless Charging Drone\n\nAbstract:\nResonant inductive power transfer.',
+  };
+
   beforeEach(() => {
     mockUploadService = {
       uploadDocument: vi.fn().mockResolvedValue(mockRecord),
@@ -27,7 +37,12 @@ describe('UploadController Unit Tests', () => {
       deleteDocument: vi.fn().mockResolvedValue(true),
     };
 
-    uploadController = new UploadController(mockUploadService);
+    mockDocumentProcessorService = {
+      processFile: vi.fn().mockResolvedValue(mockStandardDoc),
+      processDirectText: vi.fn().mockResolvedValue(mockStandardDoc),
+    };
+
+    uploadController = new UploadController(mockUploadService, mockDocumentProcessorService);
   });
 
   describe('uploadFile HTTP Handler', () => {
@@ -73,6 +88,80 @@ describe('UploadController Unit Tests', () => {
       await expect(uploadController.uploadFile(mockRequest, mockReply)).rejects.toThrow(
         BadRequestError
       );
+    });
+  });
+
+  describe('processFileUpload HTTP Handler', () => {
+    it('should process uploaded file and return 200 OK with StandardPatentDocument', async () => {
+      const mockFileObj = {
+        filename: 'invention.pdf',
+        mimetype: 'application/pdf',
+        toBuffer: vi.fn().mockResolvedValue(Buffer.from('content')),
+      };
+
+      const mockRequest: any = {
+        file: vi.fn().mockResolvedValue(mockFileObj),
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await uploadController.processFileUpload(mockRequest, mockReply);
+
+      expect(mockDocumentProcessorService.processFile).toHaveBeenCalledWith({
+        filename: 'invention.pdf',
+        mimetype: 'application/pdf',
+        buffer: expect.any(Buffer),
+        size: 7,
+      });
+
+      expect(mockReply.status).toHaveBeenCalledWith(200);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        success: true,
+        data: mockStandardDoc,
+      });
+    });
+
+    it('should throw BadRequestError if multipart file is missing', async () => {
+      const mockRequest: any = {
+        file: vi.fn().mockResolvedValue(null),
+      };
+      const mockReply: any = {};
+
+      await expect(uploadController.processFileUpload(mockRequest, mockReply)).rejects.toThrow(
+        BadRequestError
+      );
+    });
+  });
+
+  describe('processDirectText HTTP Handler', () => {
+    it('should process direct JSON invention payload and return 200 OK with StandardPatentDocument', async () => {
+      const payload = {
+        title: 'Wireless Charging Drone',
+        abstract: 'Resonant inductive power transfer.',
+        claims: '1. A drone receiver.',
+        keywords: ['wireless', 'drone'],
+      };
+
+      const mockRequest: any = {
+        body: payload,
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await uploadController.processDirectText(mockRequest, mockReply);
+
+      expect(mockDocumentProcessorService.processDirectText).toHaveBeenCalledWith(payload);
+      expect(mockReply.status).toHaveBeenCalledWith(200);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        success: true,
+        data: mockStandardDoc,
+      });
     });
   });
 

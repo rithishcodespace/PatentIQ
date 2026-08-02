@@ -48,6 +48,7 @@ import { HistoryController } from '../modules/history/controllers/history.contro
 // Upload Module
 import { UploadRepository } from '../modules/upload/repositories/upload.repository.js';
 import { UploadService } from '../modules/upload/services/upload.service.js';
+import { DocumentProcessorService } from '../modules/upload/services/document-processor.service.js';
 import { UploadController } from '../modules/upload/controllers/upload.controller.js';
 
 export interface DIContainer {
@@ -77,6 +78,7 @@ export interface DIContainer {
     reports: ReportsService;
     uploads: UploadsService;
     upload: UploadService;
+    documentProcessor: DocumentProcessorService;
     analytics: AnalyticsService;
     admin: AdminService;
     history: HistoryService;
@@ -127,6 +129,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
   const uploadsService = new UploadsService(storageProvider, patentService);
   const uploadService = new UploadService(uploadRepo);
+  const documentProcessorService = new DocumentProcessorService();
   const analyticsService = new AnalyticsService();
   const adminService = new AdminService(vectorStoreProvider, llmProvider);
 
@@ -140,7 +143,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
-  const uploadController = new UploadController(uploadService);
+  const uploadController = new UploadController(uploadService, documentProcessorService);
   const analyticsController = new AnalyticsController(analyticsService);
   const adminController = new AdminController(adminService);
   const historyController = new HistoryController(historyService);
@@ -173,6 +176,7 @@ export default fp(async (fastify: FastifyInstance) => {
       reports: reportsService,
       uploads: uploadsService,
       upload: uploadService,
+      documentProcessor: documentProcessorService,
       analytics: analyticsService,
       admin: adminService,
       history: historyService,
@@ -180,4 +184,5 @@ export default fp(async (fastify: FastifyInstance) => {
     },
   });
 });
+
 

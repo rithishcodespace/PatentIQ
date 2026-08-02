@@ -428,3 +428,45 @@ export const DocumentDeleteSuccessSchema = {
   },
 };
 
+export const StandardPatentDocumentSchema = {
+  type: 'object',
+  required: ['title', 'abstract', 'claims', 'keywords', 'fullText'],
+  properties: {
+    title: { type: 'string', description: 'Normalized patent or invention title', example: 'Wireless Charging Drone' },
+    abstract: { type: 'string', description: 'Normalized patent abstract', example: 'An autonomous drone configured for resonant inductive wireless power transfer during flight.' },
+    claims: { type: 'string', description: 'Normalized claims or novel features', example: '1. An autonomous aerial vehicle comprising an inductive receiver coil...' },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Extracted normalized keywords',
+      example: ['wireless', 'charging', 'drone', 'inductive power'],
+    },
+    fullText: { type: 'string', description: 'Unified complete normalized document text', example: 'Title: Wireless Charging Drone\n\nAbstract:\nAn autonomous drone...' },
+  },
+};
+
+export const ProcessDirectTextPayloadSchema = {
+  type: 'object',
+  required: ['title', 'abstract', 'claims'],
+  properties: {
+    title: { type: 'string', description: 'Patent title', example: 'Wireless Charging Drone' },
+    abstract: { type: 'string', description: 'Patent abstract / overview', example: 'An autonomous drone configured for resonant inductive wireless power transfer during flight.' },
+    claims: { type: 'string', description: 'Patent claims or novel features', example: '1. An autonomous aerial vehicle comprising an inductive receiver coil...' },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Optional array of keywords',
+      example: ['wireless', 'charging'],
+    },
+  },
+};
+
+export const ProcessDocumentSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: StandardPatentDocumentSchema,
+  },
+};
+
+

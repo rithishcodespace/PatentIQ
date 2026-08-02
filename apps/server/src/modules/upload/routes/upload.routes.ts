@@ -3,6 +3,8 @@ import { UploadController } from '../controllers/upload.controller.js';
 import {
   DocumentUploadSuccessSchema,
   DocumentDeleteSuccessSchema,
+  ProcessDirectTextPayloadSchema,
+  ProcessDocumentSuccessSchema,
   standardErrorResponses,
 } from '../../../common/schemas/swagger.schemas.js';
 
@@ -10,11 +12,59 @@ export async function uploadRoutes(
   fastify: FastifyInstance,
   controller: UploadController
 ): Promise<void> {
-  // POST /api/upload - Upload patent document (PDF, DOCX, TXT)
+  // POST /api/upload/process - Process Uploaded Document (PDF, DOCX, TXT)
+  fastify.post('/process', {
+    schema: {
+      tags: ['Document Ingestion'],
+      summary: 'Process Uploaded Patent Document',
+      description:
+        'Extracts and normalizes text from an uploaded document (PDF, DOCX, TXT) to produce a standardized patent document object.',
+      consumes: ['multipart/form-data'],
+      body: {
+        type: 'object',
+        properties: {
+          file: {
+            type: 'string',
+            format: 'binary',
+            description:
+              'Patent document file (Supported MIME types: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, text/plain)',
+          },
+        },
+      },
+      response: {
+        200: ProcessDocumentSuccessSchema,
+        400: standardErrorResponses[400],
+        422: standardErrorResponses[422],
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req, reply) => controller.processFileUpload(req, reply),
+  });
+
+  // POST /api/upload/process-text - Process Directly Entered Invention Text
+  fastify.post('/process-text', {
+    schema: {
+      tags: ['Document Ingestion'],
+      summary: 'Process Directly Entered Invention Text',
+      description:
+        'Normalizes manually entered invention text (title, abstract, claims, keywords) to produce the exact same standardized patent document object.',
+      consumes: ['application/json'],
+      body: ProcessDirectTextPayloadSchema,
+      response: {
+        200: ProcessDocumentSuccessSchema,
+        400: standardErrorResponses[400],
+        422: standardErrorResponses[422],
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req: any, reply) => controller.processDirectText(req, reply),
+  });
+
+  // POST /api/upload - Upload patent document (PDF, DOCX, TXT) metadata & storage
   fastify.post('/', {
     schema: {
       tags: ['Document Upload'],
-      summary: 'Upload Patent Document',
+      summary: 'Upload Patent Document Metadata',
       description:
         'Uploads a patent-related document (PDF, DOCX, TXT up to 20MB) to secure local storage and records metadata in PostgreSQL.',
       consumes: ['multipart/form-data'],
