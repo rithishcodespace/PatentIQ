@@ -61,31 +61,28 @@ const UploadCompareView = () => {
           <div className="flex items-center gap-2 bg-white/10 p-1 rounded-xl backdrop-blur">
             <button
               onClick={() => setActiveTab('upload')}
-              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${
-                activeTab === 'upload' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-indigo-200'
-              }`}
+              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${activeTab === 'upload' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-indigo-200'
+                }`}
             >
               1. Upload File
             </button>
             <button
               onClick={() => extractedData && setActiveTab('extracted')}
               disabled={!extractedData}
-              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${
-                activeTab === 'extracted'
+              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${activeTab === 'extracted'
                   ? 'bg-white text-slate-900 font-semibold shadow-xs'
                   : 'text-indigo-200 opacity-60'
-              }`}
+                }`}
             >
               2. Extracted Text
             </button>
             <button
               onClick={() => compareResults && setActiveTab('compare')}
               disabled={!compareResults}
-              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${
-                activeTab === 'compare'
+              className={`rounded-lg px-3 py-1.5 font-body text-xs font-medium transition ${activeTab === 'compare'
                   ? 'bg-white text-slate-900 font-semibold shadow-xs'
                   : 'text-indigo-200 opacity-60'
-              }`}
+                }`}
             >
               3. Prior Art Comparison
             </button>

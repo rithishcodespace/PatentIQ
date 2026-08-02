@@ -400,3 +400,98 @@ export const HealthStatusSchema = {
     },
   },
 };
+
+export const DocumentUploadSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    document: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+        originalFileName: { type: 'string', example: 'Patent_Application_Draft.pdf' },
+        storedFileName: { type: 'string', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab.pdf' },
+        mimeType: { type: 'string', example: 'application/pdf' },
+        size: { type: 'integer', example: 102345 },
+        status: { type: 'string', enum: ['Uploaded', 'Processing', 'Completed', 'Failed'], example: 'Uploaded' },
+        uploadedAt: { type: 'string', format: 'date-time', example: '2026-08-01T18:00:00.000Z' },
+      },
+    },
+  },
+};
+
+export const DocumentDeleteSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    message: { type: 'string', example: 'Document deleted successfully' },
+  },
+};
+
+export const StandardPatentDocumentSchema = {
+  type: 'object',
+  required: ['title', 'abstract', 'claims', 'keywords', 'fullText'],
+  properties: {
+    title: { type: 'string', description: 'Normalized patent or invention title', example: 'Wireless Charging Drone' },
+    abstract: { type: 'string', description: 'Normalized patent abstract', example: 'An autonomous drone configured for resonant inductive wireless power transfer during flight.' },
+    claims: { type: 'string', description: 'Normalized claims or novel features', example: '1. An autonomous aerial vehicle comprising an inductive receiver coil...' },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Extracted normalized keywords',
+      example: ['wireless', 'charging', 'drone', 'inductive power'],
+    },
+    fullText: { type: 'string', description: 'Unified complete normalized document text', example: 'Title: Wireless Charging Drone\n\nAbstract:\nAn autonomous drone...' },
+  },
+};
+
+export const ProcessDirectTextPayloadSchema = {
+  type: 'object',
+  required: ['title', 'abstract', 'claims'],
+  properties: {
+    title: { type: 'string', description: 'Patent title', example: 'Wireless Charging Drone' },
+    abstract: { type: 'string', description: 'Patent abstract / overview', example: 'An autonomous drone configured for resonant inductive wireless power transfer during flight.' },
+    claims: { type: 'string', description: 'Patent claims or novel features', example: '1. An autonomous aerial vehicle comprising an inductive receiver coil...' },
+    keywords: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Optional array of keywords',
+      example: ['wireless', 'charging'],
+    },
+  },
+};
+
+export const ProcessDocumentSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data: StandardPatentDocumentSchema,
+  },
+};
+
+export const EmbedDocumentRequestSchema = {
+  type: 'object',
+  properties: {
+    documentId: { type: 'string', format: 'uuid', description: 'ID of previously uploaded document', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+    document: StandardPatentDocumentSchema,
+  },
+};
+
+export const EmbedDocumentSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    embedding: {
+      type: 'object',
+      properties: {
+        model: { type: 'string', example: 'nomic-embed-text' },
+        dimensions: { type: 'integer', example: 768 },
+        sections: { type: 'array', items: { type: 'string' }, example: ['title', 'abstract', 'claims'] },
+        generatedAt: { type: 'string', format: 'date-time', example: '2026-08-02T09:09:22.000Z' },
+      },
+    },
+  },
+};
+
+
+

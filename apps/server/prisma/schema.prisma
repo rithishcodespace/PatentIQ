@@ -58,3 +58,27 @@ model NoveltyAnalysis {
   @@map("novelty_analyses")
 }
 
+enum UploadStatus {
+  Uploaded
+  Processing
+  Completed
+  Failed
+}
+
+model UploadedDocument {
+  id               String       @id @default(uuid())
+  userId           String?      @map("user_id")
+  originalFileName String       @map("original_file_name")
+  storedFileName   String       @map("stored_file_name")
+  mimeType         String       @map("mime_type")
+  extension        String
+  size             Int
+  storagePath      String       @map("storage_path")
+  uploadedAt       DateTime     @default(now()) @map("uploaded_at")
+  status           UploadStatus @default(Uploaded)
+
+  @@index([userId])
+  @@index([uploadedAt])
+  @@map("uploaded_documents")
+}
+
