@@ -16,32 +16,43 @@ const Search = () => {
 
   const handleSearch = async (data: PatentSearchPayload) => {
     setStep(0);
-    setTimeout(() => setStep(1), 400);
-    setTimeout(() => setStep(2), 800);
-    setTimeout(() => setStep(3), 1200);
-    setTimeout(() => setStep(4), 1700);
+    const stepTimer1 = setTimeout(() => setStep(1), 300);
+    const stepTimer2 = setTimeout(() => setStep(2), 600);
+    const stepTimer3 = setTimeout(() => setStep(3), 900);
+    const stepTimer4 = setTimeout(() => setStep(4), 1200);
 
-    const response = await runSearch(data);
+    try {
+      const response = await runSearch(data);
 
-    if (response) {
-      navigate("/results", { state: response });
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
+      clearTimeout(stepTimer3);
+      clearTimeout(stepTimer4);
+
+      if (response) {
+        navigate("/results", { state: response });
+      }
+    } catch (err) {
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
+      clearTimeout(stepTimer3);
+      clearTimeout(stepTimer4);
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-        className="mb-6 text-center"
+        className="text-center space-y-2"
       >
-        <p className="code-chip mb-2 inline-block bg-indigo/5 text-indigo">
-          STEP 01 · DESCRIBE THE INVENTION
-        </p>
-        <p className="mt-1.5 font-body text-sm text-slate">
-          Fill in the details, paste a draft, or upload a PDF — however your
-          invention is documented right now.
+        <h1 className="font-display text-3xl font-bold text-slate-900">
+          Prior-Art & Patent Novelty Search
+        </h1>
+        <p className="font-body text-xs text-slate-600 max-w-xl mx-auto">
+          Specify your invention draft using structured fields, raw text, or document uploads to retrieve ranked prior art candidates.
         </p>
       </motion.div>
 
@@ -52,7 +63,7 @@ const Search = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="space-y-6"
+            className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-6"
           >
             <Loader />
             <SearchProgress step={step} />
