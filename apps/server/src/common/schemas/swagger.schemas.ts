@@ -102,6 +102,17 @@ export const Error500Schema = {
   },
 };
 
+export const Error503Schema = {
+  ...ErrorResponseSchema,
+  description: 'Service Unavailable - External service or LLM provider is unreachable',
+  example: {
+    statusCode: 503,
+    error: 'Service Unavailable',
+    message: 'Ollama embedding service is currently unreachable',
+    timestamp: '2026-08-01T12:00:00.000Z',
+  },
+};
+
 // Standard HTTP error responses map for reuse across endpoints
 export const standardErrorResponses = {
   400: Error400Schema,
@@ -112,6 +123,7 @@ export const standardErrorResponses = {
   422: Error422Schema,
   429: Error429Schema,
   500: Error500Schema,
+  503: Error503Schema,
 };
 
 // --- Model Schemas ---
@@ -492,6 +504,63 @@ export const EmbedDocumentSuccessSchema = {
     },
   },
 };
+
+export const CompareDocumentRequestSchema = {
+  type: 'object',
+  properties: {
+    documentId: { type: 'string', format: 'uuid', description: 'ID of previously uploaded document', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+    document: StandardPatentDocumentSchema,
+    topK: { type: 'integer', minimum: 1, maximum: 100, default: 10, example: 10 },
+  },
+};
+
+export const CompareDocumentSuccessSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    document: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid', example: 'e83b9c7d-3a4b-4c5d-8e9f-0123456789ab' },
+        title: { type: 'string', example: 'Wireless Charging Drone' },
+      },
+    },
+    retrieval: {
+      type: 'object',
+      properties: {
+        topK: { type: 'integer', example: 10 },
+        retrievalConfidence: { type: 'number', example: 91.6 },
+      },
+    },
+    matches: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rank: { type: 'integer', example: 1 },
+          patentId: { type: 'string', example: 'US10123456B2' },
+          title: { type: 'string', example: 'Wireless Power Transfer System' },
+          similarityScore: { type: 'number', example: 0.92 },
+          ipc: { type: 'string', example: 'H02J 50/10' },
+          country: { type: 'string', example: 'US' },
+          publicationDate: { type: 'string', example: '2023-01-15' },
+          matchingSections: { type: 'array', items: { type: 'string' }, example: ['Abstract', 'Claims'] },
+        },
+      },
+    },
+    analysis: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string', example: 'The uploaded invention shows high similarity to prior-art patent US10123456B2.' },
+        novelty: { type: 'string', example: 'Dual-frequency resonant coils integrated directly into rotor arms.' },
+        overlappingClaims: { type: 'array', items: { type: 'string' }, example: ['Claim 1 overlaps with US10123456B2 Claim 4'] },
+        recommendations: { type: 'array', items: { type: 'string' }, example: ['Differentiate rotor arm structure in dependent claims.'] },
+      },
+    },
+    searchHistoryId: { type: 'string', format: 'uuid', example: 'a1b2c3d4-e5f6-7890-abcd-1234567890ab' },
+  },
+};
+
 
 
 

@@ -4,12 +4,14 @@ import { BadRequestError, NotFoundError } from '../../../common/errors/http-erro
 import type { IUploadService } from '../interfaces/upload.interface.js';
 import type { IDocumentProcessorService, DirectTextInput, StandardPatentDocument } from '../interfaces/upload-processor.interface.js';
 import type { IEmbeddingsService } from '../../embeddings/interfaces/embeddings-service.interface.js';
+import type { IUploadComparisonService } from '../interfaces/upload-comparison.interface.js';
 import type {
   UploadSuccessResponseDto,
   DeleteSuccessResponseDto,
   ProcessDocumentResponseDto,
   EmbedDocumentRequestDto,
   EmbedDocumentResponseDto,
+  CompareDocumentRequestDto,
 } from '../dto/upload.dto.js';
 import { DocumentProcessorService } from '../services/document-processor.service.js';
 
@@ -19,7 +21,8 @@ export class UploadController {
   constructor(
     private readonly uploadService: IUploadService,
     documentProcessorService?: IDocumentProcessorService,
-    private readonly embeddingsService?: IEmbeddingsService
+    private readonly embeddingsService?: IEmbeddingsService,
+    private readonly uploadComparisonService?: IUploadComparisonService
   ) {
     this.documentProcessorService = documentProcessorService || new DocumentProcessorService();
   }
@@ -140,6 +143,18 @@ export class UploadController {
       },
     };
 
+    reply.status(200).send(responseDto);
+  }
+
+  async compareDocument(
+    request: FastifyRequest<{ Body: CompareDocumentRequestDto }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    if (!this.uploadComparisonService) {
+      throw new BadRequestError('Upload comparison service is not configured.');
+    }
+
+    const responseDto = await this.uploadComparisonService.compareDocument(request.body);
     reply.status(200).send(responseDto);
   }
 

@@ -1,4 +1,4 @@
-import pdf from 'pdf-parse';
+import * as pdfParseModule from 'pdf-parse';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 import type { IDocumentParser, ParsedDocumentResult } from '../interfaces/upload-processor.interface.js';
 
@@ -9,6 +9,7 @@ export class PdfParser implements IDocumentParser {
     }
 
     try {
+      const pdf = typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule as any).default || pdfParseModule;
       const data = await pdf(buffer);
       const text = data.text ? data.text.trim() : '';
 

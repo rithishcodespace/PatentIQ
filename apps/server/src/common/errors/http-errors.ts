@@ -48,3 +48,10 @@ export class GatewayTimeoutError extends AppError {
   }
 }
 
+export class UnprocessableEntityError extends AppError {
+  constructor(message: string = 'Unprocessable entity') {
+    super(message, 422);
+  }
+}
+
+

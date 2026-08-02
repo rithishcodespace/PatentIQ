@@ -9,6 +9,7 @@ describe('UploadController Unit Tests', () => {
   let mockUploadService: any;
   let mockDocumentProcessorService: any;
   let mockEmbeddingsService: any;
+  let mockUploadComparisonService: any;
 
   const mockRecord: UploadedDocumentRecord = {
     id: 'doc-uuid-1234',
@@ -29,6 +30,27 @@ describe('UploadController Unit Tests', () => {
     claims: '1. A drone receiver.',
     keywords: ['wireless', 'drone'],
     fullText: 'Title: Wireless Charging Drone\n\nAbstract:\nResonant inductive power transfer.',
+  };
+
+  const mockComparisonResponse = {
+    success: true,
+    document: { title: 'Wireless Charging Drone' },
+    retrieval: { topK: 10, retrievalConfidence: 91.6 },
+    matches: [
+      {
+        rank: 1,
+        patentId: 'US10123456B2',
+        title: 'Wireless Power Transfer System',
+        similarityScore: 0.92,
+        matchingSections: ['Abstract', 'Claims'],
+      },
+    ],
+    analysis: {
+      summary: 'High overlap found.',
+      novelty: 'Rotor arm integrated coil assembly',
+      overlappingClaims: ['Claim 1 overlap'],
+      recommendations: ['Clarify claim scope'],
+    },
   };
 
   beforeEach(() => {
@@ -53,10 +75,15 @@ describe('UploadController Unit Tests', () => {
       }),
     };
 
+    mockUploadComparisonService = {
+      compareDocument: vi.fn().mockResolvedValue(mockComparisonResponse),
+    };
+
     uploadController = new UploadController(
       mockUploadService,
       mockDocumentProcessorService,
-      mockEmbeddingsService
+      mockEmbeddingsService,
+      mockUploadComparisonService
     );
   });
 
@@ -225,6 +252,43 @@ describe('UploadController Unit Tests', () => {
       const mockReply: any = {};
 
       await expect(controllerWithoutEmbeddings.embedDocument(mockRequest, mockReply)).rejects.toThrow(
+        BadRequestError
+      );
+    });
+  });
+
+  describe('compareDocument HTTP Handler', () => {
+    it('should delegate to UploadComparisonService and return 200 OK comparison report', async () => {
+      const mockRequest: any = {
+        body: { document: mockStandardDoc, topK: 10 },
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await uploadController.compareDocument(mockRequest, mockReply);
+
+      expect(mockUploadComparisonService.compareDocument).toHaveBeenCalledWith({
+        document: mockStandardDoc,
+        topK: 10,
+      });
+      expect(mockReply.status).toHaveBeenCalledWith(200);
+      expect(mockReply.send).toHaveBeenCalledWith(mockComparisonResponse);
+    });
+
+    it('should throw BadRequestError if upload comparison service is not configured', async () => {
+      const controllerWithoutComparison = new UploadController(
+        mockUploadService,
+        mockDocumentProcessorService,
+        mockEmbeddingsService
+      );
+
+      const mockRequest: any = { body: { document: mockStandardDoc } };
+      const mockReply: any = {};
+
+      await expect(controllerWithoutComparison.compareDocument(mockRequest, mockReply)).rejects.toThrow(
         BadRequestError
       );
     });
