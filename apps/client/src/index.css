@@ -1,41 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
 
-  --color-ink: #0b1120;
-  --color-paper: #faf9f5;
-  --color-indigo-brand: #1e2a78;
-  --color-amber-brand: #e8a33d;
-  --color-slate-brand: #5b6472;
+  --color-ink: #0f172a;
+  --color-paper: #ffffff;
+  --color-indigo-brand: #3b82f6;
+  --color-amber-brand: #f59e0b;
+  --color-slate-brand: #64748b;
 }
 
-/* ==========================================================================
-  PatentAI — Global Font Typography & Token Setup
-  Fonts: Fraunces (display) · Inter (body/UI) · IBM Plex Mono (codes/data)
-  ========================================================================== */
-
 :root {
-  /* Type */
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Color */
-  --ink: #0b1120;
-  --paper: #faf9f5;
-  --indigo: #1e2a78;
-  --amber: #e8a33d;
-  --slate: #5b6472;
-  --slate-100: #eef0f4;
-  --emerald: #1f9d6c;
+  --ink: #0f172a;
+  --paper: #ffffff;
+  --indigo: #3b82f6;
+  --amber: #f59e0b;
+  --slate: #64748b;
+  --slate-100: #f1f5f9;
+  --emerald: #10b981;
 
-  /* Motion */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -51,18 +43,18 @@
 html, body {
   font-family: var(--font-body);
   color: var(--ink);
-  background-color: var(--paper);
+  background-color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global typography overrides */
 button, input, select, textarea {
   font-family: inherit;
 }
 
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 .font-body {
@@ -73,21 +65,13 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-mono);
 }
 
-/* Blueprint grid texture */
-.blueprint-grid {
-  background-image:
-    linear-gradient(rgba(30, 42, 120, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 42, 120, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-/* Patent classification code chip */
 .code-chip {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: var(--indigo);
-  background: var(--slate-100);
-  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #3b82f6;
+  background: #eff6ff;
+  border-radius: 6px;
   padding: 2px 8px;
 }

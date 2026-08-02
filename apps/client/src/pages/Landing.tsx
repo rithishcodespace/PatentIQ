@@ -1,94 +1,88 @@
-import { Link } from "react-router-dom";
-import { motion, type Variants } from "framer-motion";
-import PatentConstellation from "../components/common/PatentConstellation";
+import { Link } from 'react-router-dom';
+import { motion, type Variants } from 'framer-motion';
+import { Search, UploadCloud, ArrowRight } from 'lucide-react';
+import PatentConstellation from '../components/common/PatentConstellation';
 
 const container: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.12, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
   },
 };
 
 const item: Variants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 12 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.25, 1, 0.5, 1] },
+    transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
   },
 };
 
 const Landing = () => {
   return (
-    <section className="mx-auto grid min-h-[85vh] max-w-7xl items-center gap-16 px-6 py-12 lg:grid-cols-2">
-      {/* Left — thesis */}
-      <motion.div variants={container} initial="hidden" animate="show">
-        <motion.p
-          variants={item}
-          className="code-chip mb-4 inline-block bg-indigo-50 text-indigo-600"
-        >
-          IPC / CPC-AWARE SEMANTIC SEARCH
-        </motion.p>
-
+    <section className="mx-auto grid min-h-[82vh] max-w-7xl items-center gap-12 px-4 py-8 lg:grid-cols-2 lg:px-6">
+      {/* Left Column — Clean Headline & Actions */}
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
         <motion.h1
           variants={item}
-          className="font-display text-5xl font-semibold leading-[1.08] text-ink lg:text-6xl"
+          className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight"
         >
-          Know if it's
-          <br />
-          been done<span className="text-amber">.</span>
+          Automated Prior-Art Search & Novelty Analysis
         </motion.h1>
 
         <motion.p
           variants={item}
-          className="mt-6 max-w-md font-body text-lg leading-8 text-slate"
+          className="font-body text-base text-slate-600 leading-relaxed max-w-xl"
         >
-          PatentIQ evaluates your invention draft the way a patent examiner does,
-          searching millions of prior-art filings by technical meaning and IPC classification —
-          built for enterprise innovators and patent attorneys.
+          Evaluate invention disclosures against global patent databases. Identify prior art, analyze overlapping claims, and evaluate patentability with instant citation reports.
         </motion.p>
 
-        <motion.div variants={item} className="mt-10 flex items-center gap-4">
+        <motion.div variants={item} className="flex flex-wrap items-center gap-4 pt-2">
           <Link
             to="/search"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-4 font-body text-sm font-medium text-white transition hover:bg-indigo-500"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 font-body text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition"
           >
-            Start a search
-            <span aria-hidden>→</span>
+            <Search className="h-4 w-4" />
+            Start Search
+            <ArrowRight className="h-4 w-4" />
           </Link>
+
           <Link
-            to="/how-it-works"
-            className="font-body text-sm font-medium text-slate hover:text-indigo"
+            to="/upload"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 font-body text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
           >
-            How search works
+            <UploadCloud className="h-4 w-4 text-blue-600" />
+            Upload Invention Draft
           </Link>
         </motion.div>
 
+        {/* Clean Metrics Summary */}
         <motion.div
           variants={item}
-          className="mt-14 flex gap-8 border-t border-slate-100 pt-6"
+          className="grid grid-cols-3 gap-6 border-t border-slate-200/80 pt-6 text-slate-900"
         >
           <div>
-            <p className="font-display text-2xl text-ink">140M+</p>
-            <p className="font-body text-xs text-slate">Filings indexed</p>
+            <p className="font-display text-2xl font-bold text-slate-900">140M+</p>
+            <p className="font-body text-xs text-slate-500 mt-0.5">Patents Indexed</p>
           </div>
           <div>
-            <p className="font-display text-2xl text-ink">&lt;30s</p>
-            <p className="font-body text-xs text-slate">Avg. search time</p>
+            <p className="font-display text-2xl font-bold text-slate-900">&lt;1.5s</p>
+            <p className="font-body text-xs text-slate-500 mt-0.5">Avg. Response Time</p>
           </div>
           <div>
-            <p className="font-display text-2xl text-ink">₹0</p>
-            <p className="font-body text-xs text-slate">To start</p>
+            <p className="font-display text-2xl font-bold text-slate-900">Top-K</p>
+            <p className="font-body text-xs text-slate-500 mt-0.5">Ranked Prior Art</p>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Right — signature visual */}
+      {/* Right Column — 3D Patent Constellation Visual */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.94 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1], delay: 0.2 }}
-        className="blueprint-grid relative h-[480px] overflow-hidden rounded-3xl border border-slate-100 bg-gradient-to-br from-indigo/[0.03] to-transparent"
+        transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1], delay: 0.15 }}
+        className="blueprint-grid relative h-[440px] overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-blue-50/50 via-white to-slate-50 shadow-sm"
       >
         <PatentConstellation className="h-full w-full" />
       </motion.div>

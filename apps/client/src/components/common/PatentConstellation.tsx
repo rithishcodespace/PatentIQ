@@ -3,25 +3,12 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
 import * as THREE from "three";
 
-/**
- * PatentConstellation
- * ---------------------------------------------------------------
- * The product's core idea made visible: semantic similarity is
- * distance in embedding space. The amber node is the query patent.
- * Indigo nodes are prior-art candidates scattered around it; the
- * closer (more similar) a node is, the brighter and more opaque
- * its connecting line. Used on the landing hero and reusable on
- * the results page with real similarity scores swapped in.
- * ---------------------------------------------------------------
- */
-
 type NodeDatum = {
   position: [number, number, number];
-  similarity: number; // 0..1
+  similarity: number;
 };
 
 function generateNodes(count: number, seed = 7): NodeDatum[] {
-  // deterministic pseudo-random scatter so the layout doesn't jump on re-render
   let s = seed;
   const rand = () => {
     s = (s * 16807) % 2147483647;
@@ -29,33 +16,34 @@ function generateNodes(count: number, seed = 7): NodeDatum[] {
   };
 
   return Array.from({ length: count }).map(() => {
-    const radius = 1.6 + rand() * 2.2;
+    const radius = 1.5 + rand() * 2.4;
     const theta = rand() * Math.PI * 2;
     const phi = Math.acos(2 * rand() - 1);
     const x = radius * Math.sin(phi) * Math.cos(theta);
     const y = radius * Math.sin(phi) * Math.sin(theta) * 0.6;
     const z = radius * Math.cos(phi);
-    // nodes closer to center are treated as "more similar"
-    const similarity = Math.max(0, 1 - radius / 3.8);
+    const similarity = Math.max(0, 1 - radius / 4.0);
     return { position: [x, y, z], similarity };
   });
 }
 
-function QueryNode() {
+function CenterNode() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    const scale = 1 + Math.sin(t * 1.8) * 0.08;
-    ref.current?.scale.setScalar(scale);
+    if (ref.current) {
+      const t = clock.getElapsedTime();
+      const scale = 1 + Math.sin(t * 1.8) * 0.06;
+      ref.current.scale.setScalar(scale);
+    }
   });
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.16, 24, 24]} />
+      <sphereGeometry args={[0.18, 32, 32]} />
       <meshStandardMaterial
-        color="#e8a33d"
-        emissive="#e8a33d"
-        emissiveIntensity={0.9}
-        roughness={0.3}
+        color="#3b82f6"
+        emissive="#2563eb"
+        emissiveIntensity={0.8}
+        roughness={0.2}
       />
     </mesh>
   );
@@ -63,27 +51,27 @@ function QueryNode() {
 
 function CandidateNode({ node }: { node: NodeDatum }) {
   const isStrongMatch = node.similarity > 0.55;
-  const size = 0.045 + node.similarity * 0.05;
+  const size = 0.04 + node.similarity * 0.05;
   return (
     <mesh position={node.position}>
       <sphereGeometry args={[size, 16, 16]} />
       <meshStandardMaterial
-        color={isStrongMatch ? "#f2c077" : "#5a6ad1"}
-        emissive={isStrongMatch ? "#e8a33d" : "#1e2a78"}
-        emissiveIntensity={isStrongMatch ? 0.5 : 0.25}
-        roughness={0.5}
+        color={isStrongMatch ? "#60a5fa" : "#818cf8"}
+        emissive={isStrongMatch ? "#3b82f6" : "#4f46e5"}
+        emissiveIntensity={isStrongMatch ? 0.6 : 0.25}
+        roughness={0.4}
       />
     </mesh>
   );
 }
 
 function ConnectionLine({ node }: { node: NodeDatum }) {
-  const opacity = 0.08 + node.similarity * 0.55;
+  const opacity = 0.1 + node.similarity * 0.5;
   return (
     <Line
       points={[[0, 0, 0], node.position]}
-      color={node.similarity > 0.55 ? "#e8a33d" : "#8892c9"}
-      lineWidth={0.6}
+      color={node.similarity > 0.55 ? "#60a5fa" : "#a5b4fc"}
+      lineWidth={0.7}
       transparent
       opacity={opacity}
     />
@@ -92,15 +80,17 @@ function ConnectionLine({ node }: { node: NodeDatum }) {
 
 function RotatingGroup() {
   const groupRef = useRef<THREE.Group>(null);
-  const nodes = useMemo(() => generateNodes(34), []);
+  const nodes = useMemo(() => generateNodes(32), []);
 
   useFrame((_, delta) => {
-    if (groupRef.current) groupRef.current.rotation.y += delta * 0.12;
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.14;
+    }
   });
 
   return (
     <group ref={groupRef}>
-      <QueryNode />
+      <CenterNode />
       {nodes.map((n, i) => (
         <group key={i}>
           <ConnectionLine node={n} />
@@ -119,20 +109,15 @@ export default function PatentConstellation({
   return (
     <div className={`relative ${className}`}>
       <Canvas
-        camera={{ position: [0, 0.8, 6.2], fov: 42 }}
+        camera={{ position: [0, 0.8, 6.0], fov: 42 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.6} />
-        <pointLight position={[4, 4, 4]} intensity={1.1} color="#ffffff" />
-        <pointLight position={[-4, -2, -3]} intensity={0.4} color="#1e2a78" />
+        <ambientLight intensity={0.7} />
+        <pointLight position={[5, 5, 5]} intensity={1.2} color="#ffffff" />
+        <pointLight position={[-4, -3, -3]} intensity={0.5} color="#3b82f6" />
         <RotatingGroup />
       </Canvas>
-
-      {/* caption overlay, mono/data-style */}
-      <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
-        <span className="code-chip">QUERY → 34 CANDIDATES SCANNED</span>
-      </div>
     </div>
   );
 }
