@@ -65,12 +65,17 @@ export class RagService implements IRagService {
       const cached = await this.cacheProvider.get<RagAnalysisResponse>(cacheKey);
       if (cached) {
         console.log(`[RagService] Cache HIT for query="${query}" | key="${cacheKey}"`);
+        const cachedMetrics: RagMetrics = {
+          retrievalTimeMs: cached.metrics?.retrievalTimeMs ?? 0,
+          promptTimeMs: cached.metrics?.promptTimeMs ?? 0,
+          llmInferenceTimeMs: cached.metrics?.llmInferenceTimeMs ?? 0,
+          totalTimeMs: Date.now() - totalStart,
+          retrievedCount: cached.metrics?.retrievedCount ?? cached.retrievedPatents?.length ?? 0,
+          overlappingClaimsCount: cached.metrics?.overlappingClaimsCount ?? 0,
+        };
         return {
           ...cached,
-          metrics: {
-            ...cached.metrics,
-            totalTimeMs: Date.now() - totalStart,
-          },
+          metrics: cachedMetrics,
         };
       }
     }

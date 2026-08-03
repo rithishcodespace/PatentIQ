@@ -1,10 +1,12 @@
-import Redis from 'ioredis';
+import ioredisModule from 'ioredis';
 import crypto from 'node:crypto';
 import type { ICacheProvider } from './cache-provider.interface.js';
 import { env } from '../../config/env.config.js';
 
+const RedisClient = (ioredisModule as any).default || ioredisModule;
+
 export class RedisCacheProvider implements ICacheProvider {
-  private client: Redis | null = null;
+  private client: any = null;
   private isConnected = false;
   private inMemoryCache = new Map<string, { value: any; expiresAt: number }>();
 
@@ -14,10 +16,10 @@ export class RedisCacheProvider implements ICacheProvider {
       return;
     }
 
-    const connectionString = redisUrl || env.REDIS_URL || 'redis://localhost:6379';
+    const connectionString = redisUrl || (env as any).REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379';
 
     try {
-      this.client = new Redis(connectionString, {
+      this.client = new RedisClient(connectionString, {
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false,
         connectTimeout: 2000,
@@ -29,7 +31,7 @@ export class RedisCacheProvider implements ICacheProvider {
         console.log('[CacheProvider] Connected to Redis server.');
       });
 
-      this.client.on('error', (err) => {
+      this.client.on('error', (err: any) => {
         if (this.isConnected) {
           console.warn(`[CacheProvider] Redis connection error: ${err.message}. Falling back to in-memory cache.`);
         }
@@ -37,7 +39,7 @@ export class RedisCacheProvider implements ICacheProvider {
       });
 
       // Attempt initial connection asynchronously
-      this.client.connect().catch((err) => {
+      this.client.connect().catch((err: any) => {
         console.warn(`[CacheProvider] Unable to connect to Redis (${err.message}). Using in-memory fallback cache.`);
         this.isConnected = false;
       });

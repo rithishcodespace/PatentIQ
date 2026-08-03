@@ -182,12 +182,15 @@ export class SearchService implements ISearchService {
       const cached = await this.cacheProvider.get<SearchResponse>(cacheKey);
       if (cached) {
         console.log(`[SearchService] Cache HIT for query="${trimmedQuery}" | key="${cacheKey}"`);
+        const cachedMetrics: SearchMetrics = {
+          queryEmbeddingTimeMs: cached.metrics?.queryEmbeddingTimeMs ?? 0,
+          pineconeSearchTimeMs: cached.metrics?.pineconeSearchTimeMs ?? 0,
+          totalExecutionTimeMs: Date.now() - totalStart,
+          totalResults: cached.metrics?.totalResults ?? cached.results.length,
+        };
         return {
           ...cached,
-          metrics: {
-            ...cached.metrics,
-            totalExecutionTimeMs: Date.now() - totalStart,
-          },
+          metrics: cachedMetrics,
         };
       }
     }
