@@ -23,23 +23,28 @@ import {
 import type { IHistoryService } from '../../history/interfaces/history.interface.js';
 import type { IConfidenceService } from '../../confidence/interfaces/confidence.interface.js';
 import { ConfidenceService } from '../../confidence/services/confidence.service.js';
+import type { ICacheProvider } from '../../../providers/cache/cache-provider.interface.js';
+import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provider.js';
 
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
   private readonly searchRepository: ISearchRepository;
   private readonly historyService?: IHistoryService | undefined;
   private readonly confidenceService: IConfidenceService;
+  private readonly cacheProvider: ICacheProvider;
 
   constructor(
     embeddingProvider?: IEmbeddingProvider,
     searchRepository?: ISearchRepository,
     historyService?: IHistoryService,
-    confidenceService?: IConfidenceService
+    confidenceService?: IConfidenceService,
+    cacheProvider?: ICacheProvider
   ) {
     this.embeddingProvider = embeddingProvider || new OllamaEmbeddingProvider();
     this.searchRepository = searchRepository || new SearchRepository();
     this.historyService = historyService;
     this.confidenceService = confidenceService || new ConfidenceService();
+    this.cacheProvider = cacheProvider || new RedisCacheProvider();
   }
 
   /**
@@ -159,6 +164,7 @@ export class SearchService implements ISearchService {
    * Primary search entry point accepting a SearchRequest or query string.
    */
   async search(input: string | SearchRequest, topKParam?: number): Promise<SearchResponse> {
+    const totalStart = Date.now();
     const query = typeof input === 'string' ? input : input.query;
     const topK = typeof input === 'string' ? (topKParam ?? 10) : (input.topK ?? 10);
     const filters = typeof input === 'object' ? input.filters : undefined;
@@ -169,6 +175,21 @@ export class SearchService implements ISearchService {
     }
     if (topK < 1 || topK > 100) {
       throw new BadRequestError('maximum topK is 100');
+    }
+
+    const cacheKey = RedisCacheProvider.createKey('search', { query: trimmedQuery, topK, filters });
+    if (this.cacheProvider.isAvailable()) {
+      const cached = await this.cacheProvider.get<SearchResponse>(cacheKey);
+      if (cached) {
+        console.log(`[SearchService] Cache HIT for query="${trimmedQuery}" | key="${cacheKey}"`);
+        return {
+          ...cached,
+          metrics: {
+            ...cached.metrics,
+            totalExecutionTimeMs: Date.now() - totalStart,
+          },
+        };
+      }
     }
 
     const { results, metrics } = await this.executeSearch(trimmedQuery, topK);
@@ -221,6 +242,10 @@ export class SearchService implements ISearchService {
       } catch (err: any) {
         console.warn(`[SearchService] Failed to persist search history: ${err.message}`);
       }
+    }
+
+    if (this.cacheProvider.isAvailable()) {
+      await this.cacheProvider.set(cacheKey, response);
     }
 
     return response;
