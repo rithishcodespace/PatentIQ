@@ -32,7 +32,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -40,7 +43,8 @@
   }
 }
 
-html, body {
+html,
+body {
   font-family: var(--font-body);
   color: var(--ink);
   background-color: #f8fafc;
@@ -48,11 +52,18 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
-h1, h2, h3, h4, .font-display {
+h1,
+h2,
+h3,
+h4,
+.font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
 }
@@ -61,7 +72,10 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-body);
 }
 
-.font-mono, code, pre, .code-chip {
+.font-mono,
+code,
+pre,
+.code-chip {
   font-family: var(--font-mono);
 }
 

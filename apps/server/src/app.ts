@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
 
+import rateLimitPlugin from './plugins/rate-limit.plugin.js';
 import prismaPlugin from './plugins/prisma.plugin.js';
 import corsPlugin from './plugins/cors.plugin.js';
 import swaggerPlugin from './plugins/swagger.plugin.js';
@@ -36,6 +37,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // 1. Register Core Plugins
   await app.register(corsPlugin);
+  await app.register(rateLimitPlugin);
   await app.register(swaggerPlugin);
   await app.register(authPlugin);
   await app.register(prismaPlugin);
