@@ -17,11 +17,14 @@ import { BadRequestError } from '../../../common/errors/http-errors.js';
 import type { IHistoryService } from '../../history/interfaces/history.interface.js';
 import type { IConfidenceService } from '../../confidence/interfaces/confidence.interface.js';
 import { ConfidenceService } from '../../confidence/services/confidence.service.js';
+import type { ICacheProvider } from '../../../providers/cache/cache-provider.interface.js';
+import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provider.js';
 
 export class RagService implements IRagService {
   private readonly noveltyAnalysisService: INoveltyAnalysisService;
   private readonly overlapAnalysisService: IOverlapAnalysisService;
   private readonly confidenceService: IConfidenceService;
+  private readonly cacheProvider: ICacheProvider;
 
   constructor(
     private readonly searchService: ISearchService,
@@ -29,13 +32,15 @@ export class RagService implements IRagService {
     noveltyAnalysisService?: INoveltyAnalysisService,
     overlapAnalysisService?: IOverlapAnalysisService,
     historyService?: IHistoryService,
-    confidenceService?: IConfidenceService
+    confidenceService?: IConfidenceService,
+    cacheProvider?: ICacheProvider
   ) {
     this.noveltyAnalysisService =
       noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider, historyService);
     this.overlapAnalysisService =
       overlapAnalysisService || new OverlapAnalysisService(searchService, llmProvider);
     this.confidenceService = confidenceService || new ConfidenceService();
+    this.cacheProvider = cacheProvider || new RedisCacheProvider();
   }
 
   /**
@@ -54,6 +59,26 @@ export class RagService implements IRagService {
     }
 
     const topK = request.topK ?? 10;
+
+    const cacheKey = RedisCacheProvider.createKey('rag', { query, topK });
+    if (this.cacheProvider.isAvailable()) {
+      const cached = await this.cacheProvider.get<RagAnalysisResponse>(cacheKey);
+      if (cached) {
+        console.log(`[RagService] Cache HIT for query="${query}" | key="${cacheKey}"`);
+        const cachedMetrics: RagMetrics = {
+          retrievalTimeMs: cached.metrics?.retrievalTimeMs ?? 0,
+          promptTimeMs: cached.metrics?.promptTimeMs ?? 0,
+          llmInferenceTimeMs: cached.metrics?.llmInferenceTimeMs ?? 0,
+          totalTimeMs: Date.now() - totalStart,
+          retrievedCount: cached.metrics?.retrievedCount ?? cached.retrievedPatents?.length ?? 0,
+          overlappingClaimsCount: cached.metrics?.overlappingClaimsCount ?? 0,
+        };
+        return {
+          ...cached,
+          metrics: cachedMetrics,
+        };
+      }
+    }
 
     // 1. Single Shared Retrieval Phase
     const retrievalStart = Date.now();
@@ -106,7 +131,7 @@ export class RagService implements IRagService {
       overlappingClaimsCount,
     };
 
-    return {
+    const response: RagAnalysisResponse = {
       success: true,
       query,
       confidence: {
@@ -119,6 +144,12 @@ export class RagService implements IRagService {
       overlapAnalysis: overlapItems,
       metrics,
     };
+
+    if (this.cacheProvider.isAvailable()) {
+      await this.cacheProvider.set(cacheKey, response);
+    }
+
+    return response;
   }
 
   /**

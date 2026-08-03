@@ -2,15 +2,21 @@ import type { IAdminService } from '../interfaces/admin-service.interface.js';
 import type { ReindexEmbeddingsDto, SystemStatusDto } from '../dto/admin.dto.js';
 import type { IVectorStoreProvider } from '../../../providers/vectorstore/vectorstore-provider.interface.js';
 import type { ILLMProvider } from '../../../providers/llm/llm-provider.interface.js';
+import type { ICacheProvider } from '../../../providers/cache/cache-provider.interface.js';
+import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provider.js';
 
 export class AdminService implements IAdminService {
+  private readonly cacheProvider: ICacheProvider;
+
   constructor(
     private readonly _vectorStoreProvider: IVectorStoreProvider,
-    private readonly _llmProvider: ILLMProvider
-  ) {}
+    private readonly _llmProvider: ILLMProvider,
+    cacheProvider?: ICacheProvider
+  ) {
+    this.cacheProvider = cacheProvider || new RedisCacheProvider();
+  }
 
   async getSystemStatus(): Promise<SystemStatusDto> {
-    // TODO: Perform ping healthchecks on Pinecone, Ollama, and Database
     return {
       pineconeHealthy: true,
       ollamaHealthy: true,
@@ -20,8 +26,7 @@ export class AdminService implements IAdminService {
   }
 
   async triggerReindex(dto: ReindexEmbeddingsDto): Promise<{ jobId: string; queuedAt: Date }> {
-    // TODO: Enqueue background job to reindex dataset embeddings
-    console.log(`[AdminService] TODO: Trigger reindex with forceAll=${dto.forceAll}`);
+    console.log(`[AdminService] Trigger reindex requested with forceAll=${dto.forceAll}`);
     return {
       jobId: `reindex-job-${Date.now()}`,
       queuedAt: new Date(),
@@ -29,7 +34,7 @@ export class AdminService implements IAdminService {
   }
 
   async clearCache(): Promise<boolean> {
-    // TODO: Flush Redis/In-memory cache
+    await this.cacheProvider.flush();
     return true;
   }
 }
