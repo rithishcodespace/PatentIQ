@@ -42,9 +42,10 @@ export class AuthController {
   async getMe(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const userPayload = request.user as { id: string; email: string; name: string } | undefined;
     if (!userPayload) {
-      reply.status(401).send(ResponseFormatter.error('Not authenticated', 401));
+      reply.status(401).send(ResponseFormatter.error('Not authenticated', 'Unauthorized'));
       return;
     }
+
     reply.status(200).send(ResponseFormatter.success({ user: userPayload }, 'Current user profile fetched successfully'));
   }
 }

@@ -15,27 +15,28 @@ const apiClient = axios.create({
 });
 
 export const loginUser = async (email: string, password: string): Promise<any> => {
-  const response = await apiClient.post("/v1/auth/login", { email, password });
+  const response = await apiClient.post("/auth/login", { email, password });
   return response.data;
 };
 
 export const registerUser = async (email: string, password: string, name: string): Promise<any> => {
-  const response = await apiClient.post("/v1/auth/register", { email, password, name });
+  const response = await apiClient.post("/auth/register", { email, password, name });
   return response.data;
 };
 
 export const logoutUser = async (): Promise<void> => {
-  await apiClient.post("/v1/auth/logout");
+  await apiClient.post("/auth/logout");
 };
 
 export const getCurrentUser = async (): Promise<any> => {
   try {
-    const response = await apiClient.get("/v1/auth/me");
+    const response = await apiClient.get("/auth/me");
     return response.data?.data?.user || null;
   } catch {
     return null;
   }
 };
+
 
 
 /**

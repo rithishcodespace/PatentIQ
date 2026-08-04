@@ -24,12 +24,11 @@ export default fp(async (fastify: FastifyInstance) => {
 
   fastify.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     try {
-      await request.jwtVerify({
-        extractToken: (req) => req.cookies.token || req.headers.authorization?.replace(/^Bearer\s+/i, ''),
-      });
+      await request.jwtVerify();
     } catch {
       throw new UnauthorizedError('Authentication required. Invalid or missing session cookie.');
     }
   });
+
 });
 

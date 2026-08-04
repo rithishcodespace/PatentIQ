@@ -53,7 +53,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   const { controllers } = app.diContainer;
 
   await app.register(async (instance) => authRoutes(instance, controllers.auth), { prefix: '/api/v1/auth' });
+  await app.register(async (instance) => authRoutes(instance, controllers.auth), { prefix: '/api/auth' });
   await app.register(async (instance) => usersRoutes(instance, controllers.users), { prefix: '/api/v1/users' });
+  await app.register(async (instance) => usersRoutes(instance, controllers.users), { prefix: '/api/users' });
+
   await app.register(async (instance) => patentsRoutes(instance, controllers.patents), { prefix: '/api/v1/patents' });
   await app.register(async (instance) => embeddingsRoutes(instance, controllers.embeddings), { prefix: '/api/v1/embeddings' });
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/v1/search' });
