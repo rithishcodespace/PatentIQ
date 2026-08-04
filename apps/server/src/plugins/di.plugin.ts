@@ -102,8 +102,8 @@ export default fp(async (fastify: FastifyInstance) => {
   const storageProvider = new LocalStorageProvider();
 
   // 2. Instantiate Repositories
-  const authRepo = new AuthRepository();
-  const usersRepo = new UsersRepository();
+  const authRepo = new AuthRepository(fastify.prisma);
+  const usersRepo = new UsersRepository(fastify.prisma);
   const patentsRepo = new PatentsRepository();
   const reportsRepo = new ReportsRepository();
   const searchRepo = new SearchRepository();
@@ -112,8 +112,9 @@ export default fp(async (fastify: FastifyInstance) => {
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
   const confidenceService = new ConfidenceService();
-  const authService = new AuthService(authRepo);
+  const authService = new AuthService(authRepo, (payload) => fastify.jwt.sign(payload));
   const usersService = new UsersService(usersRepo);
+
   const patentParserService = new PatentParserService();
   const patentService = new PatentService(patentsRepo, patentParserService);
   const historyService = new HistoryService(historyRepo);

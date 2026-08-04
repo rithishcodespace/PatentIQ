@@ -7,3 +7,4 @@ OLLAMA MODELS:
 10,784 patents
 3 embeddings for each patent -> 32,352 (dimension = 768)
 (title, abstract, claims) -> embeddings -> semantic similarity search   
+

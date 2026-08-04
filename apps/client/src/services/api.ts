@@ -10,8 +10,34 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
   timeout: 30000,
 });
+
+export const loginUser = async (email: string, password: string): Promise<any> => {
+  const response = await apiClient.post("/auth/login", { email, password });
+  return response.data;
+};
+
+export const registerUser = async (email: string, password: string, name: string): Promise<any> => {
+  const response = await apiClient.post("/auth/register", { email, password, name });
+  return response.data;
+};
+
+export const logoutUser = async (): Promise<void> => {
+  await apiClient.post("/auth/logout");
+};
+
+export const getCurrentUser = async (): Promise<any> => {
+  try {
+    const response = await apiClient.get("/auth/me");
+    return response.data?.data?.user || null;
+  } catch {
+    return null;
+  }
+};
+
+
 
 /**
  * Executes a semantic prior-art search and novelty analysis against the backend.

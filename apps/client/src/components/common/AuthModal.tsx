@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Key, Mail, Lock, LogOut, CheckCircle2, User } from 'lucide-react';
-import type { UserProfile, UserRole } from '../../types/auth';
+import { Shield, Mail, Lock, LogOut, CheckCircle2, User } from 'lucide-react';
+import type { UserProfile } from '../../types/auth';
 import Modal from '../ui/Modal';
+import { loginUser, registerUser, logoutUser } from '../../services/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,21 +15,58 @@ interface AuthModalProps {
 
 const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModalProps) => {
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState('analyst.rithish@patentiq.ai');
-  const [password, setPassword] = useState('••••••••••••');
-  const [fullName, setFullName] = useState('Rithish (Patent Analyst)');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('PATENT_ANALYST');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({
-      id: `usr_${Math.floor(Math.random() * 8999999 + 1000000)}`,
-      email,
-      fullName: isRegister ? fullName : email.split('@')[0] || 'User',
-      role: selectedRole,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    });
-    onClose();
+    setErrorMsg(null);
+    setLoading(true);
+
+    try {
+      if (isRegister) {
+        const res = await registerUser(email, password, fullName || email.split('@')[0]);
+        const userObj = res?.data?.user;
+        if (userObj) {
+          onLogin({
+            id: userObj.id,
+            email: userObj.email,
+            fullName: userObj.name,
+            role: 'User',
+          });
+        }
+      } else {
+        const res = await loginUser(email, password);
+        const userObj = res?.data?.user;
+        if (userObj) {
+          onLogin({
+            id: userObj.id,
+            email: userObj.email,
+            fullName: userObj.name,
+            role: 'User',
+          });
+        }
+      }
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.warn('Logout error:', err);
+    } finally {
+      onLogout();
+      onClose();
+    }
   };
 
   return (
@@ -45,70 +83,35 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
           >
             <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white font-display text-xl font-bold shadow-md shadow-indigo-600/20">
-                {currentUser.fullName.charAt(0)}
+                {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U'}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-display text-xl font-semibold text-slate-900">
                     {currentUser.fullName}
                   </h3>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 font-body text-xs font-bold ${
-                      currentUser.role === 'ADMIN'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                    }`}
-                  >
-                    {currentUser.role}
+                  <span className="rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-0.5 font-body text-xs font-bold">
+                    User
                   </span>
                 </div>
                 <p className="font-body text-sm text-slate-500">{currentUser.email}</p>
               </div>
             </div>
 
-            {/* Simulated JWT Bearer Token Card */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+            {/* HTTP-Only Cookie Session Security Card */}
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
                 <span className="flex items-center gap-1.5">
-                  <Key className="h-3.5 w-3.5 text-indigo-600" />
-                  Active JWT Bearer Session Token
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Authenticated Session Secured
                 </span>
-                <span className="flex items-center gap-1 text-emerald-600 text-[11px]">
-                  <CheckCircle2 className="h-3 w-3" /> Valid Token
+                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                  HTTP-Only Cookie
                 </span>
               </div>
-              <p className="font-mono text-[11px] text-slate-500 break-all bg-white p-2 rounded border border-slate-200">
-                eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c3JfODgyMzkxMDIzIiwicm9sZSI6IlBBVEVOVF9BTkFMWVNUIiwiaWF0IjoxNzU0MDYzOTAwfQ...
+              <p className="font-body text-xs text-emerald-800">
+                Your authentication token is stored securely in an encrypted HTTP-only cookie, protected against XSS and client-side extraction.
               </p>
-            </div>
-
-            {/* Role Switcher Demo Control */}
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 space-y-2">
-              <label className="block text-xs font-semibold text-indigo-950">
-                Simulate Role Switcher (RBAC Demo)
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => onLogin({ ...currentUser, role: 'PATENT_ANALYST' })}
-                  className={`rounded-lg py-2 text-xs font-medium border transition ${
-                    currentUser.role === 'PATENT_ANALYST'
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs font-semibold'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  PATENT_ANALYST Role
-                </button>
-                <button
-                  onClick={() => onLogin({ ...currentUser, role: 'ADMIN' })}
-                  className={`rounded-lg py-2 text-xs font-medium border transition ${
-                    currentUser.role === 'ADMIN'
-                      ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-semibold'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  ADMIN Role
-                </button>
-              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
@@ -119,10 +122,7 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
                 Close
               </button>
               <button
-                onClick={() => {
-                  onLogout();
-                  onClose();
-                }}
+                onClick={handleSignOut}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2.5 font-body text-xs font-medium text-white hover:bg-rose-500 shadow-sm"
               >
                 <LogOut className="h-4 w-4" />
@@ -147,9 +147,15 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
                 {isRegister ? 'Create PatentIQ Account' : 'Sign in to PatentIQ Engine'}
               </h3>
               <p className="font-body text-xs text-slate-500 mt-1">
-                JWT Authentication & Role-Based Authorization Portal
+                Secure Session Authentication Portal
               </p>
             </div>
+
+            {errorMsg && (
+              <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+                {errorMsg}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {isRegister && (
@@ -170,7 +176,7 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Work Email</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <input
@@ -194,34 +200,26 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 pl-9 pr-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                    placeholder="••••••••••••"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Select Assignable Role</label>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none bg-white"
-                >
-                  <option value="PATENT_ANALYST">PATENT_ANALYST (Search, RAG, Upload, History)</option>
-                  <option value="ADMIN">ADMIN (System Benchmark, Pinecone & Redis Admin)</option>
-                  <option value="INNOVATOR">INNOVATOR (Basic Patent Search)</option>
-                </select>
-              </div>
-
               <button
                 type="submit"
-                className="w-full rounded-xl bg-indigo-600 py-3 font-body text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-md shadow-indigo-600/20"
+                disabled={loading}
+                className="w-full rounded-xl bg-indigo-600 py-3 font-body text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-md shadow-indigo-600/20 disabled:opacity-50"
               >
-                {isRegister ? 'Register & Generate JWT' : 'Authenticate & Sign In'}
+                {loading ? 'Processing…' : isRegister ? 'Register & Sign In' : 'Sign In'}
               </button>
             </form>
 
             <div className="text-center pt-2 border-t border-slate-100">
               <button
-                onClick={() => setIsRegister(!isRegister)}
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setErrorMsg(null);
+                }}
                 className="font-body text-xs font-medium text-indigo-600 hover:underline"
               >
                 {isRegister ? 'Already have an account? Sign In' : "Don't have an account? Register"}
@@ -235,3 +233,4 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
 };
 
 export default AuthModal;
+

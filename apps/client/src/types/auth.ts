@@ -1,4 +1,4 @@
-export type UserRole = 'PATENT_ANALYST' | 'ADMIN' | 'INNOVATOR';
+export type UserRole = 'User';
 
 export interface UserProfile {
   id: string;
@@ -11,5 +11,5 @@ export interface UserProfile {
 export interface AuthState {
   isAuthenticated: boolean;
   user: UserProfile | null;
-  token: string | null;
 }
+

@@ -16,10 +16,11 @@ export const LoginDtoSchema = z.object({
 export type LoginDto = z.infer<typeof LoginDtoSchema>;
 
 export interface AuthResponseDto {
-  token: string;
+  token?: string;
   user: {
     id: string;
     email: string;
     name: string;
   };
 }
+
