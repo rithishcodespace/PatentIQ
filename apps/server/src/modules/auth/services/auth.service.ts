@@ -1,38 +1,67 @@
+import bcrypt from 'bcrypt';
 import type { IAuthService } from '../interfaces/auth-service.interface.js';
 import type { LoginDto, RegisterDto, AuthResponseDto } from '../dto/auth.dto.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
+import { ConflictError, UnauthorizedError } from '../../../common/errors/http-errors.js';
 
 export class AuthService implements IAuthService {
-  constructor(private readonly authRepository: AuthRepository) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly jwtSigner?: (payload: object) => string
+  ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
-    // TODO: Hash password using bcrypt, save via authRepository, generate JWT token
-    console.log(`[AuthService] TODO: Register user ${dto.email}`);
+    const existing = await this.authRepository.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictError('A user with this email address already exists.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await this.authRepository.createUser({
+      email: dto.email,
+      passwordHash,
+      name: dto.name,
+    });
+
+    const payload = { id: user.id, email: user.email, name: user.name };
+    const token = this.jwtSigner ? this.jwtSigner(payload) : 'session-token';
+
     return {
-      token: 'jwt-token-placeholder',
+      token,
       user: {
-        id: 'placeholder-user-id',
-        email: dto.email,
-        name: dto.name,
+        id: user.id,
+        email: user.email,
+        name: user.name,
       },
     };
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
-    // TODO: Verify user credentials via authRepository & bcrypt, generate JWT token
-    console.log(`[AuthService] TODO: Login user ${dto.email}`);
+    const user = await this.authRepository.findByEmail(dto.email);
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or password.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedError('Invalid email or password.');
+    }
+
+    const payload = { id: user.id, email: user.email, name: user.name };
+    const token = this.jwtSigner ? this.jwtSigner(payload) : 'session-token';
+
     return {
-      token: 'jwt-token-placeholder',
+      token,
       user: {
-        id: 'placeholder-user-id',
-        email: dto.email,
-        name: 'User Name',
+        id: user.id,
+        email: user.email,
+        name: user.name,
       },
     };
   }
 
   async validateSession(_token: string): Promise<boolean> {
-    // TODO: Validate JWT token signature
     return true;
   }
 }
+

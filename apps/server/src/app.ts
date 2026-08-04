@@ -20,8 +20,8 @@ import { ragRoutes } from './modules/rag/routes/rag.routes.js';
 import { reportsRoutes } from './modules/reports/routes/reports.routes.js';
 import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
-import { adminRoutes } from './modules/admin/routes/admin.routes.js';
 import { historyRoutes } from './modules/history/routes/history.routes.js';
+
 import { uploadRoutes } from './modules/upload/routes/upload.routes.js';
 import { HealthStatusSchema, standardErrorResponses } from './common/schemas/swagger.schemas.js';
 
@@ -65,9 +65,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/upload' });
   await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/v1/upload' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
-  await app.register(async (instance) => uploadsRoutes(instance, controllers.uploads), { prefix: '/api/v1/uploads' });
   await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/v1/analytics' });
-  await app.register(async (instance) => adminRoutes(instance, controllers.admin), { prefix: '/api/v1/admin' });
+
 
   // 5. Infrastructure Health Check Endpoints
   app.get('/health', {
