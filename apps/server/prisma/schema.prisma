@@ -82,3 +82,37 @@ model UploadedDocument {
   @@map("uploaded_documents")
 }
 
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Patent {
+  id                 String    @id @default(uuid())
+  patentNumber       String    @unique @map("patent_number")
+  title              String
+  abstract           String    @db.Text
+  claims             String[]
+  ipcClassifications String[]  @map("ipc_classifications")
+  description        String?   @db.Text
+  filingDate         DateTime? @map("filing_date")
+  grantDate          DateTime? @map("grant_date")
+  inventors          String[]
+  assignee           String?
+  cleanedAt          DateTime  @default(now()) @map("cleaned_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([patentNumber])
+  @@index([title])
+  @@map("patents")
+}
+
+
+
