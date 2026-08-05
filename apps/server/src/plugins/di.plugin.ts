@@ -141,7 +141,7 @@ export default fp(async (fastify: FastifyInstance) => {
     ragService,
     historyService
   );
-  const analyticsService = new AnalyticsService();
+  const analyticsService = new AnalyticsService(fastify.prisma);
   const adminService = new AdminService(vectorStoreProvider, llmProvider);
 
   // 4. Instantiate Controllers

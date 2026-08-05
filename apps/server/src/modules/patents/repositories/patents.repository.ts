@@ -1,8 +1,15 @@
 import type { CleanedPatentRecord } from '../types/patent.types.js';
 
 export class PatentsRepository {
+<<<<<<< HEAD
   constructor() {
     // TODO: Inject PrismaClient dependency
+=======
+  private prisma: PrismaClient;
+
+  constructor(prisma?: PrismaClient) {
+    this.prisma = prisma || new PrismaClient();
+>>>>>>> 9e9cce8 (feat: implemented real aggregated search metrics, execution times and query distribution queries agains postgrsql and redis)
   }
 
   async findById(_id: string): Promise<CleanedPatentRecord | null> {
