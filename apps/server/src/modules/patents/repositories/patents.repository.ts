@@ -14,12 +14,7 @@ export class PatentsRepository {
   private prisma: PrismaClient;
 
   constructor(prisma?: PrismaClient) {
-    this.prisma =
-      prisma ||
-      new PrismaClient({
-        datasourceUrl:
-          process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/patent_iq',
-      });
+    this.prisma = prisma || new PrismaClient();
   }
 
   /**
