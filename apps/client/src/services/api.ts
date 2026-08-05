@@ -216,3 +216,58 @@ export const deleteSearchHistoryRecord = async (id: string): Promise<boolean> =>
     return true;
   }
 };
+
+/**
+ * Dynamically fetches OpenAPI route definitions from Fastify server (/docs/json or /api/docs/json).
+ */
+export const fetchOpenApiRoutes = async (): Promise<{ method: string; path: string; summary: string }[]> => {
+  try {
+    const response = await axios.get("/docs/json");
+    if (response.data && response.data.paths) {
+      const routes: { method: string; path: string; summary: string }[] = [];
+      const pathsObj = response.data.paths;
+
+      for (const pathKey of Object.keys(pathsObj)) {
+        const methodsObj = pathsObj[pathKey];
+        for (const methodKey of Object.keys(methodsObj)) {
+          const methodUpper = methodKey.toUpperCase();
+          if (["GET", "POST", "PUT", "DELETE", "PATCH"].includes(methodUpper)) {
+            const summary =
+              methodsObj[methodKey].summary ||
+              methodsObj[methodKey].description ||
+              `${methodUpper} route on ${pathKey}`;
+            routes.push({
+              method: methodUpper,
+              path: pathKey,
+              summary,
+            });
+          }
+        }
+      }
+
+      if (routes.length > 0) {
+        return routes;
+      }
+    }
+    return [
+      { method: "POST", path: "/api/search", summary: "Execute vector similarity search over patent prior art" },
+      { method: "POST", path: "/api/rag/analyze", summary: "Grounded 7-section novelty analysis & claim overlap detection" },
+      { method: "GET", path: "/api/history", summary: "List persisted search history records with pagination" },
+      { method: "POST", path: "/api/upload/process", summary: "Parse patent document file (PDF, DOCX, TXT)" },
+      { method: "POST", path: "/api/upload/compare", summary: "End-to-end document vector embedding & prior-art comparison" },
+      { method: "GET", path: "/api/analytics/overview", summary: "Aggregated search metrics & IPC distributions" },
+      { method: "GET", path: "/api/admin/status", summary: "Infrastructure health status check (PSQL, Ollama, Pinecone)" },
+    ];
+  } catch (error: any) {
+    console.warn("[PatentIQ API] Failed to fetch OpenAPI routes from /docs/json:", error?.message);
+    return [
+      { method: "POST", path: "/api/search", summary: "Execute vector similarity search over patent prior art" },
+      { method: "POST", path: "/api/rag/analyze", summary: "Grounded 7-section novelty analysis & claim overlap detection" },
+      { method: "GET", path: "/api/history", summary: "List persisted search history records with pagination" },
+      { method: "POST", path: "/api/upload/process", summary: "Parse patent document file (PDF, DOCX, TXT)" },
+      { method: "POST", path: "/api/upload/compare", summary: "End-to-end document vector embedding & prior-art comparison" },
+      { method: "GET", path: "/api/analytics/overview", summary: "Aggregated search metrics & IPC distributions" },
+      { method: "GET", path: "/api/admin/status", summary: "Infrastructure health status check (PSQL, Ollama, Pinecone)" },
+    ];
+  }
+};

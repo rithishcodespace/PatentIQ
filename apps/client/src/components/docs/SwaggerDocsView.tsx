@@ -1,10 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ExternalLink, Code2, Check, Copy, Shield, FileText } from 'lucide-react';
-import { mockApiEndpoints } from '../../data/mockData';
+import { BookOpen, ExternalLink, Code2, Check, Copy, Shield, FileText, RefreshCw } from 'lucide-react';
+import { fetchOpenApiRoutes } from '../../services/api';
+
+interface ApiRouteItem {
+  method: string;
+  path: string;
+  summary: string;
+}
 
 const SwaggerDocsView = () => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [apiEndpoints, setApiEndpoints] = useState<ApiRouteItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadRoutes = async () => {
+    setLoading(true);
+    try {
+      const routes = await fetchOpenApiRoutes();
+      setApiEndpoints(routes);
+    } catch (err) {
+      console.error('[SwaggerDocsView] Failed to fetch Fastify route definitions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function initFetch() {
+      setLoading(true);
+      const routes = await fetchOpenApiRoutes();
+      if (isMounted) {
+        setApiEndpoints(routes);
+        setLoading(false);
+      }
+    }
+    initFetch();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleCopy = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
@@ -24,7 +60,7 @@ const SwaggerDocsView = () => {
             <div>
               <h2 className="font-display text-2xl font-bold text-slate-900">API Documentation & Swagger Specs</h2>
               <p className="font-body text-xs text-slate-600 mt-0.5">
-                Interactive API specifications and endpoint documentation for PatentIQ.
+                Interactive API specifications and live route definitions dynamically fetched from Fastify.
               </p>
             </div>
           </div>
@@ -58,7 +94,7 @@ const SwaggerDocsView = () => {
             Authentication Scheme
           </span>
           <p className="font-display text-lg font-bold text-slate-900 mt-2">JWT Bearer Auth</p>
-          <p className="font-body text-[11px] text-slate-500 mt-0.5">Role-Based Access Control</p>
+          <p className="font-body text-[11px] text-slate-500 mt-0.5">Single User Session Security</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -79,56 +115,74 @@ const SwaggerDocsView = () => {
               Documented REST API Endpoints
             </h3>
             <p className="font-body text-xs text-slate-500">
-              Interactive routes exposed on PatentIQ engine
+              Live Fastify route definitions registered on PatentIQ server
             </p>
           </div>
-          <span className="code-chip text-[10px]">
-            {mockApiEndpoints.length} Active Routes
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {mockApiEndpoints.map((ep, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ x: 2 }}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 transition hover:border-blue-200 hover:bg-white"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadRoutes}
+              disabled={loading}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-body text-xs font-semibold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50"
             >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold ${
-                    ep.method === 'POST'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : ep.method === 'GET'
-                      ? 'bg-slate-100 text-slate-800 border border-slate-200'
-                      : 'bg-slate-200 text-slate-800'
-                  }`}
-                >
-                  {ep.method}
-                </span>
-                <span className="font-mono text-xs font-semibold text-slate-900">{ep.path}</span>
-                <span className="font-body text-xs text-slate-600 hidden sm:inline">— {ep.summary}</span>
-              </div>
-
-              <button
-                onClick={() => handleCopy(`http://localhost:5000${ep.path}`, idx)}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-body text-xs text-slate-600 hover:bg-slate-50 transition"
-              >
-                {copiedIndex === idx ? (
-                  <>
-                    <Check className="h-3 w-3 text-emerald-600" />
-                    Copied URL
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy Endpoint
-                  </>
-                )}
-              </button>
-            </motion.div>
-          ))}
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              Reload Routes
+            </button>
+            <span className="code-chip text-[10px]">
+              {apiEndpoints.length} Active Routes
+            </span>
+          </div>
         </div>
+
+        {loading ? (
+          <div className="py-8 text-center font-body text-xs text-slate-500">
+            Fetching OpenAPI route definitions from /docs/json...
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {apiEndpoints.map((ep, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ x: 2 }}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 transition hover:border-blue-200 hover:bg-white"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-lg px-2.5 py-1 font-mono text-xs font-bold ${
+                      ep.method === 'POST'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                        : ep.method === 'GET'
+                        ? 'bg-slate-100 text-slate-800 border border-slate-200'
+                        : ep.method === 'DELETE'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                        : 'bg-slate-200 text-slate-800'
+                    }`}
+                  >
+                    {ep.method}
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-slate-900">{ep.path}</span>
+                  <span className="font-body text-xs text-slate-600 hidden sm:inline">— {ep.summary}</span>
+                </div>
+
+                <button
+                  onClick={() => handleCopy(`http://localhost:5000${ep.path}`, idx)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-body text-xs text-slate-600 hover:bg-slate-50 transition"
+                >
+                  {copiedIndex === idx ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-600" />
+                      Copied URL
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      Copy Endpoint
+                    </>
+                  )}
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
