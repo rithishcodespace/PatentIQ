@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   History,
@@ -10,21 +10,72 @@ import {
   Layers,
   Clock,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import type { SearchHistoryRecord } from '../../types/history';
+import { fetchSearchHistory, deleteSearchHistoryRecord } from '../../services/api';
+import Loader from '../common/Loader';
 
 interface HistoryViewProps {
-  historyRecords: SearchHistoryRecord[];
+  historyRecords?: SearchHistoryRecord[];
   onSelectRecord?: (record: SearchHistoryRecord) => void;
   onDeleteRecord?: (id: string) => void;
 }
 
-const HistoryView = ({ historyRecords, onSelectRecord, onDeleteRecord }: HistoryViewProps) => {
+const HistoryView = ({
+  historyRecords: initialRecords,
+  onSelectRecord,
+  onDeleteRecord: propOnDeleteRecord,
+}: HistoryViewProps) => {
+  const [historyRecords, setHistoryRecords] = useState<SearchHistoryRecord[]>(initialRecords || []);
+  const [loading, setLoading] = useState<boolean>(!initialRecords || initialRecords.length === 0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIpc, setSelectedIpc] = useState<string>('ALL');
 
+  const loadHistoryFromApi = async () => {
+    setLoading(true);
+    try {
+      const records = await fetchSearchHistory(1, 50);
+      setHistoryRecords(records);
+    } catch (err) {
+      console.error('[HistoryView] Failed to fetch search history from /api/history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function initFetch() {
+      if (!initialRecords || initialRecords.length === 0) {
+        setLoading(true);
+        const records = await fetchSearchHistory(1, 50);
+        if (isMounted) {
+          setHistoryRecords(records);
+          setLoading(false);
+        }
+      } else {
+        setHistoryRecords(initialRecords);
+      }
+    }
+    initFetch();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialRecords]);
+
+  const handleDelete = async (id: string) => {
+    setHistoryRecords((prev) => prev.filter((rec) => rec.id !== id));
+    if (propOnDeleteRecord) {
+      propOnDeleteRecord(id);
+    } else {
+      await deleteSearchHistoryRecord(id);
+    }
+  };
+
   const filteredHistory = historyRecords.filter((rec) => {
-    const matchesSearch = rec.searchQuery.toLowerCase().includes(searchTerm.toLowerCase());
+    const queryStr = rec.searchQuery || rec.query || '';
+    const matchesSearch = queryStr.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesIpc = selectedIpc === 'ALL' || rec.appliedFilters?.ipc === selectedIpc;
     return matchesSearch && matchesIpc;
   });
@@ -43,13 +94,24 @@ const HistoryView = ({ historyRecords, onSelectRecord, onDeleteRecord }: History
                 Search History
               </h2>
               <p className="font-body text-xs text-slate-600 mt-0.5">
-                Browse and reopen your past patent prior-art searches and novelty reports.
+                Browse and reopen your past patent prior-art searches and novelty reports stored in PostgreSQL.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-            <span>{historyRecords.length} Saved Searches</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadHistoryFromApi}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-body text-xs font-semibold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+
+            <div className="flex items-center gap-2 font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+              <span>{historyRecords.length} Saved Searches</span>
+            </div>
           </div>
         </div>
       </div>
@@ -83,103 +145,116 @@ const HistoryView = ({ historyRecords, onSelectRecord, onDeleteRecord }: History
       </div>
 
       {/* History Records */}
-      <div className="space-y-4">
-        {filteredHistory.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <History className="mx-auto h-10 w-10 text-slate-300" />
-            <h3 className="font-display text-base font-bold text-slate-800 mt-2">
-              No Matching History Records
-            </h3>
-            <p className="font-body text-xs text-slate-500 mt-1">
-              Try adjusting your search filter or start a new prior-art search.
-            </p>
-          </div>
-        ) : (
-          filteredHistory.map((rec) => {
-            const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : 'Recent';
-            const timeStr = rec.createdAt ? new Date(rec.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            return (
-              <motion.div
-                key={rec.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-blue-300 space-y-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
-                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                    <span>{dateStr}</span>
-                    {timeStr && (
-                      <>
-                        <Clock className="h-3.5 w-3.5 text-slate-400 ml-2" />
-                        <span>{timeStr}</span>
-                      </>
-                    )}
-                  </div>
+      {loading ? (
+        <div className="py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-200 p-8">
+          <Loader />
+          <p className="font-body text-xs font-semibold text-slate-500">
+            Fetching search history from /api/history...
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredHistory.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
+              <History className="mx-auto h-10 w-10 text-slate-300" />
+              <h3 className="font-display text-base font-bold text-slate-800 mt-2">
+                No Matching History Records
+              </h3>
+              <p className="font-body text-xs text-slate-500 mt-1">
+                Try adjusting your search filter or start a new prior-art search.
+              </p>
+            </div>
+          ) : (
+            filteredHistory.map((rec) => {
+              const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : 'Recent';
+              const timeStr = rec.createdAt ? new Date(rec.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              const displayQuery = rec.searchQuery || rec.query || 'Prior Art Search';
+              const overallScore = rec.confidence?.overall?.score;
+              const overallLevel = rec.confidence?.overall?.level;
+              const matchesCount = rec.retrievedPatents?.length || rec.matches?.length || 0;
+              const summaryText = rec.noveltyAnalysis?.summary || rec.analysis?.summary;
 
-                  <div className="flex items-center gap-2">
-                    {rec.confidence?.overall?.score !== undefined && (
-                      <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 font-mono text-[10px] font-bold">
-                        {rec.confidence.overall.score}% Confidence ({rec.confidence.overall.level})
-                      </span>
-                    )}
-                    {onDeleteRecord && (
+              return (
+                <motion.div
+                  key={rec.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-blue-300 space-y-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
+                      <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                      <span>{dateStr}</span>
+                      {timeStr && (
+                        <>
+                          <Clock className="h-3.5 w-3.5 text-slate-400 ml-2" />
+                          <span>{timeStr}</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {overallScore !== undefined && (
+                        <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 font-mono text-[10px] font-bold">
+                          {overallScore}% Confidence ({overallLevel || 'High'})
+                        </span>
+                      )}
                       <button
-                        onClick={() => onDeleteRecord(rec.id)}
+                        onClick={() => handleDelete(rec.id)}
                         className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
                         title="Delete record"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <span className="code-chip text-[10px]">
-                    Search Query
-                  </span>
-                  <h4 className="font-display text-base font-bold text-slate-900 mt-1">
-                    "{rec.searchQuery}"
-                  </h4>
-                </div>
-
-                {rec.noveltyAnalysis?.summary && (
-                  <p className="font-body text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
-                    {rec.noveltyAnalysis.summary}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <div className="flex items-center gap-3 text-xs font-mono text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Layers className="h-3.5 w-3.5 text-blue-600" />
-                      {rec.retrievedPatents?.length || 0} Matches
+                  <div>
+                    <span className="code-chip text-[10px]">
+                      Search Query
                     </span>
-                    {rec.searchLatency && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-slate-400" />
-                        {rec.searchLatency}ms
-                      </span>
-                    )}
+                    <h4 className="font-display text-base font-bold text-slate-900 mt-1">
+                      "{displayQuery}"
+                    </h4>
                   </div>
 
-                  {onSelectRecord && (
-                    <button
-                      onClick={() => onSelectRecord(rec)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 font-body text-xs font-semibold text-white hover:bg-blue-500 transition shadow-2xs"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      Reopen Search Report
-                      <ExternalLink className="h-3 w-3" />
-                    </button>
+                  {summaryText && (
+                    <p className="font-body text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
+                      {summaryText}
+                    </p>
                   )}
-                </div>
-              </motion.div>
-            );
-          })
-        )}
-      </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-3 text-xs font-mono text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Layers className="h-3.5 w-3.5 text-blue-600" />
+                        {matchesCount} Matches
+                      </span>
+                      {rec.searchLatency && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-slate-400" />
+                          {rec.searchLatency}ms
+                        </span>
+                      )}
+                    </div>
+
+                    {onSelectRecord && (
+                      <button
+                        onClick={() => onSelectRecord(rec)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 font-body text-xs font-semibold text-white hover:bg-blue-500 transition shadow-2xs"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Reopen Search Report
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 };
