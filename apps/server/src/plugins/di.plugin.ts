@@ -104,7 +104,7 @@ export default fp(async (fastify: FastifyInstance) => {
   // 2. Instantiate Repositories
   const authRepo = new AuthRepository(fastify.prisma);
   const usersRepo = new UsersRepository(fastify.prisma);
-  const patentsRepo = new PatentsRepository();
+  const patentsRepo = new PatentsRepository(fastify.prisma);
   const reportsRepo = new ReportsRepository();
   const searchRepo = new SearchRepository();
   const historyRepo = new HistoryRepository(fastify.prisma);
