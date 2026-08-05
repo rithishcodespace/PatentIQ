@@ -110,11 +110,23 @@ model Patent {
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
   @@index([patentNumber])
-<<<<<<< HEAD
   @@index([title])
-=======
->>>>>>> efe6986 (feat: implement Prisma Patent repository and wire DI container)
   @@map("patents")
+}
+
+model PatentabilityReport {
+  id                      String   @id @default(uuid())
+  patentId                String   @map("patent_id")
+  title                   String
+  overallNoveltyScore     Float    @map("overall_novelty_score")
+  overallObviousnessScore Float    @map("overall_obviousness_score")
+  summary                 String   @db.Text
+  keyDifferences          String[] @map("key_differences")
+  priorArtCitations       Json     @map("prior_art_citations")
+  generatedAt             DateTime @default(now()) @map("generated_at")
+
+  @@index([patentId])
+  @@map("patentability_reports")
 }
 
 

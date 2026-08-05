@@ -2,12 +2,12 @@ import { PrismaClient, type Patent } from '@prisma/client';
 import type { CleanedPatentRecord } from '../types/patent.types.js';
 
 export interface PatentFilterOptions {
-  searchQuery?: string;
-  query?: string;
-  ipc?: string;
-  patentNumber?: string;
-  limit?: number;
-  offset?: number;
+  searchQuery?: string | undefined;
+  query?: string | undefined;
+  ipc?: string | undefined;
+  patentNumber?: string | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 export class PatentsRepository {
