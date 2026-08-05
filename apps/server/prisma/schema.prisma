@@ -110,7 +110,10 @@ model Patent {
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
   @@index([patentNumber])
+<<<<<<< HEAD
   @@index([title])
+=======
+>>>>>>> efe6986 (feat: implement Prisma Patent repository and wire DI container)
   @@map("patents")
 }
 

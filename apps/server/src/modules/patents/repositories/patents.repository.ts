@@ -2,30 +2,24 @@ import { PrismaClient, type Patent } from '@prisma/client';
 import type { CleanedPatentRecord } from '../types/patent.types.js';
 
 export interface PatentFilterOptions {
-  searchQuery?: string | undefined;
-  query?: string | undefined;
-  ipc?: string | undefined;
-  patentNumber?: string | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
+  searchQuery?: string;
+  query?: string;
+  ipc?: string;
+  patentNumber?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export class PatentsRepository {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  constructor() {
-    // TODO: Inject PrismaClient dependency
-=======
-=======
->>>>>>> feature/backend
   private prisma: PrismaClient;
 
   constructor(prisma?: PrismaClient) {
+    if (!prisma && !process.env.DATABASE_URL) {
+      process.env.DATABASE_URL =
+        'postgresql://postgres:postgres@localhost:5432/patent_iq';
+    }
+
     this.prisma = prisma || new PrismaClient();
-<<<<<<< HEAD
->>>>>>> 9e9cce8 (feat: implemented real aggregated search metrics, execution times and query distribution queries agains postgrsql and redis)
-=======
->>>>>>> feature/backend
   }
 
   /**
@@ -55,30 +49,46 @@ export class PatentsRepository {
     const patent = await this.prisma.patent.findUnique({
       where: { id },
     });
+
     return patent ? this.mapToRecord(patent) : null;
   }
 
   /**
    * Find a patent record by unique patent number.
    */
-  async findByPatentNumber(patentNumber: string): Promise<CleanedPatentRecord | null> {
+  async findByPatentNumber(
+    patentNumber: string
+  ): Promise<CleanedPatentRecord | null> {
     const patent = await this.prisma.patent.findUnique({
       where: { patentNumber },
     });
+
     return patent ? this.mapToRecord(patent) : null;
   }
 
   /**
-   * List patent records with optional filters (searchQuery, query, ipc, limit, offset).
+   * List patent records with optional filters.
    */
-  async listWithFilters(filters?: PatentFilterOptions): Promise<CleanedPatentRecord[]> {
+  async listWithFilters(
+    filters?: PatentFilterOptions
+  ): Promise<CleanedPatentRecord[]> {
     const whereClause: any = {};
     const queryText = filters?.searchQuery || filters?.query;
 
     if (queryText) {
       whereClause.OR = [
-        { title: { contains: queryText, mode: 'insensitive' } },
-        { abstract: { contains: queryText, mode: 'insensitive' } },
+        {
+          title: {
+            contains: queryText,
+            mode: 'insensitive',
+          },
+        },
+        {
+          abstract: {
+            contains: queryText,
+            mode: 'insensitive',
+          },
+        },
       ];
     }
 
@@ -99,42 +109,42 @@ export class PatentsRepository {
       where: whereClause,
       take: filters?.limit ?? 50,
       skip: filters?.offset ?? 0,
-      orderBy: { createdAt: 'desc' },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    return patents.map((p) => this.mapToRecord(p));
+    return patents.map((patent) => this.mapToRecord(patent));
   }
 
   /**
    * Alias for listWithFilters.
    */
-  async list(filters?: PatentFilterOptions): Promise<CleanedPatentRecord[]> {
+  async list(
+    filters?: PatentFilterOptions
+  ): Promise<CleanedPatentRecord[]> {
     return this.listWithFilters(filters);
   }
 
   /**
-   * Insert a new patent record into PostgreSQL database via Prisma.
+   * Insert a new patent record.
    */
-  async insert(data: Partial<CleanedPatentRecord>): Promise<CleanedPatentRecord> {
-    const patentNumber = data.patentNumber || `PAT-${Date.now()}`;
-    const title = data.title || 'Untitled Patent Document';
-    const abstract = data.abstract || '';
-    const claims = data.claims || [];
-    const ipcClassifications = data.ipcClassifications || [];
-
+  async insert(
+    data: Partial<CleanedPatentRecord>
+  ): Promise<CleanedPatentRecord> {
     const patent = await this.prisma.patent.create({
       data: {
-        patentNumber,
-        title,
-        abstract,
-        claims,
-        ipcClassifications,
+        patentNumber: data.patentNumber ?? `PAT-${Date.now()}`,
+        title: data.title ?? 'Untitled Patent Document',
+        abstract: data.abstract ?? '',
+        claims: data.claims ?? [],
+        ipcClassifications: data.ipcClassifications ?? [],
         description: data.description ?? null,
         filingDate: data.filingDate ?? null,
         grantDate: data.grantDate ?? null,
-        inventors: data.inventors || [],
+        inventors: data.inventors ?? [],
         assignee: data.assignee ?? null,
-        cleanedAt: data.cleanedAt || new Date(),
+        cleanedAt: data.cleanedAt ?? new Date(),
       },
     });
 
@@ -144,7 +154,9 @@ export class PatentsRepository {
   /**
    * Alias for insert.
    */
-  async create(data: Partial<CleanedPatentRecord>): Promise<CleanedPatentRecord> {
+  async create(
+    data: Partial<CleanedPatentRecord>
+  ): Promise<CleanedPatentRecord> {
     return this.insert(data);
   }
 }
