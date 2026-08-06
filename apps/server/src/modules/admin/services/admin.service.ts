@@ -6,20 +6,25 @@ import type { ILLMProvider } from '../../../providers/llm/llm-provider.interface
 import type { ICacheProvider } from '../../../providers/cache/cache-provider.interface.js';
 import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provider.js';
 import type { EmbeddingsService } from '../../embeddings/services/embeddings.service.js';
+import { ReindexQueue } from '../../../jobs/reindex.queue.js';
 
 export class AdminService implements IAdminService {
   private readonly cacheProvider: ICacheProvider;
   private readonly prisma: PrismaClient;
+  private readonly reindexQueue: ReindexQueue;
 
   constructor(
     private readonly vectorStoreProvider: IVectorStoreProvider,
     private readonly llmProvider: ILLMProvider,
     cacheProvider?: ICacheProvider,
     prisma?: PrismaClient,
-    private readonly embeddingsService?: EmbeddingsService
+    private readonly embeddingsService?: EmbeddingsService,
+    reindexQueue?: ReindexQueue
   ) {
     this.cacheProvider = cacheProvider || new RedisCacheProvider();
     this.prisma = prisma || new PrismaClient();
+    this.reindexQueue =
+      reindexQueue || new ReindexQueue(process.env.REDIS_URL, this.prisma, this.embeddingsService);
   }
 
   /**
@@ -42,43 +47,14 @@ export class AdminService implements IAdminService {
   }
 
   /**
-   * Triggers embedding re-indexing batch job for patent documents.
+   * Triggers embedding re-indexing background job via BullMQ queue worker.
    */
   async triggerReindex(dto: ReindexEmbeddingsDto): Promise<{ jobId: string; queuedAt: Date }> {
-    const jobId = `reindex-job-${Date.now()}`;
-    console.log(`[AdminService] Trigger reindex requested: jobId=${jobId}, forceAll=${dto.forceAll}, batchSize=${dto.batchSize}`);
-
-    // Asynchronously execute re-index in background if embeddings service is available
-    if (this.embeddingsService) {
-      const batchSize = dto.batchSize || 50;
-      setTimeout(async () => {
-        try {
-          const patents = await this.prisma.patent.findMany({
-            take: batchSize,
-            select: { id: true, title: true, abstract: true, claims: true },
-          });
-
-          for (const patent of patents) {
-            const claimsStr = Array.isArray(patent.claims) ? patent.claims.join('\n') : String(patent.claims || '');
-            await this.embeddingsService?.generatePatentDocumentEmbeddings({
-              title: patent.title,
-              abstract: patent.abstract,
-              claims: claimsStr,
-              keywords: [],
-              fullText: `${patent.title}\n${patent.abstract}\n${claimsStr}`,
-            });
-          }
-          console.log(`[AdminService] Completed reindex job ${jobId} for ${patents.length} patents.`);
-        } catch (err: any) {
-          console.error(`[AdminService] Reindex job ${jobId} failed: ${err.message}`);
-        }
-      }, 10);
-    }
-
-    return {
-      jobId,
-      queuedAt: new Date(),
-    };
+    console.log(`[AdminService] Enqueuing reindex job: forceAll=${dto.forceAll}, batchSize=${dto.batchSize}`);
+    return this.reindexQueue.addReindexJob({
+      forceAll: dto.forceAll ?? false,
+      batchSize: dto.batchSize ?? 50,
+    });
   }
 
   /**
@@ -139,9 +115,11 @@ export class AdminService implements IAdminService {
 
   private async getPendingJobsCount(): Promise<number> {
     try {
-      return await this.prisma.uploadedDocument.count({
+      const queueCount = await this.reindexQueue.getPendingJobsCount();
+      const docsProcessing = await this.prisma.uploadedDocument.count({
         where: { status: 'Processing' },
       });
+      return queueCount + docsProcessing;
     } catch {
       return 0;
     }

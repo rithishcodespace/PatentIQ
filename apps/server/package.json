@@ -33,6 +33,7 @@
     "@prisma/client": "^7.8.0",
     "axios": "^1.19.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^6.0.8",
     "cors": "^2.8.6",
     "csv-parser": "^3.2.1",
     "dotenv": "^17.4.2",
