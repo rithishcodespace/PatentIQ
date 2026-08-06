@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Shield, BookOpen, History, UploadCloud, Search, Cpu } from 'lucide-react';
+import { User, Shield, BookOpen, History, UploadCloud, Search, Cpu, Activity } from 'lucide-react';
 import AuthModal from './AuthModal';
 import { getCurrentUser } from '../../services/api';
 import type { UserProfile } from '../../types/auth';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/search', label: 'Search Workspace', icon: Search },
   { to: '/upload', label: 'Invention Compare', icon: UploadCloud },
   { to: '/history', label: 'Search History', icon: History },
+  { to: '/dashboard', label: 'System Health', icon: Activity },
   { to: '/how-it-works', label: 'Architecture', icon: Cpu },
   { to: '/docs-preview', label: 'API Specs', icon: BookOpen },
 ];

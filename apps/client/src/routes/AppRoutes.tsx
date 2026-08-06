@@ -10,6 +10,7 @@ const HowItWorksPage = lazy(() => import("../pages/HowItWorksPage"));
 const HistoryPage = lazy(() => import("../pages/HistoryPage"));
 const UploadPage = lazy(() => import("../pages/UploadPage"));
 const DocsPage = lazy(() => import("../pages/DocsPage"));
+const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 
 const PageLoader = () => (
@@ -33,6 +34,8 @@ const AppRoutes = () => {
             <Route path="results" element={<Results />} />
             <Route path="upload" element={<UploadPage />} />
             <Route path="history" element={<HistoryPage />} />
+            <Route path="admin" element={<AdminDashboardPage />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="docs-preview" element={<DocsPage />} />
           </Route>
 
