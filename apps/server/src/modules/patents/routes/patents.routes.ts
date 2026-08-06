@@ -65,6 +65,83 @@ export async function patentsRoutes(fastify: FastifyInstance, controller: Patent
     handler: (req, reply) => controller.list(req as any, reply),
   });
 
+  // POST /ingestion/run - Trigger automated batch ingestion pipeline
+  fastify.post('/ingestion/run', {
+    schema: {
+      tags: ['Upload'],
+      summary: 'Trigger Ingestion Pipeline',
+      description: 'Triggers the automated batch ingestion pipeline with retry logic.',
+      body: {
+        type: 'object',
+        properties: {
+          batchSize: { type: 'integer', default: 20 },
+          maxRetries: { type: 'integer', default: 3 },
+        },
+      },
+      response: {
+        202: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string' },
+            data: { type: 'object' },
+          },
+        },
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req, reply) => controller.triggerIngestionPipeline(req as any, reply),
+  });
+
+  // GET /ingestion/status - Get automated ingestion pipeline progress and status
+  fastify.get('/ingestion/status', {
+    schema: {
+      tags: ['Upload'],
+      summary: 'Get Ingestion Pipeline Status',
+      description: 'Retrieves real-time progress tracking and logs of the ingestion pipeline.',
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { type: 'object' },
+          },
+        },
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req, reply) => controller.getIngestionPipelineStatus(req, reply),
+  });
+
+  // POST /ingestion/schedule - Configure automated ingestion schedule
+  fastify.post('/ingestion/schedule', {
+    schema: {
+      tags: ['Upload'],
+      summary: 'Configure Ingestion Schedule',
+      description: 'Schedules continuous automated dataset synchronization runs.',
+      body: {
+        type: 'object',
+        required: ['intervalMinutes', 'enabled'],
+        properties: {
+          intervalMinutes: { type: 'integer', example: 60 },
+          enabled: { type: 'boolean', example: true },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string' },
+            data: { type: 'object' },
+          },
+        },
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req, reply) => controller.configureIngestionSchedule(req as any, reply),
+  });
+
   // GET /:id - Get patent by ID
   fastify.get('/:id', {
     schema: {

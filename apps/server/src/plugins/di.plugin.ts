@@ -20,6 +20,7 @@ import { AuthService } from '../modules/auth/services/auth.service.js';
 import { UsersService } from '../modules/users/services/users.service.js';
 import { PatentParserService } from '../modules/patents/services/patent-parser.service.js';
 import { PatentService } from '../modules/patents/services/patent.service.js';
+import { IngestionPipelineService } from '../modules/patents/services/ingestion-pipeline.service.js';
 import { EmbeddingsService } from '../modules/embeddings/services/embeddings.service.js';
 import { SearchService } from '../modules/search/services/search.service.js';
 import { BenchmarkService } from '../modules/search/services/benchmark.service.js';
@@ -143,11 +144,12 @@ export default fp(async (fastify: FastifyInstance) => {
   );
   const analyticsService = new AnalyticsService(fastify.prisma);
   const adminService = new AdminService(vectorStoreProvider, llmProvider, undefined, fastify.prisma, embeddingsService);
+  const ingestionPipelineService = new IngestionPipelineService(fastify.prisma, patentParserService, embeddingProvider, vectorStoreProvider);
 
   // 4. Instantiate Controllers
   const authController = new AuthController(authService);
   const usersController = new UsersController(usersService);
-  const patentsController = new PatentsController(patentService);
+  const patentsController = new PatentsController(patentService, ingestionPipelineService);
   const embeddingsController = new EmbeddingsController(embeddingsService);
   const benchmarkController = new BenchmarkController(benchmarkService);
   const searchController = new SearchController(searchService, benchmarkController);
