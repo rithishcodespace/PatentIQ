@@ -17,6 +17,7 @@ interface CitationReportProps {
   analysis: NoveltyAnalysisData;
   overlapAnalysis: OverlapAnalysisPayload[];
   onSelectPatent?: (patentId: string) => void;
+  onDownloadPdf?: () => void;
 }
 
 export const renderTextWithCitations = (text: string, onSelectPatent?: (patentId: string) => void) => {
@@ -51,60 +52,72 @@ export const renderTextWithCitations = (text: string, onSelectPatent?: (patentId
   return parts;
 };
 
-const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent }: CitationReportProps) => {
+const CitationReport = ({ analysis, overlapAnalysis, onSelectPatent, onDownloadPdf }: CitationReportProps) => {
   const [activeTab, setActiveTab] = useState<'summary' | 'claims' | 'features' | 'risks'>('summary');
 
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 bg-slate-50/50 p-1.5 rounded-xl">
-        <button
-          onClick={() => setActiveTab('summary')}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
-            activeTab === 'summary'
-              ? 'bg-white text-indigo-600 shadow-xs font-semibold'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <FileText className="h-4 w-4" />
-          Executive Novelty Synthesis
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/50 p-1.5 rounded-xl">
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            onClick={() => setActiveTab('summary')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
+              activeTab === 'summary'
+                ? 'bg-white text-indigo-600 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            Executive Novelty Synthesis
+          </button>
 
-        <button
-          onClick={() => setActiveTab('claims')}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
-            activeTab === 'claims'
-              ? 'bg-white text-indigo-600 shadow-xs font-semibold'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <ListOrdered className="h-4 w-4" />
-          Claim Overlap Matrix ({overlapAnalysis.length})
-        </button>
+          <button
+            onClick={() => setActiveTab('claims')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
+              activeTab === 'claims'
+                ? 'bg-white text-indigo-600 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ListOrdered className="h-4 w-4" />
+            Claim Overlap Matrix ({overlapAnalysis.length})
+          </button>
 
-        <button
-          onClick={() => setActiveTab('features')}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
-            activeTab === 'features'
-              ? 'bg-white text-indigo-600 shadow-xs font-semibold'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          Feature Comparison
-        </button>
+          <button
+            onClick={() => setActiveTab('features')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
+              activeTab === 'features'
+                ? 'bg-white text-indigo-600 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="h-4 w-4" />
+            Feature Comparison
+          </button>
 
-        <button
-          onClick={() => setActiveTab('risks')}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
-            activeTab === 'risks'
-              ? 'bg-white text-amber-700 shadow-xs font-semibold'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          Prior Art Risks ({analysis.risks.length})
-        </button>
+          <button
+            onClick={() => setActiveTab('risks')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-body text-xs font-medium transition ${
+              activeTab === 'risks'
+                ? 'bg-white text-amber-700 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            Prior Art Risks ({analysis.risks.length})
+          </button>
+        </div>
+
+        {onDownloadPdf && (
+          <button
+            onClick={onDownloadPdf}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 font-body text-xs font-semibold text-indigo-700 hover:bg-indigo-50 transition shadow-2xs"
+          >
+            <FileText className="h-3.5 w-3.5 text-indigo-600" />
+            Export PDF
+          </button>
+        )}
       </div>
 
       {/* Tab Content 1: Executive Novelty Summary & Citation Paragraphs */}

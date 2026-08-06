@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
+import { Download } from "lucide-react";
 import { Card } from "../ui/Card";
+import { exportReportAsPdf } from "../../utils/pdfExporter";
 
 interface ReportProps {
   report: {
@@ -8,6 +10,8 @@ interface ReportProps {
     industrialApplicability: number;
     overall: number;
   };
+  query?: string;
+  onDownloadPdf?: () => void;
 }
 
 const Row = ({ title, value }: { title: string; value: number }) => {
@@ -37,12 +41,39 @@ const Row = ({ title, value }: { title: string; value: number }) => {
   );
 };
 
-const PatentReport = ({ report }: ReportProps) => {
+const PatentReport = ({ report, query, onDownloadPdf }: ReportProps) => {
+  const handlePdfExport = () => {
+    if (onDownloadPdf) {
+      onDownloadPdf();
+    } else {
+      exportReportAsPdf({
+        query: query || 'Patentability & Prior-Art Assessment',
+        confidence: { overall: { score: report.overall, level: 'High' } },
+        analysis: {
+          noveltyScore: report.novelty / 5,
+          obviousnessScore: (5 - report.inventiveStep) / 5,
+          summary: `Overall Patentability Assessment score: ${report.overall}%. High technical novelty in claims.`,
+        },
+      });
+    }
+  };
+
   return (
     <Card className="sticky top-24 h-fit">
-      <p className="code-chip mb-1 inline-block bg-indigo/5 text-indigo">
-        AI ASSESSMENT
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="code-chip inline-block bg-indigo/5 text-indigo">
+          AI ASSESSMENT
+        </p>
+        <button
+          onClick={handlePdfExport}
+          className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 font-body text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition"
+          title="Download Legal PDF Report"
+        >
+          <Download className="h-3 w-3" />
+          <span>Download PDF</span>
+        </button>
+      </div>
+
       <h2 className="mt-3 font-display text-xl font-semibold text-ink">
         Patentability report
       </h2>

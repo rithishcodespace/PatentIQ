@@ -74,7 +74,7 @@ const HistoryView = ({
   };
 
   const filteredHistory = historyRecords.filter((rec) => {
-    const queryStr = rec.searchQuery || rec.query || '';
+    const queryStr = rec.searchQuery || (rec as any).query || '';
     const matchesSearch = queryStr.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesIpc = selectedIpc === 'ALL' || rec.appliedFilters?.ipc === selectedIpc;
     return matchesSearch && matchesIpc;
@@ -168,11 +168,11 @@ const HistoryView = ({
             filteredHistory.map((rec) => {
               const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : 'Recent';
               const timeStr = rec.createdAt ? new Date(rec.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-              const displayQuery = rec.searchQuery || rec.query || 'Prior Art Search';
+              const displayQuery = rec.searchQuery || (rec as any).query || 'Prior Art Search';
               const overallScore = rec.confidence?.overall?.score;
               const overallLevel = rec.confidence?.overall?.level;
-              const matchesCount = rec.retrievedPatents?.length || rec.matches?.length || 0;
-              const summaryText = rec.noveltyAnalysis?.summary || rec.analysis?.summary;
+              const matchesCount = rec.retrievedPatents?.length || (rec as any).matches?.length || 0;
+              const summaryText = rec.noveltyAnalysis?.summary || (rec as any).analysis?.summary;
 
               return (
                 <motion.div

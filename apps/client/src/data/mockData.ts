@@ -6,7 +6,7 @@ export const mockCurrentUser: UserProfile = {
   id: 'usr_882391023',
   email: 'analyst.rithish@patentiq.ai',
   fullName: 'Rithish (Patent Analyst)',
-  role: 'PATENT_ANALYST',
+  role: 'User',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
 };
 

@@ -18,6 +18,7 @@ import ResultsList from '../components/results/ResultsList';
 import Modal from '../components/ui/Modal';
 import Loader from '../components/common/Loader';
 import { searchPatent } from '../services/api';
+import { exportReportAsPdf } from '../utils/pdfExporter';
 
 const Results = () => {
   const location = useLocation();
@@ -33,8 +34,9 @@ const Results = () => {
         setLoading(true);
         try {
           const res = await searchPatent({
-            query: 'Autonomous drone sensor fusion and wireless charging system',
-            advanced: { maxResults: 10 },
+            method: 'paste',
+            pastedText: 'Autonomous drone sensor fusion and wireless charging system',
+            advanced: { similarityThreshold: 75, maxResults: 10, databases: ['USPTO'], includeKeywords: true },
           });
           if (isMounted && res) {
             const dataObj = res.data || res;
@@ -146,11 +148,19 @@ const Results = () => {
 
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => exportReportAsPdf(data)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3.5 py-2 font-body text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
+          >
+            <FileText className="h-3.5 w-3.5 text-indigo-600" />
+            Export Report (PDF)
+          </button>
+
+          <button
             onClick={handleExportJson}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-body text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
           >
             <Download className="h-3.5 w-3.5 text-slate-500" />
-            Export Report (JSON)
+            Export (JSON)
           </button>
 
           <Link
@@ -292,6 +302,7 @@ const Results = () => {
             <CitationReport
               analysis={analysisData}
               overlapAnalysis={overlapData}
+              onDownloadPdf={() => exportReportAsPdf(data)}
               onSelectPatent={(patentId) => {
                 const found = results.find(
                   (p: any) => p.patentId === patentId || p.id === patentId
