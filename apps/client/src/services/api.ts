@@ -1,5 +1,4 @@
 import axios from "axios";
-import { mockRagResponse, mockSearchHistory, mockExtractedDocument } from "../data/mockData";
 import type { PatentSearchPayload } from "../types/search";
 import type { SearchHistoryRecord } from "../types/history";
 
@@ -37,14 +36,13 @@ export const getCurrentUser = async (): Promise<any> => {
   }
 };
 
-
-
 /**
  * Executes a semantic prior-art search and novelty analysis against the backend.
  * Uses /api/rag/analyze or /api/upload/compare based on payload input method.
  */
 export const searchPatent = async (payload?: PatentSearchPayload): Promise<any> => {
-  const queryText = payload?.pastedText ||
+  const queryText =
+    payload?.pastedText ||
     [payload?.title, payload?.abstract, payload?.claims, payload?.keywords]
       .filter(Boolean)
       .join("\n\n") ||
@@ -60,16 +58,11 @@ export const searchPatent = async (payload?: PatentSearchPayload): Promise<any> 
       topK: payload?.advanced?.maxResults || 10,
     });
 
-    if (response.data && response.data.success) {
-      return response.data;
-    }
     return response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Backend unreachable or failed, falling back to local engine state:", error?.message);
-    return {
-      ...mockRagResponse,
-      query: queryText,
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Search execution failed";
+    console.error("[PatentIQ API] Search patent error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -101,31 +94,9 @@ export const compareInventionFile = async (file: File, topK: number = 10): Promi
 
     throw new Error("Failed to process document file");
   } catch (error: any) {
-    console.warn("[PatentIQ API] Document upload/compare failed, falling back to structured result:", error?.message);
-    return {
-      success: true,
-      document: {
-        title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-      },
-      retrieval: {
-        topK,
-        retrievalConfidence: 91.2,
-      },
-      matches: mockRagResponse.retrievedPatents.map((p, idx) => ({
-        rank: idx + 1,
-        patentId: p.patentId,
-        title: p.title,
-        similarityScore: p.similarityScore,
-        ipc: p.ipc,
-        country: p.country,
-        publicationDate: p.publicationDate,
-        matchingSections: ["Abstract", "Claims"],
-      })),
-      analysis: mockRagResponse.analysis,
-      confidence: mockRagResponse.confidence,
-      overlapAnalysis: mockRagResponse.overlapAnalysis,
-      metrics: mockRagResponse.metrics,
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Document upload/compare failed";
+    console.error("[PatentIQ API] Document upload/compare error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -143,26 +114,9 @@ export const compareDirectText = async (
     });
     return response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Direct text comparison failed, falling back to local engine state:", error?.message);
-    return {
-      success: true,
-      document: { title: document.title },
-      retrieval: { topK, retrievalConfidence: 89.5 },
-      matches: mockRagResponse.retrievedPatents.map((p, idx) => ({
-        rank: idx + 1,
-        patentId: p.patentId,
-        title: p.title,
-        similarityScore: p.similarityScore,
-        ipc: p.ipc,
-        country: p.country,
-        publicationDate: p.publicationDate,
-        matchingSections: ["Abstract", "Claims"],
-      })),
-      analysis: mockRagResponse.analysis,
-      confidence: mockRagResponse.confidence,
-      overlapAnalysis: mockRagResponse.overlapAnalysis,
-      metrics: mockRagResponse.metrics,
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Direct text comparison failed";
+    console.error("[PatentIQ API] Direct text comparison error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -178,11 +132,9 @@ export const processDocumentFile = async (file: File): Promise<any> => {
     });
     return response.data?.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Section extraction failed, returning local fallback:", error?.message);
-    return {
-      ...mockExtractedDocument.sections,
-      title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Section extraction failed";
+    console.error("[PatentIQ API] Section extraction error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -197,10 +149,11 @@ export const fetchSearchHistory = async (page = 1, limit = 20): Promise<SearchHi
     if (response.data && response.data.data) {
       return response.data.data;
     }
-    return mockSearchHistory;
+    return [];
   } catch (error: any) {
-    console.warn("[PatentIQ API] Search history fetch failed, returning local history:", error?.message);
-    return mockSearchHistory;
+    const errorMsg = error?.response?.data?.message || error?.message || "Search history fetch failed";
+    console.error("[PatentIQ API] Search history fetch error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -212,8 +165,9 @@ export const deleteSearchHistoryRecord = async (id: string): Promise<boolean> =>
     await apiClient.delete(`/history/${id}`);
     return true;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Failed to delete history record:", error?.message);
-    return true;
+    const errorMsg = error?.response?.data?.message || error?.message || "Failed to delete history record";
+    console.error("[PatentIQ API] Failed to delete history record error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -259,16 +213,9 @@ export const fetchOpenApiRoutes = async (): Promise<{ method: string; path: stri
       { method: "GET", path: "/api/admin/status", summary: "Infrastructure health status check (PSQL, Ollama, Pinecone)" },
     ];
   } catch (error: any) {
-    console.warn("[PatentIQ API] Failed to fetch OpenAPI routes from /docs/json:", error?.message);
-    return [
-      { method: "POST", path: "/api/search", summary: "Execute vector similarity search over patent prior art" },
-      { method: "POST", path: "/api/rag/analyze", summary: "Grounded 7-section novelty analysis & claim overlap detection" },
-      { method: "GET", path: "/api/history", summary: "List persisted search history records with pagination" },
-      { method: "POST", path: "/api/upload/process", summary: "Parse patent document file (PDF, DOCX, TXT)" },
-      { method: "POST", path: "/api/upload/compare", summary: "End-to-end document vector embedding & prior-art comparison" },
-      { method: "GET", path: "/api/analytics/overview", summary: "Aggregated search metrics & IPC distributions" },
-      { method: "GET", path: "/api/admin/status", summary: "Infrastructure health status check (PSQL, Ollama, Pinecone)" },
-    ];
+    const errorMsg = error?.response?.data?.message || error?.message || "Failed to fetch OpenAPI routes";
+    console.error("[PatentIQ API] Failed to fetch OpenAPI routes error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -283,20 +230,11 @@ export const fetchAdminStatus = async (): Promise<{
 }> => {
   try {
     const response = await apiClient.get("/admin/status");
-    return response.data?.data || response.data || {
-      pineconeHealthy: true,
-      ollamaHealthy: true,
-      databaseHealthy: true,
-      pendingJobsCount: 0,
-    };
+    return response.data?.data || response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Admin status fetch failed, returning default healthy state:", error?.message);
-    return {
-      pineconeHealthy: true,
-      ollamaHealthy: true,
-      databaseHealthy: true,
-      pendingJobsCount: 0,
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Admin status fetch failed";
+    console.error("[PatentIQ API] Admin status fetch error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -306,10 +244,11 @@ export const fetchAdminStatus = async (): Promise<{
 export const triggerAdminReindex = async (forceAll = false, batchSize = 50): Promise<{ message: string; jobId: string }> => {
   try {
     const response = await apiClient.post("/admin/reindex", { forceAll, batchSize });
-    return response.data?.data || response.data || { message: "Reindexing job started", jobId: `job-${Date.now()}` };
+    return response.data?.data || response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Reindex trigger failed:", error?.message);
-    return { message: "Reindexing job queued successfully (fallback execution)", jobId: `job-fb-${Date.now()}` };
+    const errorMsg = error?.response?.data?.message || error?.message || "Reindex trigger failed";
+    console.error("[PatentIQ API] Reindex trigger error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -319,10 +258,11 @@ export const triggerAdminReindex = async (forceAll = false, batchSize = 50): Pro
 export const clearAdminCache = async (): Promise<{ message: string }> => {
   try {
     const response = await apiClient.post("/admin/clear-cache");
-    return response.data?.data || response.data || { message: "System cache cleared successfully" };
+    return response.data?.data || response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Clear cache failed:", error?.message);
-    return { message: "System cache flushed" };
+    const errorMsg = error?.response?.data?.message || error?.message || "Clear cache failed";
+    console.error("[PatentIQ API] Clear cache error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -336,30 +276,11 @@ export const fetchAnalyticsOverview = async (): Promise<{
 }> => {
   try {
     const response = await apiClient.get("/analytics/overview");
-    return response.data?.data || response.data || {
-      totalSearches: 1250,
-      averageLatencyMs: 142.5,
-      topCategories: [
-        { ipc: "H02J (Electric Power & Charging)", count: 340 },
-        { ipc: "G06F (Digital Data Processing)", count: 285 },
-        { ipc: "B64C (Aircraft & UAV Systems)", count: 210 },
-        { ipc: "G05D (Automatic Control Systems)", count: 175 },
-        { ipc: "H04L (Digital Information Transmission)", count: 140 },
-      ],
-    };
+    return response.data?.data || response.data;
   } catch (error: any) {
-    console.warn("[PatentIQ API] Analytics overview fetch failed, returning mock analytics:", error?.message);
-    return {
-      totalSearches: 1250,
-      averageLatencyMs: 142.5,
-      topCategories: [
-        { ipc: "H02J (Electric Power & Charging)", count: 340 },
-        { ipc: "G06F (Digital Data Processing)", count: 285 },
-        { ipc: "B64C (Aircraft & UAV Systems)", count: 210 },
-        { ipc: "G05D (Automatic Control Systems)", count: 175 },
-        { ipc: "H04L (Digital Information Transmission)", count: 140 },
-      ],
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Analytics overview fetch failed";
+    console.error("[PatentIQ API] Analytics overview fetch error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -371,15 +292,9 @@ export const fetchIngestionStatus = async (): Promise<any> => {
     const response = await apiClient.get("/patents/ingestion/status");
     return response.data?.data || response.data;
   } catch (error: any) {
-    return {
-      status: "idle",
-      stage: "idle",
-      progressPercent: 0,
-      processedCount: 0,
-      totalCount: 0,
-      errorCount: 0,
-      logs: ["[System] Automated ingestion worker standby"],
-    };
+    const errorMsg = error?.response?.data?.message || error?.message || "Ingestion status fetch failed";
+    console.error("[PatentIQ API] Ingestion status fetch error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -391,7 +306,9 @@ export const triggerIngestionRun = async (batchSize = 20): Promise<any> => {
     const response = await apiClient.post("/patents/ingestion/run", { batchSize });
     return response.data?.data || response.data;
   } catch (error: any) {
-    return { status: "running", stage: "dataset_discovery", progressPercent: 10 };
+    const errorMsg = error?.response?.data?.message || error?.message || "Ingestion run trigger failed";
+    console.error("[PatentIQ API] Ingestion run trigger error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -403,6 +320,8 @@ export const configureIngestionSchedule = async (intervalMinutes: number, enable
     const response = await apiClient.post("/patents/ingestion/schedule", { intervalMinutes, enabled });
     return response.data?.data || response.data;
   } catch (error: any) {
-    return { status: "idle", scheduleEnabled: enabled };
+    const errorMsg = error?.response?.data?.message || error?.message || "Ingestion schedule configuration failed";
+    console.error("[PatentIQ API] Ingestion schedule configuration error:", errorMsg);
+    throw new Error(errorMsg);
   }
 };

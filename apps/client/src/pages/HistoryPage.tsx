@@ -14,10 +14,20 @@ const HistoryPage = () => {
     let isMounted = true;
     async function loadHistory() {
       setLoading(true);
-      const records = await fetchSearchHistory(1, 50);
-      if (isMounted) {
-        setHistoryRecords(records);
-        setLoading(false);
+      try {
+        const records = await fetchSearchHistory(1, 50);
+        if (isMounted) {
+          setHistoryRecords(records);
+        }
+      } catch (err) {
+        console.error('[HistoryPage] Failed to fetch history:', err);
+        if (isMounted) {
+          setHistoryRecords([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
     loadHistory();

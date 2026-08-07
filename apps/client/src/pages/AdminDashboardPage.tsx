@@ -88,8 +88,8 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     loadDashboardData();
     const timer = setInterval(() => {
-      fetchAdminStatus().then((s) => s && setSystemStatus(s));
-      fetchIngestionStatus().then((p) => p && setIngestionStatus(p));
+      fetchAdminStatus().then((s) => s && setSystemStatus(s)).catch(() => {});
+      fetchIngestionStatus().then((p) => p && setIngestionStatus(p)).catch(() => {});
     }, 5000);
     return () => clearInterval(timer);
   }, []);
