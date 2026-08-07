@@ -21,6 +21,7 @@ import { reportsRoutes } from './modules/reports/routes/reports.routes.js';
 import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
 import { historyRoutes } from './modules/history/routes/history.routes.js';
+import { adminRoutes } from './modules/admin/routes/admin.routes.js';
 
 import { uploadRoutes } from './modules/upload/routes/upload.routes.js';
 import { HealthStatusSchema, standardErrorResponses } from './common/schemas/swagger.schemas.js';
@@ -58,6 +59,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => usersRoutes(instance, controllers.users), { prefix: '/api/users' });
 
   await app.register(async (instance) => patentsRoutes(instance, controllers.patents), { prefix: '/api/v1/patents' });
+  await app.register(async (instance) => patentsRoutes(instance, controllers.patents), { prefix: '/api/patents' });
   await app.register(async (instance) => embeddingsRoutes(instance, controllers.embeddings), { prefix: '/api/v1/embeddings' });
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/v1/search' });
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/search' });
@@ -69,6 +71,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/v1/upload' });
   await app.register(async (instance) => reportsRoutes(instance, controllers.reports), { prefix: '/api/v1/reports' });
   await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/v1/analytics' });
+  await app.register(async (instance) => analyticsRoutes(instance, controllers.analytics), { prefix: '/api/analytics' });
+  await app.register(async (instance) => adminRoutes(instance, controllers.admin), { prefix: '/api/v1/admin' });
+  await app.register(async (instance) => adminRoutes(instance, controllers.admin), { prefix: '/api/admin' });
 
 
   // 5. Infrastructure Health Check Endpoints
