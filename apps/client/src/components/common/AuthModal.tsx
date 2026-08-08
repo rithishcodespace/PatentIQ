@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Mail, Lock, LogOut, CheckCircle2, User } from 'lucide-react';
-import type { UserProfile } from '../../types/auth';
 import Modal from '../ui/Modal';
-import { loginUser, registerUser, logoutUser } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentUser: UserProfile | null;
-  onLogin: (user: UserProfile) => void;
-  onLogout: () => void;
-}
-
-const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModalProps) => {
+const AuthModal = () => {
+  const { user, isAuthModalOpen, closeAuthModal, login, register, logout } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,29 +20,14 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
 
     try {
       if (isRegister) {
-        const res = await registerUser(email, password, fullName || email.split('@')[0]);
-        const userObj = res?.data?.user;
-        if (userObj) {
-          onLogin({
-            id: userObj.id,
-            email: userObj.email,
-            fullName: userObj.name,
-            role: 'User',
-          });
-        }
+        await register(email, password, fullName || email.split('@')[0]);
       } else {
-        const res = await loginUser(email, password);
-        const userObj = res?.data?.user;
-        if (userObj) {
-          onLogin({
-            id: userObj.id,
-            email: userObj.email,
-            fullName: userObj.name,
-            role: 'User',
-          });
-        }
+        await login(email, password);
       }
-      onClose();
+      setEmail('');
+      setPassword('');
+      setFullName('');
+      closeAuthModal();
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || err.message || 'Authentication failed');
     } finally {
@@ -60,19 +37,18 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
 
   const handleSignOut = async () => {
     try {
-      await logoutUser();
-    } catch (err) {
+      await logout();
+    } catch (err: any) {
       console.warn('Logout error:', err);
     } finally {
-      onLogout();
-      onClose();
+      closeAuthModal();
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isAuthModalOpen} onClose={closeAuthModal}>
       <AnimatePresence mode="wait">
-        {currentUser ? (
+        {user ? (
           /* Authenticated User Info View */
           <motion.div
             key="authenticated"
@@ -83,40 +59,40 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
           >
             <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white font-display text-xl font-bold shadow-md shadow-indigo-600/20">
-                {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U'}
+                {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-display text-xl font-semibold text-slate-900">
-                    {currentUser.fullName}
+                    {user.fullName}
                   </h3>
                   <span className="rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-0.5 font-body text-xs font-bold">
                     User
                   </span>
                 </div>
-                <p className="font-body text-sm text-slate-500">{currentUser.email}</p>
+                <p className="font-body text-sm text-slate-500">{user.email}</p>
               </div>
             </div>
 
-            {/* HTTP-Only Cookie Session Security Card */}
+            {/* Session Security Card */}
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  Authenticated Session Secured
+                  Authenticated Session Active
                 </span>
                 <span className="text-[11px] font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                  HTTP-Only Cookie
+                  HTTP-Only Cookie / JWT
                 </span>
               </div>
               <p className="font-body text-xs text-emerald-800">
-                Your authentication token is stored securely in an encrypted HTTP-only cookie, protected against XSS and client-side extraction.
+                Your authentication token is stored securely in an encrypted cookie / authorization session, protecting system operations and workstation history.
               </p>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={onClose}
+                onClick={closeAuthModal}
                 className="rounded-xl border border-slate-200 px-5 py-2.5 font-body text-xs font-medium text-slate-700 hover:bg-slate-50"
               >
                 Close
@@ -233,4 +209,3 @@ const AuthModal = ({ isOpen, onClose, currentUser, onLogin, onLogout }: AuthModa
 };
 
 export default AuthModal;
-

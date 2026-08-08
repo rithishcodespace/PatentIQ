@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
+import { AuthProvider } from "../context/AuthContext";
+import ProtectedRoute from "../components/common/ProtectedRoute";
 
 const Landing = lazy(() => import("../pages/Landing"));
 const Search = lazy(() => import("../pages/Search"));
@@ -25,23 +27,53 @@ const PageLoader = () => (
 const AppRoutes = () => {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Landing />} />
-            <Route path="search" element={<Search />} />
-            <Route path="how-it-works" element={<HowItWorksPage />} />
-            <Route path="results" element={<Results />} />
-            <Route path="upload" element={<UploadPage />} />
-            <Route path="history" element={<HistoryPage />} />
-            <Route path="admin" element={<AdminDashboardPage />} />
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="docs-preview" element={<DocsPage />} />
-          </Route>
+      <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Landing />} />
+              <Route path="search" element={<Search />} />
+              <Route path="how-it-works" element={<HowItWorksPage />} />
+              <Route path="results" element={<Results />} />
+              <Route
+                path="upload"
+                element={
+                  <ProtectedRoute>
+                    <UploadPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="history"
+                element={
+                  <ProtectedRoute>
+                    <HistoryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="docs-preview" element={<DocsPage />} />
+            </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   );
 };
