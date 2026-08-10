@@ -20,7 +20,7 @@ import ResultsList from '../components/results/ResultsList';
 import TechnicalDeepDive from '../components/results/TechnicalDeepDive';
 import Modal from '../components/ui/Modal';
 import Loader from '../components/common/Loader';
-import { searchPatent, fetchNoveltyMatrix, fetchDesignAround } from '../services/api';
+import { searchPatent, fetchNoveltyMatrix, fetchDesignAround, exportAttorneyPdfReport } from '../services/api';
 import { exportReportAsPdf } from '../utils/pdfExporter';
 import { getSimilarityRisk } from '../utils/similarityRisk';
 
@@ -139,6 +139,7 @@ const Results = () => {
   const [noveltyMatrixData, setNoveltyMatrixData] = useState<any>(null);
   const [designAroundData, setDesignAroundData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(!location.state);
+  const [exportingPdf, setExportingPdf] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -244,6 +245,27 @@ const Results = () => {
     downloadAnchor.remove();
   };
 
+  const handleDownloadAttorneyPdf = async () => {
+    setExportingPdf(true);
+    try {
+      await exportAttorneyPdfReport({
+        inventionTitle: data.query || 'Autonomous Drone LiDAR Sensor Fusion & Inductive Charging System',
+        msmeName: 'PatentIQ Innovator Enterprise',
+        overallRiskLevel: riskLevel,
+        noveltyRiskScore: riskScore,
+        executiveRationale,
+        featureMatrix: matrixItems?.[0]?.featureOverlaps || [],
+        priorArtCitations: results.slice(0, 5),
+        designAround: designAroundPayload?.recommendations || [],
+      });
+    } catch (err) {
+      console.warn('[Results] Server-side PDF export fallback to local export:', err);
+      exportReportAsPdf(data);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 font-body">
       {/* 1. Workstation Navigation Header */}
@@ -274,11 +296,21 @@ const Results = () => {
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => exportReportAsPdf(data)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3.5 py-2 font-body text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
+            onClick={handleDownloadAttorneyPdf}
+            disabled={exportingPdf}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2 font-body text-xs font-bold text-white hover:from-indigo-500 hover:to-indigo-600 transition shadow-sm disabled:opacity-60"
           >
-            <FileText className="h-3.5 w-3.5 text-indigo-600" />
-            Export Report (PDF)
+            {exportingPdf ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Generating Report...
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4 text-white" />
+                Download Attorney Report (PDF)
+              </>
+            )}
           </button>
 
           <button

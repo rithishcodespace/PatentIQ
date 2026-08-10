@@ -351,3 +351,38 @@ export const fetchDesignAround = async (payload: { query?: string; text?: string
     return null;
   }
 };
+
+/**
+ * Generates and downloads an Attorney-Ready Prior-Art PDF Report via /api/reports/export-pdf.
+ */
+export const exportAttorneyPdfReport = async (payload: {
+  inventionTitle?: string;
+  msmeName?: string;
+  submissionDate?: string;
+  overallRiskLevel?: string;
+  noveltyRiskScore?: number;
+  executiveRationale?: string;
+  featureMatrix?: any[];
+  priorArtCitations?: any[];
+  designAround?: any[];
+}): Promise<void> => {
+  try {
+    const response = await apiClient.post("/reports/export-pdf", payload, {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `PatentIQ_Attorney_Report_${Date.now()}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || "PDF Report export failed";
+    console.error("[PatentIQ API] Attorney PDF export error:", errorMsg);
+    throw new Error(errorMsg);
+  }
+};
