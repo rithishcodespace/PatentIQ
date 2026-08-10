@@ -77,17 +77,17 @@ const ResultCard = ({ patent, onView }: ResultCardProps) => {
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-        <span className="font-body text-slate-400 text-[11px] flex items-center gap-1">
-          <Layers className="h-3 w-3 text-slate-400" />
-          Pinecone Vector ID
+        <span className="font-body text-slate-500 text-[11px] flex items-center gap-1">
+          <Layers className="h-3 w-3 text-indigo-600" />
+          Candidate Patent ID: <strong className="font-mono text-slate-900">{patentId}</strong>
         </span>
         <button
           onClick={() => onView?.(patent)}
           disabled={!onView}
-          className="inline-flex items-center gap-1.5 font-body font-semibold text-indigo-600 hover:text-indigo-800 transition"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-1.5 font-body text-xs font-semibold text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900 transition shadow-2xs"
         >
-          Inspect Full Specification
-          <ExternalLink className="h-3.5 w-3.5" />
+          1-Click Claim Inspector
+          <ExternalLink className="h-3.5 w-3.5 text-indigo-600" />
         </button>
       </div>  
     </Card>
