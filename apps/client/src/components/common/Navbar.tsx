@@ -22,12 +22,17 @@ const Navbar = () => {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white font-display font-bold text-lg shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-display font-bold text-lg shadow-sm">
               IQ
             </div>
-            <span className="font-display text-xl font-bold tracking-tight text-slate-900">
-              Patent<span className="text-indigo-600">IQ</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-xl font-bold tracking-tight text-slate-900">
+                Patent<span className="text-indigo-600">IQ</span>
+              </span>
+              <span className="hidden sm:inline-block font-mono text-[9px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200">
+                ENTERPRISE
+              </span>
+            </div>
           </Link>
 
           {/* Navigation Items */}

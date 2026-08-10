@@ -3,20 +3,15 @@ import { useLocation, Link } from 'react-router-dom';
 import {
   Search,
   ArrowLeft,
-  Zap,
-  Download,
   FileText,
   Columns,
   Wrench,
-  Cpu,
 } from 'lucide-react';
 
 import ExecutiveRiskCard from '../components/results/ExecutiveRiskCard';
 import FeatureAlignmentMatrix from '../components/results/FeatureAlignmentMatrix';
 import InteractiveSplitView from '../components/results/InteractiveSplitView';
 import DesignAroundTab from '../components/results/DesignAroundTab';
-import ResultsList from '../components/results/ResultsList';
-import TechnicalDeepDive from '../components/results/TechnicalDeepDive';
 import Modal from '../components/ui/Modal';
 import Loader from '../components/common/Loader';
 import { searchPatent, fetchNoveltyMatrix, fetchDesignAround, exportAttorneyPdfReport } from '../services/api';
@@ -133,6 +128,8 @@ const DEFAULT_RAG_DATA = {
 const Results = () => {
   const location = useLocation();
   const [selectedPatent, setSelectedPatent] = useState<any>(null);
+  const [activeRightTab, setActiveRightTab] = useState<'matrix' | 'design-around' | 'inspector' | 'patents'>('matrix');
+  const [showAllCandidates, setShowAllCandidates] = useState<boolean>(false);
   const [liveRagData, setLiveRagData] = useState<any>(location.state || DEFAULT_RAG_DATA);
   const [noveltyMatrixData, setNoveltyMatrixData] = useState<any>(null);
   const [designAroundData, setDesignAroundData] = useState<any>(null);
@@ -214,9 +211,7 @@ const Results = () => {
 
   const data = liveRagData || DEFAULT_RAG_DATA;
   const results = data.results || data.retrievedPatents || DEFAULT_RAG_DATA.results;
-  const confidenceBlock = data.confidence || DEFAULT_RAG_DATA.confidence;
   const analysisData = data.analysis || data.noveltyAnalysis || DEFAULT_RAG_DATA.analysis;
-  const metricsData = data.metrics || DEFAULT_RAG_DATA.metrics;
 
   // Novelty Matrix Data (Backend API result or fallback)
   const matrixPayload = noveltyMatrixData || data.overlapAnalysis || DEFAULT_RAG_DATA.overlapAnalysis;
@@ -230,18 +225,6 @@ const Results = () => {
 
   // Design Around Data (Backend API result or fallback)
   const designAroundPayload = designAroundData || data.designAround || DEFAULT_RAG_DATA.designAround;
-
-  const handleExportJson = () => {
-    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify({ ...data, noveltyMatrix: matrixPayload, designAround: designAroundPayload }, null, 2)
-    )}`;
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', jsonString);
-    downloadAnchor.setAttribute('download', `patent_iq_analysis_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
 
   const handleDownloadAttorneyPdf = async () => {
     setExportingPdf(true);
@@ -285,11 +268,6 @@ const Results = () => {
               "{data.query || 'Prior Art Novelty Search'}"
             </span>
           </div>
-
-          <div className="hidden lg:flex items-center gap-1.5 font-body text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-            <Zap className="h-3.5 w-3.5 text-indigo-600" />
-            Analysis Ready ({metricsData.totalTimeMs || 145}ms)
-          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -311,25 +289,17 @@ const Results = () => {
             )}
           </button>
 
-          <button
-            onClick={handleExportJson}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-body text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
-          >
-            <Download className="h-3.5 w-3.5 text-slate-500" />
-            Export (JSON)
-          </button>
-
           <Link
             to="/search"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 font-body text-xs font-semibold text-white hover:bg-indigo-500 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 font-body text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
           >
-            <Search className="h-3.5 w-3.5" />
+            <Search className="h-3.5 w-3.5 text-slate-500" />
             New Search
           </Link>
         </div>
       </div>
 
-      {/* 2. Executive Risk Card */}
+      {/* 2. Product Executive Verdict Card */}
       <ExecutiveRiskCard
         riskLevel={riskLevel}
         riskScore={riskScore}
@@ -338,108 +308,145 @@ const Results = () => {
         evaluatedPatentsCount={results?.length || 2}
       />
 
-      {/* 3. Section 1: Feature Alignment Matrix (Color-Coded Badges) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <div>
-            <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-indigo-600" />
-              1. Feature Alignment & Overlap Matrix
-            </h3>
-            <p className="font-body text-xs text-slate-500">
-              Element-level novelty breakdown mapping your invention features against top prior art
-            </p>
-          </div>
-          <span className="code-chip bg-indigo-50 text-indigo-700 font-semibold text-xs">
-            {matrixItems?.[0]?.featureOverlaps?.length || 2} Features Evaluated
-          </span>
-        </div>
-        <FeatureAlignmentMatrix
-          matrix={matrixItems}
-          onSelectPatent={(patentId) => {
-            const found = results.find(
-              (p: any) => p.patentId === patentId || p.id === patentId
-            );
-            if (found) setSelectedPatent(found);
-          }}
-        />
-      </div>
+      {/* 3. B2B SaaS Product Workstation: 2-Pane Master-Detail Layout */}
+      <div className="grid gap-5 lg:grid-cols-12 items-stretch font-body">
+        {/* LEFT PANEL: Prior-Art Candidates Drawer (4 Cols) */}
+        <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs flex flex-col justify-between space-y-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="font-display text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Search className="h-3.5 w-3.5 text-indigo-600" />
+                Prior-Art Candidates ({results.length})
+              </h3>
+              <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">
+                {showAllCandidates ? `All ${results.length} Shown` : 'Top 5 Match'}
+              </span>
+            </div>
 
-      {/* 4. Section 2: AI Design-Around Engineering Workarounds */}
-      <div className="space-y-3 pt-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <div>
-            <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-indigo-600" />
-              2. Recommended Engineering Design-Arounds
-            </h3>
-            <p className="font-body text-xs text-slate-500">
-              Actionable R&D modifications to eliminate feature overlap and boost patentability
-            </p>
-          </div>
-          <span className="code-chip bg-emerald-50 text-emerald-700 font-semibold text-xs">
-            +40% Novelty Boost Available
-          </span>
-        </div>
-        <DesignAroundTab
-          recommendations={designAroundPayload?.recommendations}
-          overallStrategy={designAroundPayload?.overallStrategy}
-        />
-      </div>
+            {/* List of Prior-Art Cards */}
+            <div className="space-y-2 max-h-[580px] overflow-y-auto pr-1">
+              {(showAllCandidates ? results : results.slice(0, 5)).map((patent: any) => {
+                const isSelected = selectedPatent?.patentId === patent.patentId || selectedPatent?.id === patent.id;
+                const simPct = getSimilarityRisk(patent.similarityScore || patent.similarity || 0.75).pct;
+                return (
+                  <div
+                    key={patent.patentId || patent.id}
+                    onClick={() => setSelectedPatent(patent)}
+                    className={`cursor-pointer rounded-xl border p-3 transition text-xs space-y-1.5 ${
+                      isSelected
+                        ? 'border-indigo-500 bg-indigo-50/60 shadow-xs ring-1 ring-indigo-500/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                        #{patent.patentId || patent.id}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {simPct}% Match
+                      </span>
+                    </div>
 
-      {/* 5. Section 3: Interactive Side-by-Side Claim Inspector */}
-      <div className="space-y-3 pt-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <div>
-            <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Columns className="h-5 w-5 text-indigo-600" />
-              3. Side-by-Side Claim Limitation Inspector
-            </h3>
-            <p className="font-body text-xs text-slate-500">
-              Compare your invention draft directly against independent claims of top cited prior art
-            </p>
+                    <h4 className="font-semibold text-slate-900 leading-snug line-clamp-2">
+                      {patent.title}
+                    </h4>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                      <span>IPC: {patent.ipc || 'G06F'}</span>
+                      <span className="text-indigo-600 font-semibold hover:underline">
+                        Inspect Claims →
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Show More / Show Less Toggle */}
+          {results.length > 5 && (
+            <button
+              onClick={() => setShowAllCandidates(!showAllCandidates)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-center text-xs font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition shrink-0 mt-2"
+            >
+              {showAllCandidates
+                ? 'Show Top 5 Only'
+                : `Show More Candidates (+${results.length - 5} more)`}
+            </button>
+          )}
+        </div>
+
+        {/* RIGHT PANEL: AI Strategy & Inspection Workspace (8 Cols) */}
+        <div className="lg:col-span-8 space-y-4 flex flex-col">
+          {/* Workstation Mode Selector */}
+          <div className="flex rounded-2xl border border-slate-200 bg-slate-100/90 p-1.5 shadow-2xs shrink-0">
+            <button
+              onClick={() => setActiveRightTab('matrix')}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 px-3 font-body text-xs font-semibold transition ${
+                activeRightTab === 'matrix'
+                  ? 'bg-white text-indigo-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="h-4 w-4 text-indigo-600" />
+              Feature Alignment Matrix
+            </button>
+
+            <button
+              onClick={() => setActiveRightTab('design-around')}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 px-3 font-body text-xs font-semibold transition ${
+                activeRightTab === 'design-around'
+                  ? 'bg-white text-indigo-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Wrench className="h-4 w-4 text-indigo-600" />
+              AI Design-Around R&D
+            </button>
+
+            <button
+              onClick={() => setActiveRightTab('inspector')}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 px-3 font-body text-xs font-semibold transition ${
+                activeRightTab === 'inspector'
+                  ? 'bg-white text-indigo-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Columns className="h-4 w-4 text-indigo-600" />
+              Side-by-Side Claim Inspector
+            </button>
+          </div>
+
+          {/* Active Workspace View */}
+          <div className="w-full flex-1">
+            {activeRightTab === 'matrix' && (
+              <FeatureAlignmentMatrix
+                matrix={matrixItems}
+                onSelectPatent={(patentId) => {
+                  const found = results.find(
+                    (p: any) => p.patentId === patentId || p.id === patentId
+                  );
+                  if (found) setSelectedPatent(found);
+                }}
+              />
+            )}
+
+            {activeRightTab === 'design-around' && (
+              <DesignAroundTab
+                recommendations={designAroundPayload?.recommendations}
+                overallStrategy={designAroundPayload?.overallStrategy}
+              />
+            )}
+
+            {activeRightTab === 'inspector' && (
+              <InteractiveSplitView
+                userQuery={data.query}
+                patents={results.slice(0, 5)}
+              />
+            )}
           </div>
         </div>
-        <InteractiveSplitView
-          userQuery={data.query}
-          patents={results.slice(0, 5)}
-        />
       </div>
-
-      {/* 6. Section 4: Top 5 Prior-Art Candidate Patents */}
-      <div className="space-y-3 pt-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <div>
-            <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Search className="h-5 w-5 text-indigo-600" />
-              4. Top 5 Cited Prior-Art Patents
-            </h3>
-            <p className="font-body text-xs text-slate-500">
-              Ranked by hybrid BM25 lexical keyword matching & Pinecone vector similarity
-            </p>
-          </div>
-        </div>
-        <ResultsList
-          results={results}
-          onView={(patent) => setSelectedPatent(patent)}
-        />
-      </div>
-
-      {/* 7. System Architecture Details (Collapsible for Tech Deep Dive) */}
-      <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs group">
-        <summary className="cursor-pointer font-display text-sm font-semibold text-slate-700 flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Cpu className="h-4 w-4 text-indigo-600" />
-            System Architecture & Pipeline Latency Details
-          </span>
-          <span className="font-body text-xs text-indigo-600 group-open:rotate-180 transition-transform">
-            ▼
-          </span>
-        </summary>
-        <div className="pt-4 border-t border-slate-100 mt-3">
-          <TechnicalDeepDive confidence={confidenceBlock} metrics={metricsData} query={data.query} />
-        </div>
-      </details>
 
       {/* Patent Inspector Detail Modal */}
       <Modal isOpen={selectedPatent !== null} onClose={() => setSelectedPatent(null)}>

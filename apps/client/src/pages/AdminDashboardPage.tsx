@@ -75,9 +75,9 @@ const AdminDashboardPage = () => {
         fetchAnalyticsOverview(),
         fetchIngestionStatus(),
       ]);
-      if (statusRes) setSystemStatus(statusRes);
-      if (analyticsRes) setAnalytics(analyticsRes);
-      if (pipelineRes) setIngestionStatus(pipelineRes);
+      if (statusRes) setSystemStatus((prev) => ({ ...prev, ...statusRes }));
+      if (analyticsRes) setAnalytics((prev) => ({ ...prev, ...analyticsRes }));
+      if (pipelineRes) setIngestionStatus((prev: any) => ({ ...prev, ...pipelineRes }));
     } catch (err: any) {
       console.error('[AdminDashboard] Failed to fetch dashboard metrics:', err);
     } finally {
@@ -323,8 +323,8 @@ const AdminDashboardPage = () => {
           </div>
 
           <div className="space-y-3">
-            {analytics.topCategories.map((cat, idx) => {
-              const maxVal = analytics.topCategories[0]?.count || 1;
+            {(analytics?.topCategories || []).map((cat: any, idx: number) => {
+              const maxVal = (analytics?.topCategories || [])[0]?.count || 1;
               const percent = Math.round((cat.count / maxVal) * 100);
 
               return (
