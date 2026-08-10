@@ -101,6 +101,27 @@ export interface RagConfidenceBlock {
 }
 
 /**
+ * Individual extracted technical feature from invention disclosure deconstruction.
+ */
+export interface ExtractedFeature {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  importance: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+/**
+ * Result payload returned by invention feature deconstruction module.
+ */
+export interface InventionDeconstructionResult {
+  coreTitle: string;
+  technicalDomain: string[];
+  extractedFeatures: ExtractedFeature[];
+  isFallback?: boolean | undefined;
+}
+
+/**
  * Full response payload returned by POST /api/rag/analyze.
  */
 export interface RagAnalysisResponse {
@@ -110,7 +131,15 @@ export interface RagAnalysisResponse {
   retrievedPatents?: RagRetrievedPatent[] | undefined;
   analysis: NoveltyAnalysisResult;
   overlapAnalysis?: OverlapAnalysisItem[] | undefined;
+  deconstructedFeatures?: InventionDeconstructionResult | undefined;
   metrics?: RagMetrics | undefined;
+}
+
+/**
+ * Feature Deconstruction Service Contract.
+ */
+export interface IFeatureDeconstructionService {
+  deconstructInvention(input: string | { query?: string; text?: string }): Promise<InventionDeconstructionResult>;
 }
 
 /**
@@ -121,6 +150,11 @@ export interface IRagService {
    * Performs retrieval-augmented generation novelty and section/claim overlap analysis.
    */
   analyze(request: RagAnalysisRequest): Promise<RagAnalysisResponse>;
+
+  /**
+   * Deconstructs plain text invention query into structured technical features.
+   */
+  deconstructInvention(input: string | { query?: string; text?: string }): Promise<InventionDeconstructionResult>;
 
   /**
    * Backward-compatible hybrid ranking method.

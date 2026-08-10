@@ -127,6 +127,7 @@ export default fp(async (fastify: FastifyInstance) => {
     llmProvider,
     undefined,
     undefined,
+    undefined,
     historyService,
     confidenceService
   );

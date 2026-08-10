@@ -35,6 +35,24 @@ export const RagAnalysisRequestDtoSchema = z.object({
 export type RagAnalysisRequestDto = z.infer<typeof RagAnalysisRequestDtoSchema>;
 
 /**
+ * Zod validation schema for POST /api/rag/deconstruct request payload.
+ */
+export const FeatureDeconstructionDtoSchema = z.object({
+  query: z
+    .string({
+      message: 'query or text is required',
+    })
+    .trim()
+    .min(1, 'query cannot be empty')
+    .optional(),
+  text: z.string().trim().min(1).optional(),
+}).refine((data) => !!(data.query || data.text), {
+  message: 'Either query or text must be provided',
+});
+
+export type FeatureDeconstructionDto = z.infer<typeof FeatureDeconstructionDtoSchema>;
+
+/**
  * Zod schema for individual retrieved patent item returned in RAG response.
  */
 export const RagRetrievedPatentDtoSchema = z.object({

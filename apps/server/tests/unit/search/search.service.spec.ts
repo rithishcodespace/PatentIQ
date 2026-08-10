@@ -27,10 +27,18 @@ describe('SearchService Unit Tests', () => {
       saveSearchHistory: vi.fn().mockResolvedValue({ id: 'history-uuid-123' }),
     };
 
+    const mockCacheProvider: any = {
+      isAvailable: () => false,
+      get: vi.fn(),
+      set: vi.fn(),
+    };
+
     searchService = new SearchService(
       mockEmbeddingProvider,
       mockSearchRepository,
-      mockHistoryService
+      mockHistoryService,
+      undefined,
+      mockCacheProvider
     );
   });
 
@@ -66,12 +74,13 @@ describe('SearchService Unit Tests', () => {
       expect(response.count).toBe(2);
       expect(response.results).toHaveLength(2);
       expect(response.results[0]?.rank).toBe(1);
-      expect(response.results[0]?.score).toBe(0.92);
+      expect(response.results[0]?.score).toBe(0.0164);
       expect(response.results[0]?.patentId).toBe('US-10112233-B2');
 
       expect(mockSearchRepository.querySimilarity).toHaveBeenCalledWith(
         mockVectorEmbedding,
-        5
+        5,
+        { ipc: { $in: ['B64C 39/02'] } }
       );
     });
 
@@ -109,7 +118,7 @@ describe('SearchService Unit Tests', () => {
 
       expect(candidates).toHaveLength(2);
       expect(candidates[0]?.patentId).toBe('US-10112233-B2');
-      expect(candidates[0]?.similarityScore).toBe(0.92);
+      expect(candidates[0]?.similarityScore).toBe(0.0164);
     });
   });
 });

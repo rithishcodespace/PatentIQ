@@ -37,9 +37,13 @@ export class SearchRepository implements ISearchRepository {
   }
 
   /**
-   * Queries Pinecone vector database using query vector.
+   * Queries Pinecone vector database using query vector and optional metadata filters.
    */
-  async querySimilarity(queryVector: number[], topK: number): Promise<PineconeMatchResult[]> {
+  async querySimilarity(
+    queryVector: number[],
+    topK: number,
+    filter?: Record<string, any>
+  ): Promise<PineconeMatchResult[]> {
     if (!this.pineconeClient) {
       throw new ServiceUnavailableError('Pinecone vector database is unavailable. PINECONE_API_KEY environment variable is missing.');
     }
@@ -47,12 +51,18 @@ export class SearchRepository implements ISearchRepository {
     try {
       const index = this.pineconeClient.index<PineconeVectorMetadata>(this.indexName);
 
+      const queryPayload: any = {
+        vector: queryVector,
+        topK,
+        includeMetadata: true,
+      };
+
+      if (filter && Object.keys(filter).length > 0) {
+        queryPayload.filter = filter;
+      }
+
       const queryResponse = await this.retryWithBackoff(async () => {
-        return await index.query({
-          vector: queryVector,
-          topK,
-          includeMetadata: true,
-        });
+        return await index.query(queryPayload);
       }, 'Pinecone Query');
 
       const matches = queryResponse.matches || [];

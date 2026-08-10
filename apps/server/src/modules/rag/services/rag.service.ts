@@ -2,6 +2,8 @@ import type {
   IRagService,
   INoveltyAnalysisService,
   IOverlapAnalysisService,
+  IFeatureDeconstructionService,
+  InventionDeconstructionResult,
   RagAnalysisRequest,
   RagAnalysisResponse,
   RagMetrics,
@@ -12,6 +14,7 @@ import type { ISearchService } from '../../search/interfaces/search.interface.js
 import type { ILLMProvider } from '../../../providers/llm/llm-provider.interface.js';
 import { NoveltyAnalysisService } from './novelty-analysis.service.js';
 import { OverlapAnalysisService } from './overlap-analysis.service.js';
+import { FeatureDeconstructionService } from './feature-deconstruction.service.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
 import type { IHistoryService } from '../../history/interfaces/history.interface.js';
@@ -23,6 +26,7 @@ import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provide
 export class RagService implements IRagService {
   private readonly noveltyAnalysisService: INoveltyAnalysisService;
   private readonly overlapAnalysisService: IOverlapAnalysisService;
+  private readonly featureDeconstructionService: IFeatureDeconstructionService;
   private readonly confidenceService: IConfidenceService;
   private readonly cacheProvider: ICacheProvider;
 
@@ -31,6 +35,7 @@ export class RagService implements IRagService {
     private readonly llmProvider: ILLMProvider,
     noveltyAnalysisService?: INoveltyAnalysisService,
     overlapAnalysisService?: IOverlapAnalysisService,
+    featureDeconstructionService?: IFeatureDeconstructionService,
     historyService?: IHistoryService,
     confidenceService?: IConfidenceService,
     cacheProvider?: ICacheProvider
@@ -39,6 +44,8 @@ export class RagService implements IRagService {
       noveltyAnalysisService || new NoveltyAnalysisService(searchService, llmProvider, historyService);
     this.overlapAnalysisService =
       overlapAnalysisService || new OverlapAnalysisService(searchService, llmProvider);
+    this.featureDeconstructionService =
+      featureDeconstructionService || new FeatureDeconstructionService(llmProvider);
     this.confidenceService = confidenceService || new ConfidenceService();
     this.cacheProvider = cacheProvider || new RedisCacheProvider();
   }
@@ -96,17 +103,22 @@ export class RagService implements IRagService {
     }));
 
     if (results.length === 0) {
-      const noveltyResponse = await this.noveltyAnalysisService.analyzeNovelty(request);
+      const [noveltyResponse, deconstructedFeatures] = await Promise.all([
+        this.noveltyAnalysisService.analyzeNovelty(request),
+        this.featureDeconstructionService.deconstructInvention(query),
+      ]);
       return {
         ...noveltyResponse,
         overlapAnalysis: [],
+        deconstructedFeatures,
       };
     }
 
-    // 2. Execute Novelty Analysis and Overlap Analysis concurrently reusing retrieved results
-    const [noveltyResponse, overlapItems] = await Promise.all([
+    // 2. Execute Novelty Analysis, Overlap Analysis, and Feature Deconstruction concurrently reusing retrieved results
+    const [noveltyResponse, overlapItems, deconstructedFeatures] = await Promise.all([
       this.noveltyAnalysisService.analyzeNovelty(request),
       this.overlapAnalysisService.analyzeOverlap(request, results),
+      this.featureDeconstructionService.deconstructInvention(query),
     ]);
 
     const totalTimeMs = Date.now() - totalStart;
@@ -142,6 +154,7 @@ export class RagService implements IRagService {
       retrievedPatents,
       analysis: noveltyResponse.analysis,
       overlapAnalysis: overlapItems,
+      deconstructedFeatures,
       metrics,
     };
 
@@ -150,6 +163,15 @@ export class RagService implements IRagService {
     }
 
     return response;
+  }
+
+  /**
+   * Deconstructs plain text invention query into structured technical features.
+   */
+  async deconstructInvention(
+    input: string | { query?: string; text?: string }
+  ): Promise<InventionDeconstructionResult> {
+    return this.featureDeconstructionService.deconstructInvention(input);
   }
 
   /**

@@ -1,44 +1,46 @@
 /**
- * Similarity → risk mapping.
- *
- * Important: in a prior-art context, HIGH similarity to an existing patent
- * is a warning sign (possible novelty conflict), not a good outcome — so
- * this intentionally does NOT use "green = good, high score" logic.
+ * Similarity -> Risk Mapping for PatentIQ Prior-Art Engine
+ * High similarity to prior art indicates high novelty risk / statutory conflict under Section 102.
  */
-export type RiskLevel = "high" | "moderate" | "low";
+export type RiskLevel = 'high' | 'moderate' | 'low';
 
-export const getSimilarityRisk = (similarity: number) => {
-  if (similarity >= 90) {
+export const getSimilarityRisk = (rawScore: number | string = 0.85) => {
+  let num = typeof rawScore === 'number' ? rawScore : parseFloat(rawScore) || 0.85;
+  // If score is a float <= 1.0 (e.g. 0.85), scale to percentage (85)
+  if (num > 0 && num <= 1) {
+    num = num * 100;
+  }
+
+  const pct = Math.round(num);
+
+  if (pct >= 85) {
     return {
-      label: "Very High",
-      bg: "bg-green-100",
-      text: "text-green-700",
-      fill: "bg-green-500",
+      pct,
+      label: 'High Overlap Risk',
+      badgeText: 'High Prior-Art Conflict (35 U.S.C. 102)',
+      bg: 'bg-rose-50/90 border-rose-200/80',
+      text: 'text-rose-700 font-semibold',
+      fill: 'bg-rose-500',
     };
   }
 
-  if (similarity >= 80) {
+  if (pct >= 70) {
     return {
-      label: "High",
-      bg: "bg-yellow-100",
-      text: "text-yellow-700",
-      fill: "bg-yellow-500",
-    };
-  }
-
-  if (similarity >= 70) {
-    return {
-      label: "Moderate",
-      bg: "bg-orange-100",
-      text: "text-orange-700",
-      fill: "bg-orange-500",
+      pct,
+      label: 'Moderate Overlap',
+      badgeText: 'Moderate Prior-Art Conflict (35 U.S.C. 103)',
+      bg: 'bg-amber-50/90 border-amber-200/80',
+      text: 'text-amber-800 font-semibold',
+      fill: 'bg-amber-500',
     };
   }
 
   return {
-    label: "Low",
-    bg: "bg-red-100",
-    text: "text-red-700",
-    fill: "bg-red-500",
+    pct,
+    label: 'Low Overlap Risk',
+    badgeText: 'High Novelty (Low Prior-Art Overlap)',
+    bg: 'bg-emerald-50/90 border-emerald-200/80',
+    text: 'text-emerald-800 font-semibold',
+    fill: 'bg-emerald-500',
   };
 };

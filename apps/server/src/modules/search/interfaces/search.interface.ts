@@ -21,7 +21,7 @@ export interface PineconeVectorMetadata extends RecordMetadata {
  * Metadata search filter criteria for Pinecone queries.
  */
 export interface SearchFilter {
-  ipc?: string | undefined;
+  ipc?: string | string[] | undefined;
   country?: string | undefined;
   publicationDate?: string | undefined;
   publicationDateFrom?: string | undefined;
@@ -37,6 +37,19 @@ export interface PineconeMatchResult {
   id: string;
   score: number;
   metadata?: PineconeVectorMetadata | undefined;
+}
+
+/**
+ * Interface representing a BM25 sparse keyword match.
+ */
+export interface BM25MatchResult {
+  id: string;
+  patentId: string;
+  title: string;
+  abstract: string;
+  claims?: string | undefined;
+  ipc: string;
+  bm25Score: number;
 }
 
 /**
@@ -95,6 +108,8 @@ export interface SearchResponse {
 export interface SearchMetrics {
   queryEmbeddingTimeMs: number;
   pineconeSearchTimeMs: number;
+  bm25SearchTimeMs?: number | undefined;
+  rrfRerankTimeMs?: number | undefined;
   totalExecutionTimeMs: number;
   totalResults: number;
 }

@@ -16,7 +16,9 @@
     "generate-embeddings": "tsx src/modules/patents/scripts/generateEmbeddings.ts",
     "upload-pinecone": "tsx src/modules/patents/scripts/uploadToPinecone.ts",
     "semantic-search": "tsx src/modules/patents/scripts/semanticSearch.ts",
-    "benchmark-search": "tsx src/modules/patents/scripts/benchmarkSearch.ts"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

@@ -43,6 +43,10 @@ export class RagController {
       analysis: response.analysis,
     };
 
+    if (response.deconstructedFeatures) {
+      responsePayload.deconstructedFeatures = response.deconstructedFeatures;
+    }
+
     if (response.overlapAnalysis) {
       responsePayload.overlapAnalysis = response.overlapAnalysis;
     }
@@ -52,6 +56,30 @@ export class RagController {
     }
 
     reply.status(200).send(responsePayload);
+  }
+
+  /**
+   * Endpoint Handler: POST /api/rag/deconstruct
+   * Deconstructs plain text invention query/disclosure into structured technical features.
+   */
+  async deconstruct(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (!request.body || typeof request.body !== 'object') {
+      throw new BadRequestError('Request body is required');
+    }
+
+    const body = request.body as Record<string, any>;
+    const inputQuery = body.query || body.text || '';
+
+    if (!inputQuery || typeof inputQuery !== 'string' || !inputQuery.trim()) {
+      throw new BadRequestError('query or text is required');
+    }
+
+    const result = await this.ragService.deconstructInvention(inputQuery.trim());
+
+    reply.status(200).send({
+      success: true,
+      data: result,
+    });
   }
 
   /**

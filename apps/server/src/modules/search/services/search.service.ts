@@ -26,9 +26,14 @@ import { ConfidenceService } from '../../confidence/services/confidence.service.
 import type { ICacheProvider } from '../../../providers/cache/cache-provider.interface.js';
 import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provider.js';
 
+import { BM25SearchService } from './bm25-search.service.js';
+import { RRFRerankerService } from './rrf-reranker.service.js';
+
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
   private readonly searchRepository: ISearchRepository;
+  private readonly bm25Service: BM25SearchService;
+  private readonly rrfReranker: RRFRerankerService;
   private readonly historyService?: IHistoryService | undefined;
   private readonly confidenceService: IConfidenceService;
   private readonly cacheProvider: ICacheProvider;
@@ -38,10 +43,14 @@ export class SearchService implements ISearchService {
     searchRepository?: ISearchRepository,
     historyService?: IHistoryService,
     confidenceService?: IConfidenceService,
-    cacheProvider?: ICacheProvider
+    cacheProvider?: ICacheProvider,
+    bm25Service?: BM25SearchService,
+    rrfReranker?: RRFRerankerService
   ) {
     this.embeddingProvider = embeddingProvider || new OllamaEmbeddingProvider();
     this.searchRepository = searchRepository || new SearchRepository();
+    this.bm25Service = bm25Service || new BM25SearchService();
+    this.rrfReranker = rrfReranker || new RRFRerankerService();
     this.historyService = historyService;
     this.confidenceService = confidenceService || new ConfidenceService();
     this.cacheProvider = cacheProvider || new RedisCacheProvider();
@@ -87,9 +96,14 @@ export class SearchService implements ISearchService {
    * Queries vector index repository using query vector embedding.
    * Measures Pinecone search latency.
    */
+  /**
+   * Queries vector index repository using query vector embedding and optional metadata filter.
+   * Measures Pinecone search latency.
+   */
   async searchVectors(
     vector: number[],
-    topK: number = 10
+    topK: number = 10,
+    filter?: Record<string, any>
   ): Promise<{ matches: PineconeMatchResult[]; durationMs: number }> {
     if (!vector || !Array.isArray(vector) || vector.length === 0) {
       throw new BadRequestError('Vector embedding array cannot be empty.');
@@ -100,7 +114,7 @@ export class SearchService implements ISearchService {
 
     const startTime = Date.now();
     try {
-      const matches = await this.searchRepository.querySimilarity(vector, topK);
+      const matches = await this.searchRepository.querySimilarity(vector, topK, filter);
       const durationMs = Date.now() - startTime;
       return { matches, durationMs };
     } catch (err: unknown) {
@@ -126,11 +140,12 @@ export class SearchService implements ISearchService {
   }
 
   /**
-   * Performs end-to-end semantic search pipeline returning results and timing metrics.
+   * Performs Precision Hybrid Search pipeline (Dense Vector + Sparse BM25 + Reciprocal Rank Fusion).
    */
   async executeSearch(
     queryText: string,
-    topK: number = 100
+    topK: number = 100,
+    filters?: import('../interfaces/search.interface.js').SearchFilter
   ): Promise<{ results: SearchResult[]; metrics: SearchMetrics }> {
     const totalStart = Date.now();
 
@@ -139,35 +154,63 @@ export class SearchService implements ISearchService {
       throw new BadRequestError('Search query cannot be empty.');
     }
 
-    // 1. Generate Query Embedding via Ollama
+    // Construct Pinecone Metadata Filter (e.g. IPC classification filtering)
+    let pineconeFilter: Record<string, any> | undefined = undefined;
+    if (filters?.ipc) {
+      const ipcList = Array.isArray(filters.ipc) ? filters.ipc : [filters.ipc];
+      if (ipcList.length > 0) {
+        pineconeFilter = { ipc: { $in: ipcList } };
+      }
+    }
+
+    // 1. Stage 1: Dense Vector Retrieval via Pinecone
     const { embedding, durationMs: queryEmbeddingTimeMs } = await this.generateEmbedding(trimmed);
+    const { matches, durationMs: pineconeSearchTimeMs } = await this.searchVectors(embedding, topK, pineconeFilter);
 
-    // 2. Query Vector Store (Pinecone)
-    const { matches, durationMs: pineconeSearchTimeMs } = await this.searchVectors(embedding, topK);
+    // Format dense results
+    const denseResults = SearchMapper.toSearchResultList(matches, topK);
 
-    // 3. Format, Sort, Rank, and Round Matches via SearchMapper
-    const results = SearchMapper.toSearchResultList(matches, topK);
+    // 2. Stage 2: Sparse BM25 Lexical Keyword Matching (Technical Term & Part Number Boosted)
+    const bm25Start = Date.now();
+    const bm25Docs = denseResults.map((item) => ({
+      id: item.vectorId || item.patentId,
+      patentId: item.patentId,
+      title: item.title,
+      abstract: item.abstract,
+      claims: item.claims,
+      ipc: item.ipc,
+    }));
+
+    const sparseBM25Matches = this.bm25Service.rankDocuments(trimmed, bm25Docs, topK);
+    const bm25SearchTimeMs = Date.now() - bm25Start;
+
+    // 3. Stage 3: Reciprocal Rank Fusion (RRF) Reranking
+    const rrfStart = Date.now();
+    const finalResults = this.rrfReranker.fuseRanks(denseResults, sparseBM25Matches, { topK });
+    const rrfRerankTimeMs = Date.now() - rrfStart;
 
     const totalExecutionTimeMs = Date.now() - totalStart;
 
     const metrics: SearchMetrics = {
       queryEmbeddingTimeMs,
       pineconeSearchTimeMs,
+      bm25SearchTimeMs,
+      rrfRerankTimeMs,
       totalExecutionTimeMs,
-      totalResults: results.length,
+      totalResults: finalResults.length,
     };
 
-    return { results, metrics };
+    return { results: finalResults, metrics };
   }
 
   /**
    * Primary search entry point accepting a SearchRequest or query string.
    */
-  async search(input: string | SearchRequest, topKParam?: number): Promise<SearchResponse> {
+  async search(input: string | SearchRequest, topKParam?: number, filtersParam?: import('../interfaces/search.interface.js').SearchFilter): Promise<SearchResponse> {
     const totalStart = Date.now();
     const query = typeof input === 'string' ? input : input.query;
     const topK = typeof input === 'string' ? (topKParam ?? 10) : (input.topK ?? 10);
-    const filters = typeof input === 'object' ? input.filters : undefined;
+    const filters = typeof input === 'object' ? input.filters : filtersParam;
 
     const trimmedQuery = query ? query.trim() : '';
     if (!trimmedQuery) {
@@ -185,6 +228,8 @@ export class SearchService implements ISearchService {
         const cachedMetrics: SearchMetrics = {
           queryEmbeddingTimeMs: cached.metrics?.queryEmbeddingTimeMs ?? 0,
           pineconeSearchTimeMs: cached.metrics?.pineconeSearchTimeMs ?? 0,
+          bm25SearchTimeMs: cached.metrics?.bm25SearchTimeMs ?? 0,
+          rrfRerankTimeMs: cached.metrics?.rrfRerankTimeMs ?? 0,
           totalExecutionTimeMs: Date.now() - totalStart,
           totalResults: cached.metrics?.totalResults ?? cached.results.length,
         };
@@ -195,7 +240,7 @@ export class SearchService implements ISearchService {
       }
     }
 
-    const { results, metrics } = await this.executeSearch(trimmedQuery, topK);
+    const { results, metrics } = await this.executeSearch(trimmedQuery, topK, filters);
 
     const highestScore = results.length > 0 ? results[0]?.score ?? 0 : 0;
 

@@ -300,7 +300,7 @@ const AdminDashboardPage = () => {
               <span className="text-xs text-slate-500">Average Vector Query Latency</span>
               <div className="mt-1 flex items-baseline justify-between">
                 <span className="font-display text-3xl font-bold text-indigo-600">
-                  {analytics.averageLatencyMs.toFixed(1)} <span className="text-base text-slate-500 font-normal">ms</span>
+                  {(analytics?.averageLatencyMs ?? 0).toFixed(1)} <span className="text-base text-slate-500 font-normal">ms</span>
                 </span>
                 <span className="code-chip bg-emerald-50 text-emerald-700 text-[10px]">
                   P95 &lt; 200ms

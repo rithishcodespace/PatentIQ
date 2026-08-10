@@ -1,0 +1,285 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { UploadController } from '../../../src/modules/upload/controllers/upload.controller.js';
+import { BadRequestError, NotFoundError } from '../../../src/common/errors/http-errors.js';
+describe('UploadController Unit Tests', () => {
+    let uploadController;
+    let mockUploadService;
+    let mockDocumentProcessorService;
+    let mockEmbeddingsService;
+    let mockUploadComparisonService;
+    const mockRecord = {
+        id: 'doc-uuid-1234',
+        userId: 'usr-1',
+        originalFileName: 'Patent.pdf',
+        storedFileName: 'doc-uuid-1234.pdf',
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        size: 51200,
+        storagePath: '/secret/path/on/disk/doc-uuid-1234.pdf',
+        uploadedAt: new Date('2026-08-01T10:00:00Z'),
+        status: 'Uploaded',
+    };
+    const mockStandardDoc = {
+        title: 'Wireless Charging Drone',
+        abstract: 'Resonant inductive power transfer.',
+        claims: '1. A drone receiver.',
+        keywords: ['wireless', 'drone'],
+        fullText: 'Title: Wireless Charging Drone\n\nAbstract:\nResonant inductive power transfer.',
+    };
+    const mockComparisonResponse = {
+        success: true,
+        document: { title: 'Wireless Charging Drone' },
+        retrieval: { topK: 10, retrievalConfidence: 91.6 },
+        matches: [
+            {
+                rank: 1,
+                patentId: 'US10123456B2',
+                title: 'Wireless Power Transfer System',
+                similarityScore: 0.92,
+                matchingSections: ['Abstract', 'Claims'],
+            },
+        ],
+        analysis: {
+            summary: 'High overlap found.',
+            novelty: 'Rotor arm integrated coil assembly',
+            overlappingClaims: ['Claim 1 overlap'],
+            recommendations: ['Clarify claim scope'],
+        },
+    };
+    beforeEach(() => {
+        mockUploadService = {
+            uploadDocument: vi.fn().mockResolvedValue(mockRecord),
+            getMetadata: vi.fn().mockResolvedValue(mockRecord),
+            deleteDocument: vi.fn().mockResolvedValue(true),
+        };
+        mockDocumentProcessorService = {
+            processFile: vi.fn().mockResolvedValue(mockStandardDoc),
+            processDirectText: vi.fn().mockResolvedValue(mockStandardDoc),
+        };
+        mockEmbeddingsService = {
+            generatePatentDocumentEmbeddings: vi.fn().mockResolvedValue({
+                model: 'nomic-embed-text',
+                dimensions: 768,
+                sections: ['title', 'abstract', 'claims'],
+                generatedAt: '2026-08-02T09:09:22.000Z',
+                vectors: {},
+            }),
+        };
+        mockUploadComparisonService = {
+            compareDocument: vi.fn().mockResolvedValue(mockComparisonResponse),
+        };
+        uploadController = new UploadController(mockUploadService, mockDocumentProcessorService, mockEmbeddingsService, mockUploadComparisonService);
+    });
+    describe('uploadFile HTTP Handler', () => {
+        it('should extract file, invoke service, and return 201 Created with document response DTO', async () => {
+            const mockFileObj = {
+                filename: 'Patent.pdf',
+                mimetype: 'application/pdf',
+                toBuffer: vi.fn().mockResolvedValue(Buffer.from('PDF')),
+            };
+            const mockRequest = {
+                file: vi.fn().mockResolvedValue(mockFileObj),
+                user: { id: 'usr-1' },
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.uploadFile(mockRequest, mockReply);
+            expect(mockReply.status).toHaveBeenCalledWith(201);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                document: {
+                    id: 'doc-uuid-1234',
+                    originalFileName: 'Patent.pdf',
+                    storedFileName: 'doc-uuid-1234.pdf',
+                    mimeType: 'application/pdf',
+                    size: 51200,
+                    status: 'Uploaded',
+                },
+            });
+        });
+        it('should throw BadRequestError if request contains no file', async () => {
+            const mockRequest = {
+                file: vi.fn().mockResolvedValue(null),
+            };
+            const mockReply = {};
+            await expect(uploadController.uploadFile(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+    });
+    describe('processFileUpload HTTP Handler', () => {
+        it('should process uploaded file and return 200 OK with StandardPatentDocument', async () => {
+            const mockFileObj = {
+                filename: 'invention.pdf',
+                mimetype: 'application/pdf',
+                toBuffer: vi.fn().mockResolvedValue(Buffer.from('content')),
+            };
+            const mockRequest = {
+                file: vi.fn().mockResolvedValue(mockFileObj),
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.processFileUpload(mockRequest, mockReply);
+            expect(mockDocumentProcessorService.processFile).toHaveBeenCalledWith({
+                filename: 'invention.pdf',
+                mimetype: 'application/pdf',
+                buffer: expect.any(Buffer),
+                size: 7,
+            });
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                data: mockStandardDoc,
+            });
+        });
+        it('should throw BadRequestError if multipart file is missing', async () => {
+            const mockRequest = {
+                file: vi.fn().mockResolvedValue(null),
+            };
+            const mockReply = {};
+            await expect(uploadController.processFileUpload(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+    });
+    describe('processDirectText HTTP Handler', () => {
+        it('should process direct JSON invention payload and return 200 OK with StandardPatentDocument', async () => {
+            const payload = {
+                title: 'Wireless Charging Drone',
+                abstract: 'Resonant inductive power transfer.',
+                claims: '1. A drone receiver.',
+                keywords: ['wireless', 'drone'],
+            };
+            const mockRequest = {
+                body: payload,
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.processDirectText(mockRequest, mockReply);
+            expect(mockDocumentProcessorService.processDirectText).toHaveBeenCalledWith(payload);
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                data: mockStandardDoc,
+            });
+        });
+    });
+    describe('embedDocument HTTP Handler', () => {
+        it('should generate embeddings for inline standard document and return 200 OK metadata response', async () => {
+            const mockRequest = {
+                body: { document: mockStandardDoc },
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.embedDocument(mockRequest, mockReply);
+            expect(mockEmbeddingsService.generatePatentDocumentEmbeddings).toHaveBeenCalledWith(mockStandardDoc);
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                embedding: {
+                    model: 'nomic-embed-text',
+                    dimensions: 768,
+                    sections: ['title', 'abstract', 'claims'],
+                    generatedAt: '2026-08-02T09:09:22.000Z',
+                },
+            });
+        });
+        it('should throw BadRequestError if neither document nor documentId is provided', async () => {
+            const mockRequest = { body: {} };
+            const mockReply = {};
+            await expect(uploadController.embedDocument(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+        it('should throw BadRequestError if embedding service is not configured', async () => {
+            const controllerWithoutEmbeddings = new UploadController(mockUploadService, mockDocumentProcessorService);
+            const mockRequest = { body: { document: mockStandardDoc } };
+            const mockReply = {};
+            await expect(controllerWithoutEmbeddings.embedDocument(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+    });
+    describe('compareDocument HTTP Handler', () => {
+        it('should delegate to UploadComparisonService and return 200 OK comparison report', async () => {
+            const mockRequest = {
+                body: { document: mockStandardDoc, topK: 10 },
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.compareDocument(mockRequest, mockReply);
+            expect(mockUploadComparisonService.compareDocument).toHaveBeenCalledWith({
+                document: mockStandardDoc,
+                topK: 10,
+            });
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith(mockComparisonResponse);
+        });
+        it('should throw BadRequestError if upload comparison service is not configured', async () => {
+            const controllerWithoutComparison = new UploadController(mockUploadService, mockDocumentProcessorService, mockEmbeddingsService);
+            const mockRequest = { body: { document: mockStandardDoc } };
+            const mockReply = {};
+            await expect(controllerWithoutComparison.compareDocument(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+    });
+    describe('getMetadata HTTP Handler', () => {
+        it('should return document metadata and status 200 without exposing physical storagePath', async () => {
+            const mockRequest = {
+                params: { id: 'doc-uuid-1234' },
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.getMetadata(mockRequest, mockReply);
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                document: {
+                    id: 'doc-uuid-1234',
+                    originalFileName: 'Patent.pdf',
+                    storedFileName: 'doc-uuid-1234.pdf',
+                    mimeType: 'application/pdf',
+                    size: 51200,
+                    status: 'Uploaded',
+                    uploadedAt: '2026-08-01T10:00:00.000Z',
+                },
+            });
+            // Verify physical storagePath is omitted from output
+            const sentPayload = mockReply.send.mock.calls[0][0];
+            expect(sentPayload.document.storagePath).toBeUndefined();
+        });
+        it('should throw BadRequestError if id param is missing', async () => {
+            const mockRequest = { params: {} };
+            const mockReply = {};
+            await expect(uploadController.getMetadata(mockRequest, mockReply)).rejects.toThrow(BadRequestError);
+        });
+    });
+    describe('deleteFile HTTP Handler', () => {
+        it('should invoke service deletion and return success response with status 200', async () => {
+            const mockRequest = {
+                params: { id: 'doc-uuid-1234' },
+            };
+            const mockReply = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+            await uploadController.deleteFile(mockRequest, mockReply);
+            expect(mockUploadService.deleteDocument).toHaveBeenCalledWith('doc-uuid-1234');
+            expect(mockReply.status).toHaveBeenCalledWith(200);
+            expect(mockReply.send).toHaveBeenCalledWith({
+                success: true,
+                message: 'Document deleted successfully',
+            });
+        });
+        it('should propagate NotFoundError if service fails to find document', async () => {
+            mockUploadService.deleteDocument.mockRejectedValueOnce(new NotFoundError('Document not found'));
+            const mockRequest = { params: { id: 'invalid-id' } };
+            const mockReply = {};
+            await expect(uploadController.deleteFile(mockRequest, mockReply)).rejects.toThrow(NotFoundError);
+        });
+    });
+});
+//# sourceMappingURL=upload.controller.spec.js.map

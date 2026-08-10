@@ -24,6 +24,54 @@ export async function ragRoutes(fastify: FastifyInstance, controller: RagControl
     handler: (req: FastifyRequest, reply: FastifyReply) => controller.analyze(req, reply),
   });
 
+  // POST /api/rag/deconstruct - Deconstruct Invention Disclosure into Structured Technical Features
+  fastify.post('/deconstruct', {
+    schema: {
+      tags: ['RAG'],
+      summary: 'Invention Feature Deconstruction',
+      description: 'Extracts core title, inferred IPC domains, and structured technical features from plain text invention disclosures.',
+      body: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', example: 'Smart solar water purification bottle' },
+          text: { type: 'string', example: 'System comprising UV-C LED and IoT sensors' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                coreTitle: { type: 'string' },
+                technicalDomain: { type: 'array', items: { type: 'string' } },
+                extractedFeatures: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      description: { type: 'string' },
+                      category: { type: 'string' },
+                      importance: { type: 'string' },
+                    },
+                  },
+                },
+                isFallback: { type: 'boolean' },
+              },
+            },
+          },
+        },
+        400: standardErrorResponses[400],
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req: FastifyRequest, reply: FastifyReply) => controller.deconstruct(req, reply),
+  });
+
   // POST /api/rag/rank - Hybrid Ranking & Cross-Encoder Reranking
   fastify.post('/rank', {
     schema: {
