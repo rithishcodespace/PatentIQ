@@ -1,9 +1,11 @@
-import { RagAnalysisRequestDtoSchema, HybridRankingDtoSchema, } from '../dto/rag.dto.js';
+import { RagAnalysisRequestDtoSchema, HybridRankingDtoSchema, DesignAroundRequestDtoSchema, } from '../dto/rag.dto.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 export class RagController {
     ragService;
-    constructor(ragService) {
+    designAroundService;
+    constructor(ragService, designAroundService) {
         this.ragService = ragService;
+        this.designAroundService = designAroundService;
     }
     /**
      * Endpoint Handler: POST /api/rag/analyze
@@ -74,6 +76,28 @@ export class RagController {
             success: true,
             data: reranked,
             message: 'Hybrid RAG ranking completed',
+        });
+    }
+    /**
+     * Endpoint Handler: POST /api/rag/design-around
+     * Generates actionable engineering design-around recommendations.
+     */
+    async designAround(request, reply) {
+        if (!request.body || typeof request.body !== 'object') {
+            throw new BadRequestError('Request body is required');
+        }
+        const parseResult = DesignAroundRequestDtoSchema.safeParse(request.body);
+        if (!parseResult.success) {
+            const issue = parseResult.error.issues[0];
+            throw new BadRequestError(issue ? issue.message : 'Invalid design-around request payload');
+        }
+        if (!this.designAroundService) {
+            throw new BadRequestError('Design-Around recommendation service is not initialized');
+        }
+        const result = await this.designAroundService.generateDesignAround(parseResult.data);
+        reply.status(200).send({
+            success: true,
+            data: result,
         });
     }
 }

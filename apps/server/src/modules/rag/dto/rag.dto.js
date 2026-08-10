@@ -127,4 +127,23 @@ export const HybridRankingDtoSchema = z.object({
     })
         .optional(),
 });
+/**
+ * Zod schema for POST /api/rag/design-around request payload.
+ */
+export const DesignAroundRequestDtoSchema = z
+    .object({
+    query: z.string().trim().optional(),
+    text: z.string().trim().optional(),
+    topK: z.number().int().min(1).max(100).optional().default(10),
+    features: z
+        .array(z.object({
+        id: z.string().default('F1'),
+        name: z.string().min(1),
+        description: z.string().default(''),
+    }))
+        .optional(),
+})
+    .refine((data) => !!(data.query || data.text || (data.features && data.features.length > 0)), {
+    message: 'At least one of query, text, or features array is required',
+});
 //# sourceMappingURL=rag.dto.js.map

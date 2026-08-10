@@ -210,4 +210,18 @@ export interface RankedPatentCandidate {
     claimScore: number;
     ipcScore: number;
 }
+/**
+ * Zod schema for POST /api/rag/design-around request payload.
+ */
+export declare const DesignAroundRequestDtoSchema: z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    text: z.ZodOptional<z.ZodString>;
+    topK: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+    features: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodDefault<z.ZodString>;
+        name: z.ZodString;
+        description: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>>;
+}, z.core.$strip>;
+export type DesignAroundRequestDto = z.infer<typeof DesignAroundRequestDtoSchema>;
 //# sourceMappingURL=rag.dto.d.ts.map

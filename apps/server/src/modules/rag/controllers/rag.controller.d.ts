@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { IRagService } from '../interfaces/rag.interface.js';
+import type { DesignAroundService } from '../services/design-around.service.js';
 export declare class RagController {
     private readonly ragService;
-    constructor(ragService: IRagService);
+    private readonly designAroundService?;
+    constructor(ragService: IRagService, designAroundService?: DesignAroundService | undefined);
     /**
      * Endpoint Handler: POST /api/rag/analyze
      * Performs semantic retrieval, 7-section novelty analysis, and section/claim overlap analysis via Ollama (Qwen).
@@ -17,5 +19,10 @@ export declare class RagController {
      * Backward-compatible endpoint handler: POST /api/rag/rank
      */
     rank(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+    /**
+     * Endpoint Handler: POST /api/rag/design-around
+     * Generates actionable engineering design-around recommendations.
+     */
+    designAround(request: FastifyRequest, reply: FastifyReply): Promise<void>;
 }
 //# sourceMappingURL=rag.controller.d.ts.map

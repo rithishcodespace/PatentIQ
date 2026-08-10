@@ -102,5 +102,18 @@ export async function ragRoutes(fastify, controller) {
         },
         handler: (req, reply) => controller.rank(req, reply),
     });
+    // POST /api/rag/design-around - AI Design-Around Recommendations
+    fastify.post('/design-around', {
+        schema: {
+            tags: ['RAG'],
+            summary: 'AI Design-Around R&D Recommendations',
+            description: 'Generates actionable engineering modifications, conflict explanations, and estimated patentability novelty boosts when prior-art overlap is identified.',
+            response: {
+                400: standardErrorResponses[400],
+                500: standardErrorResponses[500],
+            },
+        },
+        handler: (req, reply) => controller.designAround(req, reply),
+    });
 }
 //# sourceMappingURL=rag.routes.js.map
