@@ -90,4 +90,24 @@ export const SearchResponseDtoSchema = z.object({
  * Legacy DTO schema alias for compatibility.
  */
 export const SearchQueryDtoSchema = SearchRequestDtoSchema;
+/**
+ * Zod schema for POST /api/search/novelty-matrix request payload.
+ */
+export const ExtractedFeatureSchema = z.object({
+    id: z.string().default('F1'),
+    name: z.string().min(1, 'feature name cannot be empty'),
+    description: z.string().default(''),
+    category: z.string().optional(),
+    importance: z.string().optional(),
+});
+export const NoveltyMatrixRequestDtoSchema = z
+    .object({
+    query: z.string().trim().optional(),
+    text: z.string().trim().optional(),
+    topK: z.number().int().min(1).max(100).optional().default(10),
+    features: z.array(ExtractedFeatureSchema).optional(),
+})
+    .refine((data) => !!(data.query || data.text || (data.features && data.features.length > 0)), {
+    message: 'At least one of query, text, or features array is required',
+});
 //# sourceMappingURL=search.dto.js.map

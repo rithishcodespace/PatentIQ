@@ -53,5 +53,18 @@ export async function searchRoutes(fastify, controller, benchmarkController) {
         },
         handler: (req, reply) => controller.searchPriorArt(req, reply),
     });
+    // POST /api/search/novelty-matrix - Element-Level Novelty Overlap Matrix
+    fastify.post('/novelty-matrix', {
+        schema: {
+            tags: ['Search'],
+            summary: 'Element-Level Novelty Overlap Matrix',
+            description: 'Generates feature-by-feature claim comparison matrix across top prior-art patents, calculating element overlap status (EXACT_MATCH, PARTIAL_MATCH, NO_MATCH), citation evidence, and overall Novelty Risk Score.',
+            response: {
+                400: standardErrorResponses[400],
+                500: standardErrorResponses[500],
+            },
+        },
+        handler: (req, reply) => controller.getNoveltyMatrix(req, reply),
+    });
 }
 //# sourceMappingURL=search.routes.js.map

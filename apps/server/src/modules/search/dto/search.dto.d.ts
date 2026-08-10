@@ -139,4 +139,27 @@ export declare const SearchQueryDtoSchema: z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export type SearchQueryDto = SearchRequestDto;
+/**
+ * Zod schema for POST /api/search/novelty-matrix request payload.
+ */
+export declare const ExtractedFeatureSchema: z.ZodObject<{
+    id: z.ZodDefault<z.ZodString>;
+    name: z.ZodString;
+    description: z.ZodDefault<z.ZodString>;
+    category: z.ZodOptional<z.ZodString>;
+    importance: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const NoveltyMatrixRequestDtoSchema: z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    text: z.ZodOptional<z.ZodString>;
+    topK: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+    features: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodDefault<z.ZodString>;
+        name: z.ZodString;
+        description: z.ZodDefault<z.ZodString>;
+        category: z.ZodOptional<z.ZodString>;
+        importance: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>;
+}, z.core.$strip>;
+export type NoveltyMatrixRequestDto = z.infer<typeof NoveltyMatrixRequestDtoSchema>;
 //# sourceMappingURL=search.dto.d.ts.map

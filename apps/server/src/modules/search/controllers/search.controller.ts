@@ -1,13 +1,15 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { ISearchService } from '../interfaces/search.interface.js';
 import type { BenchmarkController } from './benchmark.controller.js';
-import { SearchRequestDtoSchema, type SearchRequestDto } from '../dto/search.dto.js';
+import { SearchRequestDtoSchema, type SearchRequestDto, NoveltyMatrixRequestDtoSchema } from '../dto/search.dto.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
+import type { NoveltyMatrixService } from '../../rag/services/novelty-matrix.service.js';
 
 export class SearchController {
   constructor(
     private readonly searchService: ISearchService,
-    public readonly benchmarkController?: BenchmarkController
+    public readonly benchmarkController?: BenchmarkController,
+    private readonly noveltyMatrixService?: NoveltyMatrixService
   ) {}
 
   /**
@@ -60,5 +62,27 @@ export class SearchController {
    */
   async searchPriorArt(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     await this.search(request, reply);
+  }
+
+  /**
+   * Endpoint Handler: POST /api/search/novelty-matrix
+   */
+  async getNoveltyMatrix(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (!request.body || typeof request.body !== 'object') {
+      throw new BadRequestError('Request body is required');
+    }
+
+    const parseResult = NoveltyMatrixRequestDtoSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0];
+      throw new BadRequestError(issue ? issue.message : 'Invalid novelty matrix request payload');
+    }
+
+    if (!this.noveltyMatrixService) {
+      throw new BadRequestError('Novelty Matrix service is not initialized');
+    }
+
+    const matrixResult = await this.noveltyMatrixService.generateNoveltyMatrix(parseResult.data);
+    reply.status(200).send(matrixResult);
   }
 }

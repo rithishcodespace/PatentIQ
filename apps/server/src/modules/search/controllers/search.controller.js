@@ -1,11 +1,13 @@
-import { SearchRequestDtoSchema } from '../dto/search.dto.js';
+import { SearchRequestDtoSchema, NoveltyMatrixRequestDtoSchema } from '../dto/search.dto.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 export class SearchController {
     searchService;
     benchmarkController;
-    constructor(searchService, benchmarkController) {
+    noveltyMatrixService;
+    constructor(searchService, benchmarkController, noveltyMatrixService) {
         this.searchService = searchService;
         this.benchmarkController = benchmarkController;
+        this.noveltyMatrixService = noveltyMatrixService;
     }
     /**
      * HTTP POST /api/search Handler.
@@ -46,6 +48,24 @@ export class SearchController {
      */
     async searchPriorArt(request, reply) {
         await this.search(request, reply);
+    }
+    /**
+     * Endpoint Handler: POST /api/search/novelty-matrix
+     */
+    async getNoveltyMatrix(request, reply) {
+        if (!request.body || typeof request.body !== 'object') {
+            throw new BadRequestError('Request body is required');
+        }
+        const parseResult = NoveltyMatrixRequestDtoSchema.safeParse(request.body);
+        if (!parseResult.success) {
+            const issue = parseResult.error.issues[0];
+            throw new BadRequestError(issue ? issue.message : 'Invalid novelty matrix request payload');
+        }
+        if (!this.noveltyMatrixService) {
+            throw new BadRequestError('Novelty Matrix service is not initialized');
+        }
+        const matrixResult = await this.noveltyMatrixService.generateNoveltyMatrix(parseResult.data);
+        reply.status(200).send(matrixResult);
     }
 }
 //# sourceMappingURL=search.controller.js.map

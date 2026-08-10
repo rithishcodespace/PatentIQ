@@ -45,6 +45,8 @@ import { UploadRepository } from '../modules/upload/repositories/upload.reposito
 import { UploadService } from '../modules/upload/services/upload.service.js';
 import { DocumentProcessorService } from '../modules/upload/services/document-processor.service.js';
 import { UploadController } from '../modules/upload/controllers/upload.controller.js';
+import { FeatureDeconstructionService } from '../modules/rag/services/feature-deconstruction.service.js';
+import { NoveltyMatrixService } from '../modules/rag/services/novelty-matrix.service.js';
 import { UploadComparisonService } from '../modules/upload/services/upload-comparison.service.js';
 export default fp(async (fastify) => {
     // 1. Instantiate Providers
@@ -62,6 +64,7 @@ export default fp(async (fastify) => {
     const uploadRepo = new UploadRepository(fastify.prisma);
     // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
     const confidenceService = new ConfidenceService();
+    const featureDeconstructionService = new FeatureDeconstructionService(llmProvider);
     const authService = new AuthService(authRepo, (payload) => fastify.jwt.sign(payload));
     const usersService = new UsersService(usersRepo);
     const patentParserService = new PatentParserService();
@@ -69,6 +72,7 @@ export default fp(async (fastify) => {
     const historyService = new HistoryService(historyRepo);
     const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
     const searchService = new SearchService(embeddingProvider, searchRepo, historyService, confidenceService);
+    const noveltyMatrixService = new NoveltyMatrixService(searchService, llmProvider, featureDeconstructionService);
     const benchmarkService = new BenchmarkService(searchService);
     const ragService = new RagService(searchService, llmProvider, undefined, undefined, undefined, historyService, confidenceService);
     const reportsService = new ReportsService(reportsRepo, llmProvider, patentService);
@@ -85,7 +89,7 @@ export default fp(async (fastify) => {
     const patentsController = new PatentsController(patentService, ingestionPipelineService);
     const embeddingsController = new EmbeddingsController(embeddingsService);
     const benchmarkController = new BenchmarkController(benchmarkService);
-    const searchController = new SearchController(searchService, benchmarkController);
+    const searchController = new SearchController(searchService, benchmarkController, noveltyMatrixService);
     const ragController = new RagController(ragService);
     const reportsController = new ReportsController(reportsService);
     const uploadsController = new UploadsController(uploadsService);

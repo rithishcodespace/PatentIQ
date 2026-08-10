@@ -93,6 +93,8 @@ declare module 'fastify' {
   }
 }
 
+import { FeatureDeconstructionService } from '../modules/rag/services/feature-deconstruction.service.js';
+import { NoveltyMatrixService } from '../modules/rag/services/novelty-matrix.service.js';
 import { UploadComparisonService } from '../modules/upload/services/upload-comparison.service.js';
 
 export default fp(async (fastify: FastifyInstance) => {
@@ -113,6 +115,7 @@ export default fp(async (fastify: FastifyInstance) => {
 
   // 3. Instantiate Services (Injecting Provider & Repository Dependencies)
   const confidenceService = new ConfidenceService();
+  const featureDeconstructionService = new FeatureDeconstructionService(llmProvider);
   const authService = new AuthService(authRepo, (payload) => fastify.jwt.sign(payload));
   const usersService = new UsersService(usersRepo);
 
@@ -121,6 +124,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const historyService = new HistoryService(historyRepo);
   const embeddingsService = new EmbeddingsService(embeddingProvider, vectorStoreProvider);
   const searchService = new SearchService(embeddingProvider, searchRepo, historyService, confidenceService);
+  const noveltyMatrixService = new NoveltyMatrixService(searchService, llmProvider, featureDeconstructionService);
   const benchmarkService = new BenchmarkService(searchService);
   const ragService = new RagService(
     searchService,
@@ -153,7 +157,7 @@ export default fp(async (fastify: FastifyInstance) => {
   const patentsController = new PatentsController(patentService, ingestionPipelineService);
   const embeddingsController = new EmbeddingsController(embeddingsService);
   const benchmarkController = new BenchmarkController(benchmarkService);
-  const searchController = new SearchController(searchService, benchmarkController);
+  const searchController = new SearchController(searchService, benchmarkController, noveltyMatrixService);
   const ragController = new RagController(ragService);
   const reportsController = new ReportsController(reportsService);
   const uploadsController = new UploadsController(uploadsService);
