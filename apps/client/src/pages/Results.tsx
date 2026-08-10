@@ -6,7 +6,15 @@ import {
   FileText,
   Columns,
   Wrench,
+  ExternalLink,
 } from 'lucide-react';
+
+const getGooglePatentsUrl = (id: string | number): string => {
+  if (!id) return 'https://patents.google.com';
+  const cleanId = String(id).replace(/[^a-zA-Z0-9]/g, '');
+  const formattedId = /^[a-zA-Z]{2}/.test(cleanId) ? cleanId : `US${cleanId}`;
+  return `https://patents.google.com/patent/${formattedId}/en`;
+};
 
 import ExecutiveRiskCard from '../components/results/ExecutiveRiskCard';
 import FeatureAlignmentMatrix from '../components/results/FeatureAlignmentMatrix';
@@ -353,9 +361,15 @@ const Results = () => {
 
                     <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
                       <span>IPC: {patent.ipc || 'G06F'}</span>
-                      <span className="text-indigo-600 font-semibold hover:underline">
-                        Inspect Claims →
-                      </span>
+                      <a
+                        href={getGooglePatentsUrl(patent.patentId || patent.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-indigo-600 font-bold hover:underline inline-flex items-center gap-0.5"
+                      >
+                        Official Patent ↗
+                      </a>
                     </div>
                   </div>
                 );
@@ -452,47 +466,59 @@ const Results = () => {
       <Modal isOpen={selectedPatent !== null} onClose={() => setSelectedPatent(null)}>
         {selectedPatent && (
           <div className="space-y-5 font-body">
-            <div className="border-b border-slate-100 pb-4">
-              <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
-                Patent Candidate #{selectedPatent.patentId || selectedPatent.id}
-              </span>
-              <h2 className="font-display text-xl font-bold text-slate-900 mt-1">
-                {selectedPatent.title}
-              </h2>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-700">
-                  IPC: {selectedPatent.ipc || 'G06F 16/90'}
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
+                  Patent Candidate #{selectedPatent.patentId || selectedPatent.id}
                 </span>
-                {(selectedPatent.similarityScore || selectedPatent.similarity) && (
-                  <span className="rounded bg-indigo-50 px-2 py-0.5 font-body font-semibold text-indigo-700 border border-indigo-200">
-                    Similarity: {getSimilarityRisk(selectedPatent.similarityScore || selectedPatent.similarity).pct}%
+                <h2 className="font-display text-xl font-bold text-slate-900 mt-1">
+                  {selectedPatent.title}
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-700">
+                    IPC: {selectedPatent.ipc || 'G06F 16/90'}
                   </span>
-                )}
-                {selectedPatent.owner && (
-                  <span className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-700">
-                    Owner: {selectedPatent.owner}
-                  </span>
-                )}
+                  {(selectedPatent.similarityScore || selectedPatent.similarity) && (
+                    <span className="rounded bg-indigo-50 px-2 py-0.5 font-body font-semibold text-indigo-700 border border-indigo-200">
+                      Similarity: {getSimilarityRisk(selectedPatent.similarityScore || selectedPatent.similarity).pct}%
+                    </span>
+                  )}
+                  {selectedPatent.owner && (
+                    <span className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-700">
+                      Owner: {selectedPatent.owner}
+                    </span>
+                  )}
+                </div>
               </div>
+
+              <a
+                href={getGooglePatentsUrl(selectedPatent.patentId || selectedPatent.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 font-body text-xs font-bold text-white hover:bg-indigo-500 transition shadow-sm shrink-0"
+              >
+                <ExternalLink className="h-4 w-4" />
+                View Full Patent on Google Patents ↗
+              </a>
             </div>
 
-            <div className="space-y-4 text-xs font-body">
+            <div className="space-y-4 text-xs font-body max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <h4 className="font-semibold text-slate-800 uppercase tracking-wider mb-1">
-                  Abstract
+                  Full Abstract Disclosure
                 </h4>
-                <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  {selectedPatent.abstract || selectedPatent.summary || selectedPatent.description || 'An apparatus and method for prior-art technical evaluation.'}
+                <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                  {selectedPatent.abstract || selectedPatent.summary || selectedPatent.description || 'An apparatus and method for prior-art technical evaluation and vector novelty matching.'}
                 </p>
               </div>
 
               <div>
                 <h4 className="font-semibold text-slate-800 uppercase tracking-wider mb-1">
-                  Patent Claims
+                  Independent & Dependent Patent Claims
                 </h4>
-                <p className="text-slate-700 font-mono leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="text-slate-800 font-mono leading-relaxed bg-slate-900 text-slate-100 p-4 rounded-xl border border-slate-800 text-xs whitespace-pre-wrap">
                   {selectedPatent.claims || selectedPatent.claimText || selectedPatent.text || '1. An autonomous vehicle navigation apparatus comprising an optical image sensor, a laser radar scanner, and a central processing unit for mapping spatial vectors.'}
-                </p>
+                </div>
               </div>
             </div>
           </div>

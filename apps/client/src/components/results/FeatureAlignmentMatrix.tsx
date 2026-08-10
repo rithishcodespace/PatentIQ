@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, CheckCircle2, AlertTriangle, XCircle, Search, Quote } from 'lucide-react';
+import { FileText, CheckCircle2, AlertTriangle, XCircle, Search, ExternalLink, Quote } from 'lucide-react';
 
 export interface FeatureOverlapItem {
   featureId: string;
@@ -20,6 +20,13 @@ export interface PatentNoveltyMatrixItem {
   featureOverlaps: FeatureOverlapItem[];
 }
 
+const getGooglePatentsUrl = (id: string | number): string => {
+  if (!id) return 'https://patents.google.com';
+  const cleanId = String(id).replace(/[^a-zA-Z0-9]/g, '');
+  const formattedId = /^[a-zA-Z]{2}/.test(cleanId) ? cleanId : `US${cleanId}`;
+  return `https://patents.google.com/patent/${formattedId}/en`;
+};
+
 interface FeatureAlignmentMatrixProps {
   matrix?: PatentNoveltyMatrixItem[];
   onSelectPatent?: (patentId: string) => void;
@@ -27,7 +34,7 @@ interface FeatureAlignmentMatrixProps {
 
 export const FeatureAlignmentMatrix: React.FC<FeatureAlignmentMatrixProps> = ({
   matrix = [],
-  onSelectPatent,
+  onSelectPatent: _onSelectPatent,
 }) => {
   if (!matrix || matrix.length === 0) {
     return (
@@ -101,13 +108,16 @@ export const FeatureAlignmentMatrix: React.FC<FeatureAlignmentMatrixProps> = ({
             {/* Patent Bar */}
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100/80 px-4 py-3 border-b border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onSelectPatent?.(patentItem.patentId)}
-                  className="font-mono font-bold text-indigo-600 hover:underline hover:text-indigo-800"
+                <a
+                  href={getGooglePatentsUrl(patentItem.patentId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono font-bold text-indigo-600 hover:underline hover:text-indigo-800 flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-indigo-200 shadow-2xs"
                 >
                   #{patentItem.patentId}
-                </button>
-                <span className="font-semibold text-slate-900 truncate max-w-lg">
+                  <ExternalLink className="h-3 w-3 text-indigo-600" />
+                </a>
+                <span className="font-semibold text-slate-900 truncate max-w-md">
                   {patentItem.title}
                 </span>
                 {patentItem.ipc && (
