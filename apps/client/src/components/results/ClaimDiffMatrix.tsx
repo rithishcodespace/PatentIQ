@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, AlertTriangle, ArrowRight, Lightbulb, ChevronRight } from 'lucide-react';
+import { FileText, Lightbulb, ChevronRight } from 'lucide-react';
 
 interface ClaimDiffMatrixProps {
   onSelectPatent?: (patentId: string) => void;

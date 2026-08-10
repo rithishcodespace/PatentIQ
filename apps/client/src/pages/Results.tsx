@@ -3,25 +3,24 @@ import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
-  Layers,
   ArrowLeft,
-  ShieldCheck,
   Zap,
   Download,
   FileText,
-  AlertTriangle,
-  Lightbulb,
-  CheckCircle2,
+  Columns,
+  Wrench,
   Cpu,
 } from 'lucide-react';
 
-import CitationReport from '../components/results/CitationReport';
-import NoveltyDial from '../components/results/NoveltyDial';
+import ExecutiveRiskCard from '../components/results/ExecutiveRiskCard';
+import FeatureAlignmentMatrix from '../components/results/FeatureAlignmentMatrix';
+import InteractiveSplitView from '../components/results/InteractiveSplitView';
+import DesignAroundTab from '../components/results/DesignAroundTab';
 import ResultsList from '../components/results/ResultsList';
 import TechnicalDeepDive from '../components/results/TechnicalDeepDive';
 import Modal from '../components/ui/Modal';
 import Loader from '../components/common/Loader';
-import { searchPatent } from '../services/api';
+import { searchPatent, fetchNoveltyMatrix, fetchDesignAround } from '../services/api';
 import { exportReportAsPdf } from '../utils/pdfExporter';
 import { getSimilarityRisk } from '../utils/similarityRisk';
 
@@ -66,32 +65,68 @@ const DEFAULT_RAG_DATA = {
     noveltyScore: 0.82,
     obviousnessScore: 0.18,
     summary:
-      'The submitted invention disclosure demonstrates strong novelty in resonant inductive wireless charging feedback loops, with moderate prior-art claim overlap under 35 U.S.C. 102/103 with [US-10112233-B2] and [US-9876543-A1].',
-    novelAspects: [
-      'Resonant inductive wireless power transmission feedback loop',
-      'Real-time edge AI spatial point cloud aggregation protocol',
-    ],
-    risks: [
-      'Draft Claim 1 overlaps with optical & LiDAR sensor fusion in [US-10112233-B2]',
-      'Potential Section 103 obviousness risk when combining telemetry with wireless power',
-    ],
-    recommendations: [
-      'Amend Claim 1 to explicitly include the resonant inductive charging feedback controller',
-      'Emphasize dynamic beamforming phased array in dependent claims',
-    ],
+      'The submitted invention disclosure demonstrates strong novelty in resonant inductive wireless charging feedback loops, with moderate prior-art claim overlap under 35 U.S.C. 102/103 with US-10112233-B2.',
   },
   overlapAnalysis: {
-    overlappingClaims: [
+    overallRiskLevel: 'MODERATE_RISK',
+    noveltyRiskScore: 42,
+    executiveRationale:
+      'Draft Claim 1 demonstrates strong novelty in resonant inductive wireless charging feedback loops, with moderate prior-art claim overlap under 35 U.S.C. 102/103 with US-10112233-B2.',
+    matrix: [
       {
         patentId: 'US-10112233-B2',
-        claimNumber: 1,
-        overlapStrength: 'High',
-        summary: 'Sensor fusion vector aggregation overlap',
-        reason: 'Overlapping spatial vector calculation logic in Claim 1',
+        title: 'Integrated LiDAR and Optical Fusion Architecture for Autonomous Navigation',
+        ipc: 'B64C 39/02',
+        similarityScore: 0.85,
+        overallPatentOverlapScore: 85,
+        featureOverlaps: [
+          {
+            featureId: 'F1',
+            featureName: 'Optical flow velocity sensor',
+            featureDescription: 'High frequency optical sensing module',
+            status: 'EXACT_MATCH',
+            matchConfidence: 0.92,
+            citationEvidence: '[Claims 1-4]: Optical velocity sensor emitting light beam.',
+            explanation: 'Exact match with prior art claim 1.',
+          },
+          {
+            featureId: 'F2',
+            featureName: 'Resonant Inductive Wireless Charger',
+            featureDescription: 'Dynamic power feedback loop',
+            status: 'NO_MATCH',
+            matchConfidence: 0.12,
+            citationEvidence: 'No resonant inductive charger recited in reference.',
+            explanation: 'Novel element establishing clear patentability.',
+          },
+        ],
       },
     ],
-    overallOverlapScore: 18,
-    riskLevel: 'Moderate',
+  },
+  designAround: {
+    overallStrategy:
+      'Pivot core architectural components toward specialized solid-state hardware and dynamic control protocols to establish clear novelty and Freedom to Operate (FTO) over cited prior art.',
+    recommendations: [
+      {
+        featureId: 'F1',
+        featureName: 'Optical Flow Velocity Sensor',
+        conflictReason: 'Direct overlap with US-10112233-B2 Independent Claim 1 regarding optical velocity sensing.',
+        suggestedModification:
+          'Switch from optical flow velocity sensor to MEMS ultrasonic Doppler transducer array to eliminate optical calibration requirements.',
+        patentabilityBoost: '+40% Novelty Boost',
+        rAndDFeasibility: 'HIGH',
+        targetPriorArtId: 'US-10112233-B2',
+      },
+      {
+        featureId: 'F2',
+        featureName: 'Wireless Bluetooth Telemetry Protocol',
+        conflictReason: 'Overlaps with baseline wireless RF power telemetry claims in US-9876543-A1.',
+        suggestedModification:
+          'Integrate adaptive frequency-hopping spread spectrum (FHSS) mesh protocol with localized edge encryption.',
+        patentabilityBoost: '+35% Novelty Boost',
+        rAndDFeasibility: 'HIGH',
+        targetPriorArtId: 'US-9876543-A1',
+      },
+    ],
   },
   metrics: { totalTimeMs: 145, overlappingClaimsCount: 1 },
 };
@@ -99,14 +134,17 @@ const DEFAULT_RAG_DATA = {
 const Results = () => {
   const location = useLocation();
   const [selectedPatent, setSelectedPatent] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'insights' | 'patents' | 'technical'>('insights');
+  const [activeTab, setActiveTab] = useState<'matrix' | 'split' | 'design-around' | 'deepdive'>('matrix');
   const [liveRagData, setLiveRagData] = useState<any>(location.state || DEFAULT_RAG_DATA);
+  const [noveltyMatrixData, setNoveltyMatrixData] = useState<any>(null);
+  const [designAroundData, setDesignAroundData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(!location.state);
 
   useEffect(() => {
-    if (!location.state) {
-      let isMounted = true;
-      async function fetchLiveRag() {
+    let isMounted = true;
+
+    async function loadData() {
+      if (!location.state) {
         setLoading(true);
         try {
           const res = await searchPatent({
@@ -114,6 +152,7 @@ const Results = () => {
             pastedText: 'Autonomous drone sensor fusion and wireless charging system',
             advanced: { similarityThreshold: 75, maxResults: 10, databases: ['USPTO'], includeKeywords: true },
           });
+
           if (isMounted && res) {
             const dataObj = res.data || res;
             setLiveRagData({
@@ -134,16 +173,38 @@ const Results = () => {
           if (isMounted) setLoading(false);
         }
       }
-      fetchLiveRag();
-      return () => {
-        isMounted = false;
-      };
+
+      // Fetch Novelty Matrix & Design-Around in background if needed
+      const queryStr = liveRagData?.query || DEFAULT_RAG_DATA.query;
+      try {
+        const [matrixRes, designAroundRes] = await Promise.all([
+          fetchNoveltyMatrix({ query: queryStr, topK: 5 }),
+          fetchDesignAround({ query: queryStr, topK: 5 }),
+        ]);
+
+        if (isMounted) {
+          if (matrixRes && matrixRes.data) {
+            setNoveltyMatrixData(matrixRes.data);
+          }
+          if (designAroundRes) {
+            setDesignAroundData(designAroundRes);
+          }
+        }
+      } catch (err) {
+        console.warn('[Results] Background matrix/design-around fetch failed:', err);
+      }
     }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [location.state]);
 
   if (loading) {
     return (
-      <div className="py-20 text-center space-y-4">
+      <div className="py-20 text-center space-y-4 font-body">
         <Loader />
         <p className="font-body text-xs font-semibold text-slate-600">
           Analyzing prior art databases & generating novelty report...
@@ -156,15 +217,24 @@ const Results = () => {
   const results = data.results || data.retrievedPatents || DEFAULT_RAG_DATA.results;
   const confidenceBlock = data.confidence || DEFAULT_RAG_DATA.confidence;
   const analysisData = data.analysis || data.noveltyAnalysis || DEFAULT_RAG_DATA.analysis;
-  const overlapData = data.overlapAnalysis || DEFAULT_RAG_DATA.overlapAnalysis;
   const metricsData = data.metrics || DEFAULT_RAG_DATA.metrics;
 
-  const topMatchScore = results?.[0]?.similarityScore || results?.[0]?.similarity || 0.85;
-  const topMatchRisk = getSimilarityRisk(topMatchScore);
+  // Novelty Matrix Data (Backend API result or fallback)
+  const matrixPayload = noveltyMatrixData || data.overlapAnalysis || DEFAULT_RAG_DATA.overlapAnalysis;
+  const riskLevel = matrixPayload.overallRiskLevel || matrixPayload.riskLevel || 'MODERATE_RISK';
+  const riskScore = matrixPayload.noveltyRiskScore ?? matrixPayload.overallOverlapScore ?? 42;
+  const executiveRationale =
+    matrixPayload.executiveRationale ||
+    analysisData.summary ||
+    'Draft Claim 1 demonstrates strong novelty in resonant inductive wireless charging feedback loops, with moderate prior-art claim overlap under 35 U.S.C. 102/103 with US-10112233-B2.';
+  const matrixItems = matrixPayload.matrix || DEFAULT_RAG_DATA.overlapAnalysis.matrix;
+
+  // Design Around Data (Backend API result or fallback)
+  const designAroundPayload = designAroundData || data.designAround || DEFAULT_RAG_DATA.designAround;
 
   const handleExportJson = () => {
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(data, null, 2)
+      JSON.stringify({ ...data, noveltyMatrix: matrixPayload, designAround: designAroundPayload }, null, 2)
     )}`;
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', jsonString);
@@ -229,154 +299,77 @@ const Results = () => {
         </div>
       </div>
 
-      {/* 2. Executive Prior-Art Verdict & Novelty Assessment Workstation Panel */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="space-y-0.5">
-            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-slate-900">
-              <ShieldCheck className="h-5 w-5 text-indigo-600" />
-              Executive Prior-Art Verdict & Novelty Assessment
-            </h2>
-            <p className="font-body text-xs text-slate-500">
-              Citation-grounded analysis across global prior art databases
-            </p>
-          </div>
-
-          <span className={`inline-flex items-center gap-1.5 font-body text-xs font-semibold px-3.5 py-1.5 rounded-full border ${topMatchRisk.bg} ${topMatchRisk.text}`}>
-            {topMatchRisk.badgeText}
-          </span>
-        </div>
-
-        {/* 2-Column Split Layout */}
-        <div className="grid gap-6 lg:grid-cols-12 items-center">
-          {/* Left Column: Radial Novelty Dial */}
-          <div className="lg:col-span-4 border-r-0 lg:border-r border-slate-100 lg:pr-6 flex justify-center">
-            <NoveltyDial
-              noveltyScore={analysisData.noveltyScore ?? 0.82}
-              obviousnessScore={analysisData.obviousnessScore ?? 0.18}
-              overlapScore={overlapData.overallOverlapScore ?? 15}
-              riskLevel={overlapData.riskLevel ?? 'Low'}
-              summary={analysisData.summary}
-            />
-          </div>
-
-          {/* Right Column: 3 Core Executive Verdict Answers */}
-          <div className="lg:col-span-8 space-y-3 font-body text-xs">
-            {/* Answer 1 */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 font-display font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  1. Matching Prior Art Found
-                </span>
-                <span className="font-mono text-[11px] font-semibold text-slate-500">
-                  {results?.length || 0} Candidates Matched
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                Found <span className="font-semibold text-slate-900">{results?.length || 0} prior-art patents</span> with up to <span className="font-semibold text-rose-700">{topMatchRisk.pct}% max overlap</span>. Closest reference is <span className="font-mono font-bold text-indigo-700">#{results?.[0]?.patentId || results?.[0]?.id || 'US-10112233-B2'}</span>.
-              </p>
-            </div>
-
-            {/* Answer 2 */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 font-display font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                  2. Statutory Rejection Hazards (35 U.S.C. 102/103)
-                </span>
-                <span className="font-mono text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  Section 102 Risk
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                Draft Claim #1 is vulnerable under <span className="font-semibold text-slate-900">35 U.S.C. 102 (Anticipation)</span> due to optical & LiDAR sensor fusion element overlap with US-10112233-B2.
-              </p>
-            </div>
-
-            {/* Answer 3 */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 font-display font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  <Lightbulb className="h-4 w-4 text-indigo-600 shrink-0" />
-                  3. Actionable Claim Narrowing Strategy
-                </span>
-                <span className="font-mono text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                  Amendment Advice
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                Narrow independent Claim 1 body to include <span className="font-semibold text-indigo-900">resonant inductive wireless power receiver feedback loop</span> to establish clear novelty over prior art.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 2. Executive Risk Card */}
+      <ExecutiveRiskCard
+        riskLevel={riskLevel}
+        riskScore={riskScore}
+        executiveRationale={executiveRationale}
+        evaluatedFeaturesCount={matrixItems?.[0]?.featureOverlaps?.length || 2}
+        evaluatedPatentsCount={results?.length || 2}
+      />
 
       {/* 3. Sleek Segmented Control Workstation Tab Bar */}
       <div className="flex border border-slate-200 bg-slate-100/80 p-1.5 rounded-2xl shadow-2xs">
         <button
-          onClick={() => setActiveTab('insights')}
+          onClick={() => setActiveTab('matrix')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-body text-xs font-semibold transition ${
-            activeTab === 'insights'
+            activeTab === 'matrix'
               ? 'bg-white text-indigo-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <FileText className="h-4 w-4" />
-          Prior-Art Insights & Claim Guidance
+          Feature Alignment Matrix
         </button>
 
         <button
-          onClick={() => setActiveTab('patents')}
+          onClick={() => setActiveTab('split')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-body text-xs font-semibold transition ${
-            activeTab === 'patents'
+            activeTab === 'split'
               ? 'bg-white text-indigo-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Layers className="h-4 w-4" />
-          Retrieved Prior-Art Patents ({results?.length || 0})
+          <Columns className="h-4 w-4" />
+          Interactive Side-by-Side Split View
         </button>
 
         <button
-          onClick={() => setActiveTab('technical')}
+          onClick={() => setActiveTab('design-around')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-body text-xs font-semibold transition ${
-            activeTab === 'technical'
+            activeTab === 'design-around'
+              ? 'bg-white text-indigo-600 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Wrench className="h-4 w-4" />
+          AI Design-Around R&D
+        </button>
+
+        <button
+          onClick={() => setActiveTab('deepdive')}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-body text-xs font-semibold transition ${
+            activeTab === 'deepdive'
               ? 'bg-white text-indigo-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Cpu className="h-4 w-4" />
-          Technical Deep-Dive & System Mechanics
+          Prior-Art Patents & Deep Dive ({results?.length || 0})
         </button>
       </div>
 
       {/* 4. Tab Content Views */}
       <AnimatePresence mode="wait">
-        {activeTab === 'insights' && (
+        {activeTab === 'matrix' && (
           <motion.div
-            key="insights"
+            key="matrix"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="flex items-center gap-2 font-display text-base font-semibold text-slate-900">
-                <FileText className="h-4 w-4 text-indigo-600" />
-                Prior-Art Limitation Matrix & Statutory Rejection Analysis
-              </h2>
-              <span className="inline-flex items-center gap-1 font-body text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
-                <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" /> Grounded Analysis
-              </span>
-            </div>
-
-            <CitationReport
-              analysis={analysisData}
-              overlapAnalysis={overlapData}
-              onDownloadPdf={() => exportReportAsPdf(data)}
+            <FeatureAlignmentMatrix
+              matrix={matrixItems}
               onSelectPatent={(patentId) => {
                 const found = results.find(
                   (p: any) => p.patentId === patentId || p.id === patentId
@@ -387,20 +380,48 @@ const Results = () => {
           </motion.div>
         )}
 
-        {activeTab === 'patents' && (
+        {activeTab === 'split' && (
           <motion.div
-            key="patents"
+            key="split"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="space-y-4"
+          >
+            <InteractiveSplitView
+              userQuery={data.query}
+              patents={results}
+            />
+          </motion.div>
+        )}
+
+        {activeTab === 'design-around' && (
+          <motion.div
+            key="design-around"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <DesignAroundTab
+              recommendations={designAroundPayload?.recommendations}
+              overallStrategy={designAroundPayload?.overallStrategy}
+            />
+          </motion.div>
+        )}
+
+        {activeTab === 'deepdive' && (
+          <motion.div
+            key="deepdive"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="space-y-6"
           >
             <div className="flex items-center justify-between">
               <h3 className="font-display text-base font-semibold text-slate-900">
-                Retrieved Prior-Art Patents
+                Retrieved Prior-Art Patent Candidates
               </h3>
               <span className="font-body text-xs text-slate-500">
-                Ranked by Prior-Art Overlap
+                Ranked by Vector & BM25 Similarity Score
               </span>
             </div>
 
@@ -408,16 +429,7 @@ const Results = () => {
               results={results}
               onView={(patent) => setSelectedPatent(patent)}
             />
-          </motion.div>
-        )}
 
-        {activeTab === 'technical' && (
-          <motion.div
-            key="technical"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-          >
             <TechnicalDeepDive confidence={confidenceBlock} metrics={metricsData} query={data.query} />
           </motion.div>
         )}
@@ -426,7 +438,7 @@ const Results = () => {
       {/* Patent Inspector Detail Modal */}
       <Modal isOpen={selectedPatent !== null} onClose={() => setSelectedPatent(null)}>
         {selectedPatent && (
-          <div className="space-y-5">
+          <div className="space-y-5 font-body">
             <div className="border-b border-slate-100 pb-4">
               <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
                 Patent Candidate #{selectedPatent.patentId || selectedPatent.id}

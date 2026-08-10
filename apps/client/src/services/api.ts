@@ -325,3 +325,29 @@ export const configureIngestionSchedule = async (intervalMinutes: number, enable
     throw new Error(errorMsg);
   }
 };
+
+/**
+ * Fetches Element-Level Novelty Overlap Matrix via /api/search/novelty-matrix.
+ */
+export const fetchNoveltyMatrix = async (payload: { query?: string; text?: string; features?: any[]; topK?: number }): Promise<any> => {
+  try {
+    const response = await apiClient.post("/search/novelty-matrix", payload);
+    return response.data;
+  } catch (error: any) {
+    console.warn("[PatentIQ API] Novelty matrix fetch warning:", error?.message);
+    return null;
+  }
+};
+
+/**
+ * Fetches AI Design-Around R&D Recommendations via /api/rag/design-around.
+ */
+export const fetchDesignAround = async (payload: { query?: string; text?: string; features?: any[]; topK?: number }): Promise<any> => {
+  try {
+    const response = await apiClient.post("/rag/design-around", payload);
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.warn("[PatentIQ API] Design-Around fetch warning:", error?.message);
+    return null;
+  }
+};
