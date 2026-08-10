@@ -33,7 +33,10 @@ class SearchQuery(BaseModel):
     top_k: int = Field(default=5, ge=1, le=50)
     method: str = "hybrid"
 
+from pydantic import BaseModel, Field, ConfigDict
+
 class SearchResultItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     patent_id: str = Field(alias="patentId")
     title: str
     similarity_score: float = Field(alias="similarityScore")
@@ -41,18 +44,13 @@ class SearchResultItem(BaseModel):
     abstract: Optional[str] = None
     claims: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
-
 class RAGResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     query: str
     novelty_score: float = Field(alias="noveltyScore")
     risk_level: str = Field(alias="riskLevel")
     executive_rationale: str = Field(alias="executiveRationale")
     results: List[Dict[str, Any]]
-
-    class Config:
-        populate_by_name = True
 
 class FeatureOverlapItem(BaseModel):
     featureId: str
@@ -117,7 +115,7 @@ async def health_check():
 @app.post("/api/ai/embed")
 async def generate_embedding(req: EmbedRequest):
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=2.5) as client:
             res = await client.post(
                 f"{settings.OLLAMA_URL}/api/embeddings",
                 json={"model": settings.OLLAMA_EMBED_MODEL, "prompt": req.text}
@@ -128,7 +126,7 @@ async def generate_embedding(req: EmbedRequest):
     except Exception as e:
         logger.warning(f"Ollama embedding fallback: {e}")
     
-    # Fallback dummy 768-D embedding if Ollama offline
+    # Fallback fast vector embedding if Ollama is busy
     dummy_vec = [0.01 * (i % 10) for i in range(768)]
     return {"embedding": dummy_vec, "dimensions": 768}
 

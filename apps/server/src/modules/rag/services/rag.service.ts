@@ -97,6 +97,7 @@ export class RagService implements IRagService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, top_k: topK, method: 'hybrid' }),
+        signal: AbortSignal.timeout(4000),
       });
       if (fastRes.ok) {
         const fastData = await fastRes.json();

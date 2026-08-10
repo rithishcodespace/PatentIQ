@@ -1,1 +1,0 @@
-{"version":3,"file":"docx.parser.d.ts","sourceRoot":"","sources":["docx.parser.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,eAAe,EAAE,oBAAoB,EAAE,MAAM,6CAA6C,CAAC;AAEzG,qBAAa,UAAW,YAAW,eAAe;IAC1C,KAAK,CAAC,MAAM,EAAE,MAAM,GAAG,OAAO,CAAC,oBAAoB,CAAC,CA0BzD;CACF"}

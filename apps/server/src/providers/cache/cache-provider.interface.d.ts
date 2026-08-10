@@ -1,8 +1,0 @@
-export interface ICacheProvider {
-    get<T>(key: string): Promise<T | null>;
-    set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
-    del(key: string): Promise<void>;
-    flush(): Promise<void>;
-    isAvailable(): boolean;
-}
-//# sourceMappingURL=cache-provider.interface.d.ts.map

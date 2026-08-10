@@ -10,7 +10,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true,
-  timeout: 30000,
+  timeout: 120000,
 });
 
 export const loginUser = async (email: string, password: string): Promise<any> => {

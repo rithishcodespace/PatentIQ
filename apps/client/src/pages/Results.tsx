@@ -7,6 +7,7 @@ import {
   Columns,
   Wrench,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 
 const getGooglePatentsUrl = (id: string | number): string => {
@@ -255,6 +256,35 @@ const Results = () => {
     }
   };
 
+  const handleExportCsv = () => {
+    if (!results || results.length === 0) return;
+
+    const headers = ['Patent ID', 'Title', 'IPC Classification', 'Similarity Match %', 'Official Google Patents Link', 'Abstract', 'Claims'];
+
+    const csvRows = [
+      headers.join(','),
+      ...results.map((patent: any) => {
+        const id = patent.patentId || patent.id || 'N/A';
+        const title = `"${(patent.title || '').replace(/"/g, '""')}"`;
+        const ipc = `"${(patent.ipc || 'G06F').replace(/"/g, '""')}"`;
+        const simPct = getSimilarityRisk(patent.similarityScore || patent.similarity || 0.75).pct;
+        const link = `https://patents.google.com/patent/${String(id).replace(/[^a-zA-Z0-9]/g, '')}/en`;
+        const abstract = `"${(patent.abstract || patent.summary || '').replace(/"/g, '""')}"`;
+        const claims = `"${(patent.claims || patent.claimText || '').replace(/"/g, '""')}"`;
+        return [id, title, ipc, `${simPct}%`, link, abstract, claims].join(',');
+      }),
+    ];
+
+    const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(csvBlob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `PatentIQ_PriorArt_Candidates_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 font-body">
       {/* 1. Workstation Navigation Header */}
@@ -279,6 +309,14 @@ const Results = () => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-body text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-600 transition shadow-2xs"
+          >
+            <Download className="h-3.5 w-3.5 text-indigo-600" />
+            Export CSV (.csv)
+          </button>
+
           <button
             onClick={handleDownloadAttorneyPdf}
             disabled={exportingPdf}

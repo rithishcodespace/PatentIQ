@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
 import { AuthProvider } from "../context/AuthContext";
@@ -10,7 +10,6 @@ const Search = lazy(() => import("../pages/Search"));
 const Results = lazy(() => import("../pages/Results"));
 const HowItWorksPage = lazy(() => import("../pages/HowItWorksPage"));
 const HistoryPage = lazy(() => import("../pages/HistoryPage"));
-const UploadPage = lazy(() => import("../pages/UploadPage"));
 const DocsPage = lazy(() => import("../pages/DocsPage"));
 const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
 const NotFound = lazy(() => import("../pages/NotFound"));
@@ -35,14 +34,7 @@ const AppRoutes = () => {
               <Route path="search" element={<Search />} />
               <Route path="how-it-works" element={<HowItWorksPage />} />
               <Route path="results" element={<Results />} />
-              <Route
-                path="upload"
-                element={
-                  <ProtectedRoute>
-                    <UploadPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="upload" element={<Navigate to="/search" replace />} />
               <Route
                 path="history"
                 element={

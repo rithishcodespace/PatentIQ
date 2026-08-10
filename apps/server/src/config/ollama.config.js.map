@@ -1,1 +1,0 @@
-{"version":3,"file":"ollama.config.js","sourceRoot":"","sources":["ollama.config.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,GAAG,EAAE,MAAM,iBAAiB,CAAC;AAEtC,MAAM,CAAC,MAAM,YAAY,GAAG;IAC1B,OAAO,EAAE,GAAG,CAAC,eAAe;IAC5B,cAAc,EAAE,GAAG,CAAC,sBAAsB;IAC1C,QAAQ,EAAE,GAAG,CAAC,gBAAgB;CAC/B,CAAC"}
