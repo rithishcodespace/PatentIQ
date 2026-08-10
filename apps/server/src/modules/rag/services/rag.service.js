@@ -57,15 +57,36 @@ export class RagService {
                 };
             }
         }
-        // 1. Single Shared Retrieval Phase
+        // 1. Single Shared Retrieval Phase (delegated to FastAPI if online)
         const retrievalStart = Date.now();
-        const searchResponse = await this.searchService.search({ query, topK });
+        let searchResponse = null;
+        try {
+            const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:8000';
+            const fastRes = await fetch(`${fastApiUrl}/api/ai/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, top_k: topK, method: 'hybrid' }),
+            });
+            if (fastRes.ok) {
+                const fastData = await fastRes.json();
+                console.log(`[RagService] Successfully received vector search results from Python FastAPI Microservice.`);
+                if (fastData?.results) {
+                    searchResponse = { results: fastData.results };
+                }
+            }
+        }
+        catch (err) {
+            console.warn(`[RagService] Python FastAPI microservice unreachable (${err.message}). Falling back to internal SearchService.`);
+        }
+        if (!searchResponse) {
+            searchResponse = await this.searchService.search({ query, topK });
+        }
         const retrievalTimeMs = Date.now() - retrievalStart;
         const results = searchResponse.results || [];
         const retrievedPatents = results.map((p) => ({
             patentId: p.patentId,
             title: p.title,
-            score: p.score,
+            score: p.score ?? p.similarityScore ?? 0.75,
             ipc: p.ipc,
             abstract: p.abstract,
             section: p.section,

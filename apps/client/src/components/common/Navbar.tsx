@@ -5,8 +5,8 @@ import AuthModal from './AuthModal';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
-  { to: '/search', label: 'Search Workspace', icon: Search },
-  { to: '/upload', label: 'Invention Compare', icon: UploadCloud },
+  { to: '/search', label: 'Prior-Art Search', icon: Search },
+  { to: '/upload', label: 'Document Spec Inspector', icon: UploadCloud },
   { to: '/history', label: 'Search History', icon: History },
   { to: '/dashboard', label: 'System Health', icon: Activity },
   { to: '/how-it-works', label: 'Architecture', icon: Cpu },

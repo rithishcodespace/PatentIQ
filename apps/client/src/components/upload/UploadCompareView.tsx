@@ -67,10 +67,10 @@ const UploadCompareView = () => {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-bold text-slate-900">
-              Upload & Compare Invention Document
+              Document Specification & Prior-Art Inspector
             </h2>
             <p className="font-body text-xs text-slate-600 mt-1 max-w-xl">
-              Upload your patent specification draft (PDF, DOCX, TXT) to extract key sections and analyze prior-art similarity against global filings.
+              Upload your full patent draft (PDF, DOCX, TXT) to inspect extracted text sections and analyze similarity against prior-art filings.
             </p>
           </div>
 
