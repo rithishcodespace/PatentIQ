@@ -116,21 +116,23 @@ export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepD
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-base font-semibold text-slate-900 flex items-center gap-2">
                 <Database className="h-4 w-4 text-indigo-600" />
-                Pinecone Vector Store Metadata
+                Pinecone System Architecture Metadata
               </h3>
-              <span className="font-mono text-xs text-slate-500">768-Dim Dense Vectors</span>
+              <span className="font-mono text-xs text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200 font-semibold">
+                768-Dim Dense Vectors
+              </span>
             </div>
 
             <div className="space-y-3 font-mono text-xs">
-              <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-indigo-200 overflow-x-auto">
-                <p className="text-slate-400 font-body mb-2">// Query Vector Transformation Payload</p>
-                <pre>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-800 overflow-x-auto">
+                <p className="text-slate-500 font-body mb-2 text-xs font-medium">// System Architecture & Hybrid Filter Context</p>
+                <pre className="font-mono text-xs text-indigo-700">
 {`{
-  "query": "${query || 'Drone sensor fusion'}",
+  "query": "${query || 'Autonomous LiDAR drone sensor fusion'}",
   "vectorDimensions": 768,
-  "metric": "cosine",
-  "topK": 10,
-  "ipcFilter": "B64C, G06F, H02J"
+  "similarityMetric": "Cosine Vector Space",
+  "topK": 5,
+  "ipcClassificationFilter": "B64C, G06F, H02J"
 }`}
                 </pre>
               </div>
