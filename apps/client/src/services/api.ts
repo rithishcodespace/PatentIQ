@@ -53,7 +53,7 @@ export const searchPatent = async (payload?: PatentSearchPayload): Promise<any> 
       return await compareInventionFile(payload.file, payload.advanced?.maxResults || 10);
     }
 
-    const response = await apiClient.post("/rag/analyze", {
+    const response = await apiClient.post("/search", {
       query: queryText,
       topK: payload?.advanced?.maxResults || 10,
     });
