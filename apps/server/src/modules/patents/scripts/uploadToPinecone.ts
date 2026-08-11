@@ -10,9 +10,25 @@ import { env } from '../../../config/env.config.js';
  */
 export interface PatentVectorMetadata {
   patentId: string;
-  section: 'title' | 'abstract' | 'claims';
-  ipc: string;
-  [key: string]: string;
+  publicationNumber?: string;
+  sectionType?: 'title' | 'abstract' | 'claim' | 'claims' | 'description' | string;
+  section?: 'title' | 'abstract' | 'claims' | 'description' | string;
+  chunkId?: string;
+  claimNumber?: number;
+  ipc?: string;
+  cpc?: string;
+  title?: string;
+  abstract?: string;
+  claims?: string;
+  description?: string;
+  inventors?: string;
+  owner?: string;
+  applicants?: string;
+  publicationDate?: string;
+  filingDate?: string;
+  priorityDate?: string;
+  sourceUrl?: string;
+  [key: string]: any;
 }
 
 /**
@@ -20,11 +36,25 @@ export interface PatentVectorMetadata {
  */
 export interface PatentEmbeddingRecord {
   patentId: string;
-  ipc: string;
-  embeddings: {
+  publicationNumber?: string;
+  ipc?: string;
+  cpc?: string;
+  title?: string;
+  abstract?: string;
+  claims?: string;
+  description?: string;
+  inventors?: string;
+  owner?: string;
+  applicants?: string;
+  publicationDate?: string;
+  filingDate?: string;
+  priorityDate?: string;
+  sourceUrl?: string;
+  embeddings?: {
     title?: number[];
     abstract?: number[];
     claims?: number[];
+    description?: number[];
   };
 }
 

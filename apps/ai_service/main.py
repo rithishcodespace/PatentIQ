@@ -6,7 +6,11 @@ from pydantic import BaseModel
 import requests
 
 from config import settings
-from vector_store import search_vector_store
+try:
+    from vector_store import search_vector_store
+except ImportError:
+    def search_vector_store(query: str, top_k: int = 10):
+        return []
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("patentiq_ai")

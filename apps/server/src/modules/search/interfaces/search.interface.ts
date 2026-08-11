@@ -6,15 +6,26 @@ import type { SearchRequestDto, SearchResponseDto, SearchResultDto, PriorArtMatc
  */
 export interface PineconeVectorMetadata extends RecordMetadata {
   patentId: string;
-  section?: 'title' | 'abstract' | 'claims' | string;
-  ipc: string;
-  title?: string;
-  abstract?: string;
-  claims?: string;
-  publicationDate?: string;
-  owner?: string;
-  assignee?: string;
-  country?: string;
+  publicationNumber?: string | undefined;
+  sectionType?: 'title' | 'abstract' | 'claim' | 'claims' | 'description' | string | undefined;
+  section?: 'title' | 'abstract' | 'claims' | 'description' | string | undefined;
+  claimNumber?: number | undefined;
+  chunkId?: string | undefined;
+  title?: string | undefined;
+  abstract?: string | undefined;
+  claims?: string | undefined;
+  description?: string | undefined;
+  inventors?: string | string[] | undefined;
+  owner?: string | undefined;
+  assignee?: string | undefined;
+  applicants?: string | string[] | undefined;
+  publicationDate?: string | undefined;
+  filingDate?: string | undefined;
+  priorityDate?: string | undefined;
+  ipc?: string | undefined;
+  cpc?: string | undefined;
+  country?: string | undefined;
+  sourceUrl?: string | undefined;
 }
 
 /**
@@ -22,12 +33,13 @@ export interface PineconeVectorMetadata extends RecordMetadata {
  */
 export interface SearchFilter {
   ipc?: string | string[] | undefined;
+  cpc?: string | string[] | undefined;
   country?: string | undefined;
   publicationDate?: string | undefined;
   publicationDateFrom?: string | undefined;
   publicationDateTo?: string | undefined;
   owner?: string | undefined;
-  section?: 'title' | 'abstract' | 'claims' | undefined;
+  section?: 'title' | 'abstract' | 'claims' | 'description' | undefined;
 }
 
 /**
@@ -45,10 +57,20 @@ export interface PineconeMatchResult {
 export interface BM25MatchResult {
   id: string;
   patentId: string;
+  publicationNumber?: string | undefined;
   title: string;
   abstract: string;
   claims?: string | undefined;
+  description?: string | undefined;
   ipc: string;
+  cpc?: string | undefined;
+  inventors?: string | undefined;
+  owner?: string | undefined;
+  applicants?: string | undefined;
+  publicationDate?: string | undefined;
+  filingDate?: string | undefined;
+  priorityDate?: string | undefined;
+  sourceUrl?: string | undefined;
   bm25Score: number;
 }
 
@@ -64,15 +86,26 @@ export interface SearchResult {
   rank: number;
   score: number;
   patentId: string;
+  publicationNumber?: string | undefined;
   title: string;
   abstract: string;
   claims?: string | undefined;
+  description?: string | undefined;
   ipc: string;
+  cpc?: string | undefined;
   country?: string | undefined;
   owner?: string | undefined;
+  applicants?: string | undefined;
+  inventors?: string | undefined;
   publicationDate?: string | undefined;
+  filingDate?: string | undefined;
+  priorityDate?: string | undefined;
   section?: string | undefined;
+  sectionType?: string | undefined;
+  chunkId?: string | undefined;
+  claimNumber?: number | undefined;
   vectorId?: string | undefined;
+  sourceUrl?: string | undefined;
 }
 
 /**
