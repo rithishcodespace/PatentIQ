@@ -7,7 +7,6 @@ import {
   FileText,
   RefreshCw,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 import PatentCard, { type PatentItem } from '../components/results/PatentCard';
 import PatentDetailsModal from '../components/results/PatentDetailsModal';
@@ -136,131 +135,123 @@ const Results = () => {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 font-body pb-16">
-      {/* 1. Header Section: Prior-Art Search Results */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600">
-              <Sparkles className="h-3.5 w-3.5" />
-              Prior-Art Retrieval Engine
+      {/* 1. Industry Standard Search Header */}
+      <div className="space-y-4 font-body">
+        {/* Top Search Input Bar (Google Patents / Legal Workstation Style) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-white p-3 border border-slate-200 shadow-2xs">
+          {/* Active Query Input Display */}
+          <div className="relative flex-1 min-w-0">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+              <Search className="h-4 w-4 text-indigo-600" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              SEARCH RESULTS
-            </h1>
-            <p className="text-sm font-medium text-slate-600">
-              These are the patents most relevant to your invention.
-            </p>
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200/80 shrink-0">
-            <Search className="h-3.5 w-3.5 text-indigo-600" />
-            Search method: <strong className="text-slate-900 font-semibold">Hybrid Semantic + BM25 + RRF</strong>
-          </div>
-        </div>
-
-        {/* Query Box */}
-        <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80 space-y-2">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Query:
-          </div>
-          <p className="text-sm font-medium text-slate-900 leading-relaxed font-mono bg-white p-3 rounded-lg border border-slate-200/60 break-words">
-            "{queryText}"
-          </p>
-          <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
-            <span className="font-semibold text-slate-800">
-              Found {mappedPatents.length} relevant patents
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Filters and Controls Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-3.5 border border-slate-200 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-3 min-w-0 flex-1">
-          <Link
-            to="/search"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 transition shrink-0 cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Search
-          </Link>
-
-          {/* Quick Search Filter */}
-          <div className="relative min-w-[200px] flex-1 sm:flex-none">
             <input
               type="text"
-              placeholder="Filter patents by keyword..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+              readOnly
+              value={queryText}
+              onClick={handleModifySearch}
+              title="Click to refine search query"
+              className="w-full rounded-xl border border-slate-200/80 bg-slate-50/80 py-2.5 pl-10 pr-24 text-sm font-medium text-slate-900 shadow-inner focus:outline-hidden cursor-pointer hover:bg-slate-100/80 transition truncate"
             />
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <div className="absolute inset-y-0 right-1.5 flex items-center">
+              <button
+                onClick={handleModifySearch}
+                className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+              >
+                <SlidersHorizontal className="h-3 w-3 text-slate-500" />
+                Refine
+              </button>
+            </div>
           </div>
 
-          {/* IPC Filter Dropdown */}
-          {availableIpcClasses.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <select
-                value={selectedIpc}
-                onChange={(e) => setSelectedIpc(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-              >
-                <option value="ALL">All IPC Classifications</option>
-                {availableIpcClasses.map((ipc) => (
-                  <option key={ipc} value={ipc}>
-                    IPC: {ipc}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 justify-end">
+            <Link
+              to="/search"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 text-slate-500" />
+              Back
+            </Link>
+            <button
+              onClick={handleNewSearch}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              New Search
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Sort By */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className="font-medium">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-            >
-              <option value="relevance">Retrieval Relevance (Default)</option>
-              <option value="date-newest">Publication Date (Newest)</option>
-              <option value="date-oldest">Publication Date (Oldest)</option>
-            </select>
+        {/* 2. Sub-Toolbar: Metrics & Filter Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-600">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Results Count Summary */}
+            <span className="font-semibold text-slate-800">
+              Found <strong className="text-indigo-600 font-bold">{mappedPatents.length}</strong> prior-art patent references
+            </span>
+
+            <span className="hidden sm:inline text-slate-300">|</span>
+
+            {/* Keyword Filter inside results */}
+            <div className="relative min-w-[200px]">
+              <input
+                type="text"
+                placeholder="Filter retrieved patents..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+              />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {/* IPC Filter Dropdown */}
+            {availableIpcClasses.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <select
+                  value={selectedIpc}
+                  onChange={(e) => setSelectedIpc(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="ALL">All IPC Classes</option>
+                  {availableIpcClasses.map((ipc) => (
+                    <option key={ipc} value={ipc}>
+                      IPC: {ipc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
-          {/* Top-K Display Limit */}
-          <div className="flex items-center gap-1 text-xs text-slate-600">
-            <span className="font-medium">Show:</span>
-            <select
-              value={topKLimit}
-              onChange={(e) => setTopKLimit(Number(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-            >
-              <option value={10}>Top 10</option>
-              <option value={20}>Top 20</option>
-              <option value={50}>Top 50</option>
-            </select>
+          {/* Sort & Limit Options */}
+          <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-slate-500">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+              >
+                <option value="relevance">Retrieval Relevance</option>
+                <option value="date-newest">Publication Date (Newest)</option>
+                <option value="date-oldest">Publication Date (Oldest)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-slate-500">Show:</span>
+              <select
+                value={topKLimit}
+                onChange={(e) => setTopKLimit(Number(e.target.value))}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+              >
+                <option value={10}>Top 10</option>
+                <option value={20}>Top 20</option>
+                <option value={50}>Top 50</option>
+              </select>
+            </div>
           </div>
-
-          <button
-            onClick={handleModifySearch}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
-            Modify
-          </button>
-
-          <button
-            onClick={handleNewSearch}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            New Search
-          </button>
         </div>
       </div>
 
