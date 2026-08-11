@@ -114,6 +114,9 @@ export interface SearchResult {
   bm25Score?: number | undefined;
   retrievalRelevanceScore?: number | undefined;
   relevanceReason?: string | undefined;
+  provenanceVerified?: boolean | undefined;
+  provenanceStatus?: 'VERIFIED' | 'FAILED_MISMATCH' | 'UNVERIFIED' | undefined;
+  provenanceViolations?: string[] | undefined;
 }
 
 /**

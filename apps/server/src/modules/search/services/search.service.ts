@@ -30,6 +30,7 @@ import { BM25SearchService } from './bm25-search.service.js';
 import { RRFRerankerService } from './rrf-reranker.service.js';
 import { QueryPreprocessorService } from './query-preprocessor.service.js';
 import { PatentRerankerService } from './patent-reranker.service.js';
+import { PatentProvenanceValidator } from '../validators/patent-provenance.validator.js';
 
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
@@ -201,7 +202,14 @@ export class SearchService implements ISearchService {
 
     // 4. Stage 4 (Optional): Second-Stage Technical Relevance Reranker
     const rerankOutput = await this.patentReranker.rerank(trimmed, rrfCandidates, topK);
-    const finalResults = rerankOutput.rerankedResults;
+    const candidateResults = rerankOutput.rerankedResults;
+
+    // 5. Stage 5: Strict Patent Provenance Audit
+    const provenanceValidator = new PatentProvenanceValidator();
+    const finalResults = provenanceValidator.validateAndFilterResults(candidateResults, {
+      strictMode: true,
+      logViolations: true,
+    });
 
     const totalExecutionTimeMs = Date.now() - totalStart;
 
