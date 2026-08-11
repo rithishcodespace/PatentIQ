@@ -7,6 +7,7 @@ import {
   FileText,
   RefreshCw,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import PatentCard, { type PatentItem } from '../components/results/PatentCard';
 import PatentDetailsModal from '../components/results/PatentDetailsModal';
@@ -40,7 +41,7 @@ const Results = () => {
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-slate-900">No Active Prior-Art Search Session</h2>
           <p className="text-sm text-slate-600 max-w-md mx-auto">
-            Please enter your invention description on the search workstation to execute a hybrid prior-art patent retrieval search.
+            Please enter your invention description on the search workstation to execute a prior-art patent retrieval search.
           </p>
         </div>
         <Link
@@ -62,9 +63,12 @@ const Results = () => {
     return rawResults.map((item: any, idx: number) => ({
       rank: item.rank || idx + 1,
       patentId: item.patentId || item.id || `PAT-${idx + 1}`,
+      publicationNumber: item.publicationNumber || item.patentId,
       title: item.title || `Prior-Art Patent #${item.patentId || idx + 1}`,
-      abstract: item.abstract || item.summary || 'No abstract description available for this prior art patent.',
+      abstract: item.abstract || item.summary || 'No abstract description available for this prior-art patent.',
       publicationDate: item.publicationDate || item.date || item.pubDate || 'N/A',
+      filingDate: item.filingDate,
+      priorityDate: item.priorityDate || item.filingDate,
       ipc: item.ipc || 'G06F',
       cpc: item.cpc,
       owner: item.owner || item.assignee || item.applicant || 'Undisclosed',
@@ -72,6 +76,10 @@ const Results = () => {
       applicant: item.applicant,
       inventors: item.inventors || [],
       score: item.score ?? item.similarityScore ?? item.similarity,
+      denseScore: item.denseScore,
+      bm25Score: item.bm25Score,
+      retrievalRelevanceScore: item.retrievalRelevanceScore,
+      relevanceReason: item.relevanceReason,
       sourceUrl: item.sourceUrl,
       section: item.section,
     }));
@@ -82,7 +90,6 @@ const Results = () => {
     const classes = new Set<string>();
     mappedPatents.forEach((p) => {
       if (p.ipc) {
-        // Extract main IPC prefix e.g., "G06F" from "G06F 16/90"
         const clean = p.ipc.split(' ')[0];
         if (clean) classes.add(clean);
       }
@@ -129,7 +136,45 @@ const Results = () => {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 font-body pb-16">
-      {/* Filters and Controls Toolbar */}
+      {/* 1. Header Section: Prior-Art Search Results */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600">
+              <Sparkles className="h-3.5 w-3.5" />
+              Prior-Art Retrieval Engine
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              SEARCH RESULTS
+            </h1>
+            <p className="text-sm font-medium text-slate-600">
+              These are the patents most relevant to your invention.
+            </p>
+          </div>
+
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200/80 shrink-0">
+            <Search className="h-3.5 w-3.5 text-indigo-600" />
+            Search method: <strong className="text-slate-900 font-semibold">Hybrid Semantic + BM25 + RRF</strong>
+          </div>
+        </div>
+
+        {/* Query Box */}
+        <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80 space-y-2">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Query:
+          </div>
+          <p className="text-sm font-medium text-slate-900 leading-relaxed font-mono bg-white p-3 rounded-lg border border-slate-200/60 break-words">
+            "{queryText}"
+          </p>
+          <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
+            <span className="font-semibold text-slate-800">
+              Found {mappedPatents.length} relevant patents
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Filters and Controls Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-3.5 border border-slate-200 shadow-2xs">
         <div className="flex flex-wrap items-center gap-3 min-w-0 flex-1">
           <Link
@@ -219,7 +264,7 @@ const Results = () => {
         </div>
       </div>
 
-      {/* 4. Matching Patents Cards List */}
+      {/* 3. Matching Patents Cards List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
