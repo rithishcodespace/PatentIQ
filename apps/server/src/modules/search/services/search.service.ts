@@ -28,12 +28,14 @@ import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provide
 
 import { BM25SearchService } from './bm25-search.service.js';
 import { RRFRerankerService } from './rrf-reranker.service.js';
+import { QueryPreprocessorService } from './query-preprocessor.service.js';
 
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
   private readonly searchRepository: ISearchRepository;
   private readonly bm25Service: BM25SearchService;
   private readonly rrfReranker: RRFRerankerService;
+  private readonly queryPreprocessor: QueryPreprocessorService;
   private readonly historyService?: IHistoryService | undefined;
   private readonly confidenceService: IConfidenceService;
   private readonly cacheProvider: ICacheProvider;
@@ -45,12 +47,14 @@ export class SearchService implements ISearchService {
     confidenceService?: IConfidenceService,
     cacheProvider?: ICacheProvider,
     bm25Service?: BM25SearchService,
-    rrfReranker?: RRFRerankerService
+    rrfReranker?: RRFRerankerService,
+    queryPreprocessor?: QueryPreprocessorService
   ) {
     this.embeddingProvider = embeddingProvider || new OllamaEmbeddingProvider();
     this.searchRepository = searchRepository || new SearchRepository();
     this.bm25Service = bm25Service || new BM25SearchService();
     this.rrfReranker = rrfReranker || new RRFRerankerService();
+    this.queryPreprocessor = queryPreprocessor || new QueryPreprocessorService();
     this.historyService = historyService;
     this.confidenceService = confidenceService || new ConfidenceService();
     this.cacheProvider = cacheProvider || new RedisCacheProvider();
@@ -170,8 +174,9 @@ export class SearchService implements ISearchService {
     // Format dense results
     const denseResults = SearchMapper.toSearchResultList(matches, topK);
 
-    // 2. Stage 2: Sparse BM25 Lexical Keyword Matching (Technical Term & Part Number Boosted)
+    // 2. Stage 2: Sparse BM25 Lexical Keyword Matching (Domain-Agnostic Processed Query)
     const bm25Start = Date.now();
+    const processedQuery = this.queryPreprocessor.process(trimmed);
     const bm25Docs = denseResults.map((item) => ({
       id: item.vectorId || item.patentId,
       patentId: item.patentId,
@@ -181,7 +186,7 @@ export class SearchService implements ISearchService {
       ipc: item.ipc,
     }));
 
-    const sparseBM25Matches = this.bm25Service.rankDocuments(trimmed, bm25Docs, topK);
+    const sparseBM25Matches = this.bm25Service.rankDocuments(processedQuery.normalizedQuery, bm25Docs, topK);
     const bm25SearchTimeMs = Date.now() - bm25Start;
 
     // 3. Stage 3: Reciprocal Rank Fusion (RRF) Reranking
