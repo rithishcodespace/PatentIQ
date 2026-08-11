@@ -183,6 +183,7 @@ export class SearchService implements ISearchService {
       title: item.title,
       abstract: item.abstract,
       claims: item.claims,
+      description: item.description,
       ipc: item.ipc,
     }));
 

@@ -4,29 +4,29 @@ import type { SearchRequestDto, SearchResponseDto, SearchResultDto, PriorArtMatc
 /**
  * Metadata stored inside Pinecone vector records.
  */
-export interface PineconeVectorMetadata extends RecordMetadata {
+export type PineconeVectorMetadata = RecordMetadata & {
   patentId: string;
-  publicationNumber?: string | undefined;
-  sectionType?: 'title' | 'abstract' | 'claim' | 'claims' | 'description' | string | undefined;
-  section?: 'title' | 'abstract' | 'claims' | 'description' | string | undefined;
-  claimNumber?: number | undefined;
-  chunkId?: string | undefined;
-  title?: string | undefined;
-  abstract?: string | undefined;
-  claims?: string | undefined;
-  description?: string | undefined;
-  inventors?: string | string[] | undefined;
-  owner?: string | undefined;
-  assignee?: string | undefined;
-  applicants?: string | string[] | undefined;
-  publicationDate?: string | undefined;
-  filingDate?: string | undefined;
-  priorityDate?: string | undefined;
-  ipc?: string | undefined;
-  cpc?: string | undefined;
-  country?: string | undefined;
-  sourceUrl?: string | undefined;
-}
+  publicationNumber?: string;
+  sectionType?: 'title' | 'abstract' | 'claim' | 'claims' | 'description' | string;
+  section?: 'title' | 'abstract' | 'claims' | 'description' | string;
+  claimNumber?: number;
+  chunkId?: string;
+  title?: string;
+  abstract?: string;
+  claims?: string;
+  description?: string;
+  inventors?: string | string[];
+  owner?: string;
+  assignee?: string;
+  applicants?: string | string[];
+  publicationDate?: string;
+  filingDate?: string;
+  priorityDate?: string;
+  ipc?: string;
+  cpc?: string;
+  country?: string;
+  sourceUrl?: string;
+};
 
 /**
  * Metadata search filter criteria for Pinecone queries.
@@ -71,6 +71,7 @@ export interface BM25MatchResult {
   filingDate?: string | undefined;
   priorityDate?: string | undefined;
   sourceUrl?: string | undefined;
+  rank?: number | undefined;
   bm25Score: number;
 }
 

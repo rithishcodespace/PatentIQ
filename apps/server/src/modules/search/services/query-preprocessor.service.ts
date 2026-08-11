@@ -93,10 +93,15 @@ export class QueryPreprocessorService {
         const slice = words.slice(i, i + len);
         const phrase = slice.join(' ').toLowerCase();
 
-        // Ensure first and last words are non-stopwords and phrase contains meaningful content
+        const firstWord = slice[0];
+        const lastWord = slice[slice.length - 1];
+
+        // Ensure first and last words exist and are non-stopwords and phrase contains meaningful content
         if (
-          !this.isStopWord(slice[0]) &&
-          !this.isStopWord(slice[slice.length - 1]) &&
+          firstWord &&
+          lastWord &&
+          !this.isStopWord(firstWord) &&
+          !this.isStopWord(lastWord) &&
           phrase.length >= 6
         ) {
           if (!technicalPhrases.includes(phrase)) {
@@ -104,12 +109,12 @@ export class QueryPreprocessorService {
           }
 
           // Categorize into components vs mechanisms
-          const lastWord = slice[slice.length - 1].toLowerCase();
-          if (QueryPreprocessorService.COMPONENT_KEYWORDS.has(lastWord)) {
+          const lastWordLower = lastWord.toLowerCase();
+          if (QueryPreprocessorService.COMPONENT_KEYWORDS.has(lastWordLower)) {
             componentsSet.add(phrase);
           } else if (
-            QueryPreprocessorService.MECHANISM_KEYWORDS.has(lastWord) ||
-            lastWord.endsWith('ing')
+            QueryPreprocessorService.MECHANISM_KEYWORDS.has(lastWordLower) ||
+            lastWordLower.endsWith('ing')
           ) {
             mechanismsSet.add(phrase);
           }

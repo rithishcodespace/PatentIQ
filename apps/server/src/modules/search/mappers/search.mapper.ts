@@ -157,14 +157,17 @@ export class SearchMapper {
           existing.topMatch = match;
         }
 
+        const updatedMeta: PineconeVectorMetadata = {
+          ...existing.topMatch.metadata,
+          patentId: existing.mergedMeta.patentId || patentId,
+        };
+        if (existing.mergedMeta.claims) updatedMeta.claims = existing.mergedMeta.claims;
+        if (existing.mergedMeta.abstract) updatedMeta.abstract = existing.mergedMeta.abstract;
+        if (existing.mergedMeta.description) updatedMeta.description = existing.mergedMeta.description;
+
         existing.topMatch = {
           ...existing.topMatch,
-          metadata: {
-            ...existing.topMatch.metadata,
-            claims: existing.mergedMeta.claims,
-            abstract: existing.mergedMeta.abstract,
-            description: existing.mergedMeta.description,
-          },
+          metadata: updatedMeta,
         };
       }
     }
