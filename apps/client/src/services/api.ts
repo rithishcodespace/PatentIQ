@@ -332,7 +332,7 @@ export const configureIngestionSchedule = async (intervalMinutes: number, enable
 export const fetchNoveltyMatrix = async (payload: { query?: string; text?: string; features?: any[]; topK?: number }): Promise<any> => {
   try {
     const response = await apiClient.post("/search/novelty-matrix", payload);
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error: any) {
     console.warn("[PatentIQ API] Novelty matrix fetch warning:", error?.message);
     return null;

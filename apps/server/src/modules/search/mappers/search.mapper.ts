@@ -99,12 +99,20 @@ export class SearchMapper {
     if (publicationDate) {
       dto.publicationDate = publicationDate;
     }
+
+    // Construct official Google Patents source URL
+    const rawSourceUrl = meta.sourceUrl;
+    const cleanPatentId = String(patentId).replace(/[^a-zA-Z0-9]/g, '');
+    const formattedId = /^[a-zA-Z]{2}/.test(cleanPatentId) ? cleanPatentId : `US${cleanPatentId}`;
+    const sourceUrl = rawSourceUrl || `https://patents.google.com/patent/${formattedId}/en`;
+
     if (section) {
       dto.section = section;
     }
     if (matchId) {
       dto.vectorId = matchId;
     }
+    dto.sourceUrl = sourceUrl;
 
     return dto;
   }

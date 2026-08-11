@@ -50,26 +50,34 @@ export const FeatureAlignmentMatrix: React.FC<FeatureAlignmentMatrixProps> = ({
 
   const renderStatusBadge = (status: string) => {
     const s = String(status).toUpperCase();
-    if (s.includes('EXACT')) {
+    if (s.includes('DIRECT') || s.includes('EXACT')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
           <XCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
-          Direct Conflict (Exact Match)
+          DIRECT_OVERLAP
         </span>
       );
     }
     if (s.includes('PARTIAL')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
           <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-          Partial Overlap
+          PARTIAL_OVERLAP
+        </span>
+      );
+    }
+    if (s.includes('UNKNOWN')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+          <Quote className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+          UNKNOWN (No Evidence)
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-        Novel (No Overlap)
+        NOVEL
       </span>
     );
   };

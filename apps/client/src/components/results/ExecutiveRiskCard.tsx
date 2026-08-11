@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2, Zap, Layers } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, CheckCircle2, Zap, Info } from 'lucide-react';
 
 interface ExecutiveRiskCardProps {
   riskLevel: 'LOW_RISK' | 'MODERATE_RISK' | 'HIGH_RISK' | string;
@@ -7,47 +7,51 @@ interface ExecutiveRiskCardProps {
   executiveRationale: string;
   evaluatedFeaturesCount?: number;
   evaluatedPatentsCount?: number;
+  singleReferenceCoverageLevel?: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  singleReferenceCoverageScore?: number;
+  distributedOverlapLevel?: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  distributedOverlapScore?: number;
+  distinctFeatures?: string[];
+  evidenceConfidenceLevel?: 'HIGH' | 'MEDIUM' | 'LOW' | string;
 }
 
 export const ExecutiveRiskCard: React.FC<ExecutiveRiskCardProps> = ({
   riskLevel,
   riskScore,
   executiveRationale,
-  evaluatedFeaturesCount = 3,
-  evaluatedPatentsCount = 2,
+  evaluatedFeaturesCount = 0,
+  evaluatedPatentsCount = 0,
+  singleReferenceCoverageLevel = 'LOW',
+  singleReferenceCoverageScore = 0,
+  distributedOverlapLevel = 'LOW',
+  distributedOverlapScore = 0,
+  distinctFeatures = [],
+  evidenceConfidenceLevel = 'LOW',
 }) => {
   const normRisk = String(riskLevel).toUpperCase();
   const isHigh = normRisk.includes('HIGH');
   const isMod = normRisk.includes('MODERATE') || normRisk.includes('MEDIUM');
 
-  let levelText = 'Low Novelty Risk';
+  let riskLabel = 'LOW';
   let badgeBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
   let gaugeColor = '#10b981'; // emerald-500
-  let Icon = ShieldCheck;
-  let ftoStatus = 'Strong Freedom to Operate (FTO)';
-  let ftoBadge = 'bg-emerald-100 text-emerald-800';
+  let Icon = CheckCircle2;
 
   if (isHigh) {
-    levelText = 'High Overlap Risk';
+    riskLabel = 'HIGH';
     badgeBg = 'bg-rose-50 text-rose-700 border-rose-200';
     gaugeColor = '#f43f5e'; // rose-500
     Icon = ShieldAlert;
-    ftoStatus = 'High Prior-Art Conflict Risk';
-    ftoBadge = 'bg-rose-100 text-rose-800';
   } else if (isMod) {
-    levelText = 'Moderate Overlap Risk';
+    riskLabel = 'MEDIUM';
     badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
     gaugeColor = '#f59e0b'; // amber-500
     Icon = AlertTriangle;
-    ftoStatus = 'Obviousness Review Advised';
-    ftoBadge = 'bg-amber-100 text-amber-800';
   }
 
-  // Ensure 2-sentence rationale summary
   let formattedRationale = executiveRationale;
   if (!formattedRationale || formattedRationale.trim().length < 10) {
-    formattedRationale =
-      'The submitted invention disclosure demonstrates strong novelty with low prior-art claim overlap across database matches. Further dependent claim refinement is recommended prior to filing.';
+    formattedRationale = `Evaluation of ${evaluatedFeaturesCount} extracted technical claim limitations against ${evaluatedPatentsCount} retrieved prior-art disclosures indicates element-level overlap across cited references.`;
   }
 
   return (
@@ -60,26 +64,23 @@ export const ExecutiveRiskCard: React.FC<ExecutiveRiskCardProps> = ({
           </div>
           <div>
             <h2 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
-              Executive Patentability & Novelty Verdict
+              AI Prior-Art Assessment
             </h2>
             <p className="font-body text-xs text-slate-500">
-              Citation-grounded analysis across global prior art databases
+              Element-level claim limitation & evidence analysis across cited prior-art references
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${badgeBg}`}>
+          <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border ${badgeBg}`}>
             <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: gaugeColor }} />
-            {levelText} ({riskScore}% Overlap Risk)
-          </span>
-          <span className={`hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold ${ftoBadge}`}>
-            {ftoStatus}
+            AI Prior-Art Risk: {riskLabel} ({riskScore}%)
           </span>
         </div>
       </div>
 
-      {/* Grid: Left Gauge & Right Executive Rationale */}
+      {/* Grid: Left Radial Score & Right Metrics Breakdown */}
       <div className="grid gap-6 md:grid-cols-12 items-center">
         {/* Left Column: Radial Risk Score Dial */}
         <div className="md:col-span-4 flex flex-col items-center justify-center p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-center space-y-2">
@@ -107,12 +108,12 @@ export const ExecutiveRiskCard: React.FC<ExecutiveRiskCardProps> = ({
             </div>
           </div>
 
-          <span className="font-body text-xs font-medium text-slate-600">
-            {isHigh ? 'Anticipation Risk (35 U.S.C. 102)' : isMod ? 'Obviousness Risk (35 U.S.C. 103)' : 'Distinct Patentable Features'}
+          <span className="font-body text-xs font-semibold text-slate-700">
+            {isHigh ? 'High Prior-Art Conflict (35 U.S.C. 102)' : isMod ? 'Moderate Overlap (35 U.S.C. 103)' : 'Low Overlap Risk'}
           </span>
         </div>
 
-        {/* Right Column: 2-Sentence Executive Rationale */}
+        {/* Right Column: Structured Assessment Metrics */}
         <div className="md:col-span-8 space-y-4">
           <div className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-2 shadow-2xs">
             <span className="font-display text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -124,33 +125,37 @@ export const ExecutiveRiskCard: React.FC<ExecutiveRiskCardProps> = ({
             </p>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-3 gap-3 font-body text-xs">
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 flex items-center gap-2">
-              <Layers className="h-4 w-4 text-indigo-600 shrink-0" />
-              <div>
-                <div className="font-bold text-slate-900">{evaluatedFeaturesCount} Features</div>
-                <div className="text-[10px] text-slate-500 font-medium">Deconstructed</div>
-              </div>
+          {/* 4-Item Assessment Breakdown Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-body text-xs">
+            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 space-y-0.5">
+              <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Single-Reference</div>
+              <div className="font-bold text-slate-900">{singleReferenceCoverageLevel} ({singleReferenceCoverageScore}%)</div>
             </div>
 
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-              <div>
-                <div className="font-bold text-slate-900">{evaluatedPatentsCount} Prior Art</div>
-                <div className="text-[10px] text-slate-500 font-medium font-mono">Patents Matched</div>
-              </div>
+            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 space-y-0.5">
+              <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Distributed Overlap</div>
+              <div className="font-bold text-slate-900">{distributedOverlapLevel} ({distributedOverlapScore}%)</div>
             </div>
 
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0" />
-              <div>
-                <div className="font-bold text-slate-900">35 U.S.C. 102/103</div>
-                <div className="text-[10px] text-slate-500 font-medium">Statutory Check</div>
-              </div>
+            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 space-y-0.5">
+              <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Distinct Features</div>
+              <div className="font-bold text-indigo-600">{distinctFeatures.length > 0 ? `${distinctFeatures.length} (${distinctFeatures.slice(0, 3).join(', ')})` : '0 Features'}</div>
+            </div>
+
+            <div className="p-2.5 rounded-xl border border-slate-200 bg-white/80 space-y-0.5">
+              <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Evidence Confidence</div>
+              <div className="font-bold text-emerald-600">{evidenceConfidenceLevel}</div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mandatory Disclaimer Banner */}
+      <div className="flex items-start gap-2 rounded-xl border border-amber-200/80 bg-amber-50/60 p-3 text-[11px] text-amber-900 font-body">
+        <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+        <p className="leading-snug">
+          <strong>Legal Disclaimer:</strong> This AI-generated assessment is for prior-art research and technical overlap analysis. It does not constitute legal advice or a legal determination of patentability or freedom to operate.
+        </p>
       </div>
     </div>
   );

@@ -100,6 +100,12 @@ export interface SearchResponse {
   } | undefined;
   results: SearchResult[];
   metrics?: SearchMetrics | undefined;
+  provenance?: {
+    dataSource: string;
+    embeddingModel: string;
+    isLiveVectorData: boolean;
+    indexName: string;
+  } | undefined;
 }
 
 /**

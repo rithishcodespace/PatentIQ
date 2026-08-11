@@ -1,4 +1,4 @@
-export type FeatureOverlapStatus = 'EXACT_MATCH' | 'PARTIAL_MATCH' | 'NO_MATCH';
+export type FeatureOverlapStatus = 'DIRECT_OVERLAP' | 'PARTIAL_OVERLAP' | 'NOVEL' | 'UNKNOWN' | 'EXACT_MATCH' | 'PARTIAL_MATCH' | 'NO_MATCH';
 export type NoveltyRiskLevel = 'LOW_RISK' | 'MODERATE_RISK' | 'HIGH_RISK';
 
 export interface ExtractedFeatureInput {

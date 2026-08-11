@@ -80,6 +80,7 @@ export const SearchResultDtoSchema = z.object({
   publicationDate: z.string().optional(),
   section: z.string().optional(),
   vectorId: z.string().optional(),
+  sourceUrl: z.string().optional(),
 });
 
 export type SearchResultDto = z.infer<typeof SearchResultDtoSchema>;

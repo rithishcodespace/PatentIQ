@@ -31,10 +31,19 @@ export class SearchController {
 
     const validatedDto: SearchRequestDto = parseResult.data;
 
-    // 2. Call service layer
+    // 2. Call search service layer (Embedding + Pinecone + BM25 + RRF)
     const response = await this.searchService.search(validatedDto);
 
-    // 3. Log performance summary metrics without full payload
+    // 3. Attach retrieval methodology metadata
+    (response as any).searchMethod = {
+      semantic: true,
+      bm25: true,
+      rrf: true,
+      embeddingModel: 'nomic-embed-text',
+      rankingAlgorithm: 'Reciprocal Rank Fusion (RRF) + Dense Vector + BM25',
+    };
+
+    // 4. Log performance summary metrics
     const highestScore = response.results && response.results.length > 0 ? response.results[0]?.score ?? 0 : 0;
     const latencyMs = response.metrics?.totalExecutionTimeMs ?? 0;
     const requestedTopK = validatedDto.topK ?? 10;
@@ -43,7 +52,7 @@ export class SearchController {
       `[SearchAPI] query="${response.query}" | topK=${requestedTopK} | count=${response.count} | highestScore=${highestScore} | latency=${latencyMs}ms`
     );
 
-    // 4. Return JSON response
+    // 5. Return JSON response
     reply.status(200).send(response);
   }
 
@@ -83,6 +92,6 @@ export class SearchController {
     }
 
     const matrixResult = await this.noveltyMatrixService.generateNoveltyMatrix(parseResult.data);
-    reply.status(200).send(matrixResult);
+    reply.status(200).send({ success: true, data: matrixResult });
   }
 }

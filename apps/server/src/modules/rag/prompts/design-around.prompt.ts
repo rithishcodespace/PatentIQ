@@ -37,8 +37,8 @@ Output MUST be strictly valid JSON without markdown preamble.`;
           (p) =>
             `Patent ID: ${p.patentId} (${p.title})\n  Overall Overlap Score: ${p.overallPatentOverlapScore}%\n  Conflicting Features:\n` +
             p.featureOverlaps
-              .filter((fo) => fo.status === 'EXACT_MATCH' || fo.status === 'PARTIAL_MATCH')
-              .map((fo) => `    - [${fo.featureId}] ${fo.featureName}: Status=${fo.status} | Citation: ${fo.citationEvidence}`)
+              .filter((fo) => fo.status === 'DIRECT_OVERLAP' || fo.status === 'PARTIAL_OVERLAP' || fo.status === 'EXACT_MATCH' || fo.status === 'PARTIAL_MATCH')
+              .map((fo) => `    - [${fo.featureId}] ${fo.featureName}: Status=${fo.status} | Evidence Quote: ${fo.citationEvidence}`)
               .join('\n')
         )
         .join('\n\n---\n\n');
@@ -113,26 +113,10 @@ Output JSON format strictly conforming to:
     const primaryPatentId = matrix && matrix[0]?.patentId ? matrix[0].patentId : 'US-PRIOR-ART';
 
     const recommendations: DesignAroundRecommendation[] = features.map((f, idx) => {
-      const lowerName = f.name.toLowerCase();
-      let conflictReason = `Feature '${f.name}' directly overlaps with independent claims of cited prior-art patent ${primaryPatentId}.`;
-      let suggestedModification = `Modify the operational protocol and mechanical interface of '${f.name}' to introduce non-obvious structural differences.`;
-      let patentabilityBoost = '+30% Novelty Boost';
-      let rAndDFeasibility: RandDFeasibility = 'HIGH';
-
-      if (lowerName.includes('sensor') || lowerName.includes('detector') || lowerName.includes('camera')) {
-        suggestedModification = `Replace optical sensor module with a solid-state MEMS ultrasonic Doppler transducer array to operate independently of ambient light conditions.`;
-        conflictReason = `Prior-art patent ${primaryPatentId} claims optical sensing for position detection, creating direct anticipation risk under 35 U.S.C. 102.`;
-        patentabilityBoost = '+40% Novelty Boost';
-      } else if (lowerName.includes('wireless') || lowerName.includes('bluetooth') || lowerName.includes('wifi') || lowerName.includes('communication')) {
-        suggestedModification = `Integrate adaptive frequency-hopping spread spectrum (FHSS) mesh protocol with localized edge encryption instead of standard radio signaling.`;
-        conflictReason = `Prior-art claims general wireless connectivity for data transmission.`;
-        patentabilityBoost = '+35% Novelty Boost';
-      } else if (lowerName.includes('battery') || lowerName.includes('power') || lowerName.includes('charger')) {
-        suggestedModification = `Switch to resonant multi-frequency inductive power transfer with dynamic impedance matching controller.`;
-        conflictReason = `Overlaps with baseline DC power distribution claims.`;
-        patentabilityBoost = '+25% Novelty Boost';
-        rAndDFeasibility = 'MEDIUM';
-      }
+      const conflictReason = `Feature '${f.name}' exhibits technical overlap with cited prior-art patent #${primaryPatentId}.`;
+      const suggestedModification = `Re-architect implementation of '${f.name}' to introduce dynamic parameters, localized processing, or distinct operational control loops over cited disclosure.`;
+      const patentabilityBoost = '+30% Novelty Boost';
+      const rAndDFeasibility: RandDFeasibility = 'HIGH';
 
       return {
         featureId: f.id || `F${idx + 1}`,

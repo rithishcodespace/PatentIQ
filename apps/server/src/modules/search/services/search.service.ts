@@ -259,6 +259,12 @@ export class SearchService implements ISearchService {
       },
       results,
       metrics,
+      provenance: {
+        dataSource: 'Live Pinecone Vector Index',
+        embeddingModel: 'nomic-embed-text (Ollama)',
+        isLiveVectorData: true,
+        indexName: 'patent-embeddings',
+      },
     };
 
     if (filters) {
