@@ -139,24 +139,16 @@ export class NoveltyAnalysisService implements INoveltyAnalysisService {
     });
     const promptTimeMs = Date.now() - promptStart;
 
-    // 3. LLM Generation Phase: Query Qwen via Ollama with safe fallback
+    // 3. LLM Generation Phase: Query Qwen via Ollama
     const llmStart = Date.now();
-    let rawLlmOutput = '';
-    let analysis: NoveltyAnalysisResult;
-
-    try {
-      rawLlmOutput = await this.llmProvider.generateCompletion(promptText, {
-        systemPrompt,
-        temperature: 0.2,
-      });
-      analysis = NoveltyAnalysisPromptBuilder.parseNoveltyAnalysisResponse(rawLlmOutput);
-    } catch (err: any) {
-      console.warn(`[NoveltyAnalysisService] LLM completion fallback activated (${err.message})`);
-      analysis = NoveltyAnalysisPromptBuilder.createFallbackResult(
-        `High-speed vector similarity match executed. Prior-art candidate #${results[0]?.patentId || 'US-10112233-B2'} exhibits similarity match.`
-      );
-    }
+    const rawLlmOutput = await this.llmProvider.generateCompletion(promptText, {
+      systemPrompt,
+      temperature: 0.2,
+    });
     const llmInferenceTimeMs = Date.now() - llmStart;
+
+    // 4. Response Parsing Phase
+    const analysis: NoveltyAnalysisResult = NoveltyAnalysisPromptBuilder.parseNoveltyAnalysisResponse(rawLlmOutput);
 
     const totalTimeMs = Date.now() - totalStart;
     const metrics: RagMetrics = {

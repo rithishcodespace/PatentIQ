@@ -23,6 +23,30 @@ const EMPTY_FORM: FillFormValues = {
   keywords: "",
 };
 
+const PRESET_EXAMPLES = [
+  {
+    label: "🚁 Autonomous Drone LiDAR",
+    title: "Autonomous Drone Optical LiDAR & Inductive Wireless Charging",
+    abstract: "An autonomous aerial vehicle navigation apparatus comprising a pulsed optical laser scanner, localized edge DSP Doppler mapping, and resonant inductive power receiver.",
+    claims: "1. An autonomous navigation system comprising an optical sensor, a laser radar scanner, and an inductive charging feedback loop.",
+    keywords: "LiDAR, Drone, Inductive Charging, Optical Sensor",
+  },
+  {
+    label: "⚡ Medical Implant Wireless Charger",
+    title: "Resonant Inductive Power Transfer for Medical Implants",
+    abstract: "A resonant inductive wireless power transfer apparatus with dynamic impedance tuning and localized thermal monitoring.",
+    claims: "1. A wireless power transfer system comprising a primary transmitter coil and a secondary resonant implant receiver.",
+    keywords: "Resonant Inductive, Wireless Power, Medical Implants",
+  },
+  {
+    label: "🤖 MEMS Ultrasonic Sensor",
+    title: "Low Power MEMS Ultrasonic Transducer Velocity Array",
+    abstract: "Ultrasonic Doppler transducer array with dynamic beamforming for fluid velocity measurement in low power embedded systems.",
+    claims: "1. A MEMS ultrasonic transducer array configured for localized spatial Doppler velocity beamforming.",
+    keywords: "MEMS, Ultrasonic Transducer, Beamforming, Doppler",
+  },
+];
+
 const PatentForm = ({ onSearch }: PatentFormProps) => {
   const [method, setMethod] = useState<InputMethod>("form");
 
@@ -63,6 +87,29 @@ const PatentForm = ({ onSearch }: PatentFormProps) => {
         transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
         className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_2px_rgba(11,17,32,0.04),0_12px_32px_-16px_rgba(11,17,32,0.12)] sm:p-6"
       >
+        {/* Try Sample Inventions Quick Action Bar */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+          <span className="font-body text-[11px] font-bold tracking-wider text-slate-600 uppercase">Try Sample:</span>
+          {PRESET_EXAMPLES.map((ex) => (
+            <button
+              key={ex.label}
+              type="button"
+              onClick={() => {
+                setMethod("form");
+                setFormValues({
+                  title: ex.title,
+                  abstract: ex.abstract,
+                  claims: ex.claims,
+                  keywords: ex.keywords,
+                });
+              }}
+              className="rounded-lg border border-slate-200/80 bg-slate-50 px-2.5 py-1 font-body text-xs font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-600 transition shadow-2xs"
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
+
         <div className="mb-5">
           <InputMethodTabs active={method} onChange={setMethod} />
         </div>

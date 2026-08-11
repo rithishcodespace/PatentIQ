@@ -36,44 +36,27 @@ export class OllamaLLMProvider implements ILLMProvider {
         requestPayload.system = options.systemPrompt;
       }
 
-      const timeoutPromise = new Promise<{ response?: string }>((resolve) =>
-        setTimeout(() => {
-          console.warn('[OllamaLLMProvider] LLM generation timeout (high-speed fallback activated)');
-          resolve({
-            response: JSON.stringify({
-              summary: 'High-speed novelty evaluation completed over retrieved candidate patents.',
-              similarPatents: [{ patentId: 'US-10112233-B2', similarityScore: 0.82, keyOverlaps: ['LiDAR sensor', 'Inductive receiver'] }],
-              featureComparison: {
-                commonFeatures: ['Optical laser scanning'],
-                uniqueFeatures: ['Spatial Doppler transducer'],
-                partialOverlap: ['Wireless charging feedback']
-              },
-              novelAspects: ['MEMS ultrasonic velocity sensor array'],
-              overlappingClaims: ['Claim 1: Optical velocity camera and laser scanner.'],
-              risks: ['Moderate prior-art claim overlap detected.'],
-              recommendations: ['Differentiate operating frequency to establish non-obviousness.']
-            })
-          });
-        }, 2000)
-      );
-
-      const response = (await Promise.race([
-        this.client.generate(requestPayload),
-        timeoutPromise,
-      ])) as { response?: string };
+      const response = (await this.client.generate(requestPayload)) as { response?: string };
 
       return response.response || '';
     } catch (err: unknown) {
-      console.warn(`[OllamaLLMProvider] LLM completion exception:`, err);
-      return JSON.stringify({
-        summary: 'High-speed novelty evaluation completed over retrieved candidate patents.',
-        similarPatents: [],
-        featureComparison: { commonFeatures: [], uniqueFeatures: [], partialOverlap: [] },
-        novelAspects: [],
-        overlappingClaims: [],
-        risks: [],
-        recommendations: []
-      });
+      if (err instanceof ServiceUnavailableError || err instanceof GatewayTimeoutError) {
+        throw err;
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[OllamaLLMProvider] LLM generation failed: ${msg}`, err);
+
+      if (
+        msg.includes('ECONNREFUSED') ||
+        msg.toLowerCase().includes('fetch failed') ||
+        msg.toLowerCase().includes('connect')
+      ) {
+        throw new ServiceUnavailableError(`Ollama LLM service is unavailable: ${msg}`);
+      }
+      if (msg.includes('ETIMEDOUT') || msg.toLowerCase().includes('timeout')) {
+        throw new GatewayTimeoutError(`Ollama LLM generation timed out: ${msg}`);
+      }
+      throw new InternalServerError(`Ollama LLM generation failed: ${msg}`);
     }
   }
 

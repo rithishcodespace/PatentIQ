@@ -30,6 +30,7 @@ const Search = () => {
       clearTimeout(stepTimer4);
 
       if (response) {
+        sessionStorage.setItem('patentiq_latest_result', JSON.stringify(response));
         navigate("/results", { state: response });
       }
     } catch (err) {
