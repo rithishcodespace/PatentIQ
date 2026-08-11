@@ -94,6 +94,7 @@ export class SearchMapper {
     const dto: SearchResultDto = {
       rank,
       score: this.formatScore(rawScore),
+      denseScore: this.formatScore(rawScore),
       patentId,
       publicationNumber,
       title,

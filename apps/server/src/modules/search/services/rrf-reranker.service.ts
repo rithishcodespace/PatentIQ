@@ -102,6 +102,7 @@ export class RRFRerankerService {
     return fusedList.slice(0, topK).map((item, idx) => ({
       rank: idx + 1,
       score: Number(item.rrfScore.toFixed(4)),
+      denseScore: Number(item.vectorScore.toFixed(4)),
       patentId: item.patentId,
       title: item.title,
       abstract: item.abstract,

@@ -86,11 +86,11 @@ export class SearchService implements ISearchService {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[SearchService] [ERROR] Ollama embedding generation failed: ${msg}`, err);
 
-      if (msg.includes('ECONNREFUSED') || msg.toLowerCase().includes('fetch failed') || msg.toLowerCase().includes('connect')) {
-        throw new ServiceUnavailableError(`Ollama service is unavailable: ${msg}`);
-      }
-      if (msg.includes('ETIMEDOUT') || msg.toLowerCase().includes('timeout')) {
+      if (msg.includes('ETIMEDOUT') || msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('timeout')) {
         throw new GatewayTimeoutError(`Ollama embedding generation timed out: ${msg}`);
+      }
+      if (msg.includes('ECONNREFUSED') || msg.toLowerCase().includes('fetch failed') || msg.toLowerCase().includes('connection refused')) {
+        throw new ServiceUnavailableError(`Ollama service is unavailable: ${msg}`);
       }
       throw new InternalServerError(`Ollama embedding generation failed: ${msg}`);
     }

@@ -86,6 +86,7 @@ export type PineconeMatch = PineconeMatchResult;
 export interface SearchResult {
   rank: number;
   score: number;
+  denseScore?: number | undefined;
   patentId: string;
   publicationNumber?: string | undefined;
   title: string;

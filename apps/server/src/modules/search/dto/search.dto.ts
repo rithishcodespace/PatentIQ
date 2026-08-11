@@ -70,6 +70,7 @@ export type SearchRequestDto = z.infer<typeof SearchRequestDtoSchema>;
 export const SearchResultDtoSchema = z.object({
   rank: z.number().int().min(1, 'rank must be a positive integer'),
   score: z.number({ message: 'score must be a number' }),
+  denseScore: z.number().optional(),
   patentId: z.string(),
   publicationNumber: z.string().optional(),
   title: z.string(),
