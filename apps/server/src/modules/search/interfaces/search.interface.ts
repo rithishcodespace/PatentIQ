@@ -106,8 +106,12 @@ export interface SearchResult {
   sectionType?: string | undefined;
   chunkId?: string | undefined;
   claimNumber?: number | undefined;
-  vectorId?: string | undefined;
   sourceUrl?: string | undefined;
+  rrfScore?: number | undefined;
+  denseRank?: number | null | undefined;
+  bm25Rank?: number | null | undefined;
+  finalRank?: number | undefined;
+  bm25Score?: number | undefined;
 }
 
 /**

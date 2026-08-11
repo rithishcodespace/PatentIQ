@@ -92,6 +92,11 @@ export const SearchResultDtoSchema = z.object({
   claimNumber: z.number().optional(),
   vectorId: z.string().optional(),
   sourceUrl: z.string().optional(),
+  rrfScore: z.number().optional(),
+  denseRank: z.number().nullable().optional(),
+  bm25Rank: z.number().nullable().optional(),
+  finalRank: z.number().optional(),
+  bm25Score: z.number().optional(),
 });
 
 export type SearchResultDto = z.infer<typeof SearchResultDtoSchema>;
