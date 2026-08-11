@@ -112,6 +112,8 @@ export interface SearchResult {
   bm25Rank?: number | null | undefined;
   finalRank?: number | undefined;
   bm25Score?: number | undefined;
+  retrievalRelevanceScore?: number | undefined;
+  relevanceReason?: string | undefined;
 }
 
 /**

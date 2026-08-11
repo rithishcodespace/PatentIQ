@@ -97,6 +97,8 @@ export const SearchResultDtoSchema = z.object({
   bm25Rank: z.number().nullable().optional(),
   finalRank: z.number().optional(),
   bm25Score: z.number().optional(),
+  retrievalRelevanceScore: z.number().optional(),
+  relevanceReason: z.string().optional(),
 });
 
 export type SearchResultDto = z.infer<typeof SearchResultDtoSchema>;

@@ -29,6 +29,7 @@ import { RedisCacheProvider } from '../../../providers/cache/redis-cache.provide
 import { BM25SearchService } from './bm25-search.service.js';
 import { RRFRerankerService } from './rrf-reranker.service.js';
 import { QueryPreprocessorService } from './query-preprocessor.service.js';
+import { PatentRerankerService } from './patent-reranker.service.js';
 
 export class SearchService implements ISearchService {
   private readonly embeddingProvider: IEmbeddingProvider;
@@ -39,6 +40,7 @@ export class SearchService implements ISearchService {
   private readonly historyService?: IHistoryService | undefined;
   private readonly confidenceService: IConfidenceService;
   private readonly cacheProvider: ICacheProvider;
+  private readonly patentReranker: PatentRerankerService;
 
   constructor(
     embeddingProvider?: IEmbeddingProvider,
@@ -48,7 +50,8 @@ export class SearchService implements ISearchService {
     cacheProvider?: ICacheProvider,
     bm25Service?: BM25SearchService,
     rrfReranker?: RRFRerankerService,
-    queryPreprocessor?: QueryPreprocessorService
+    queryPreprocessor?: QueryPreprocessorService,
+    patentReranker?: PatentRerankerService
   ) {
     this.embeddingProvider = embeddingProvider || new OllamaEmbeddingProvider();
     this.searchRepository = searchRepository || new SearchRepository();
@@ -58,6 +61,7 @@ export class SearchService implements ISearchService {
     this.historyService = historyService;
     this.confidenceService = confidenceService || new ConfidenceService();
     this.cacheProvider = cacheProvider || new RedisCacheProvider();
+    this.patentReranker = patentReranker || new PatentRerankerService(undefined, false);
   }
 
   /**
@@ -190,10 +194,14 @@ export class SearchService implements ISearchService {
     const sparseBM25Matches = this.bm25Service.rankDocuments(processedQuery.normalizedQuery, bm25Docs, topK);
     const bm25SearchTimeMs = Date.now() - bm25Start;
 
-    // 3. Stage 3: Reciprocal Rank Fusion (RRF) Reranking
+    // 3. Stage 3: Reciprocal Rank Fusion (RRF) Reranking (top 30-50 candidates)
     const rrfStart = Date.now();
-    const finalResults = this.rrfReranker.fuseRanks(denseResults, sparseBM25Matches, { topK });
+    const rrfCandidates = this.rrfReranker.fuseRanks(denseResults, sparseBM25Matches, { topK: Math.max(topK, 30) });
     const rrfRerankTimeMs = Date.now() - rrfStart;
+
+    // 4. Stage 4 (Optional): Second-Stage Technical Relevance Reranker
+    const rerankOutput = await this.patentReranker.rerank(trimmed, rrfCandidates, topK);
+    const finalResults = rerankOutput.rerankedResults;
 
     const totalExecutionTimeMs = Date.now() - totalStart;
 
