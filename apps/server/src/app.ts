@@ -17,6 +17,7 @@ import { patentsRoutes } from './modules/patents/routes/patents.routes.js';
 import { embeddingsRoutes } from './modules/embeddings/routes/embeddings.routes.js';
 import { searchRoutes } from './modules/search/routes/search.routes.js';
 import { ragRoutes } from './modules/rag/routes/rag.routes.js';
+import { analyzeRoutes } from './modules/rag/routes/analyze.routes.js';
 import { reportsRoutes } from './modules/reports/routes/reports.routes.js';
 import { uploadsRoutes } from './modules/uploads/routes/uploads.routes.js';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes.js';
@@ -65,6 +66,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async (instance) => searchRoutes(instance, controllers.search), { prefix: '/api/search' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/v1/rag' });
   await app.register(async (instance) => ragRoutes(instance, controllers.rag), { prefix: '/api/rag' });
+  await app.register(async (instance) => analyzeRoutes(instance, controllers.rag), { prefix: '/api/v1/analyze' });
+  await app.register(async (instance) => analyzeRoutes(instance, controllers.rag), { prefix: '/api/analyze' });
   await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/v1/history' });
   await app.register(async (instance) => historyRoutes(instance, controllers.history), { prefix: '/api/history' });
   await app.register(async (instance) => uploadRoutes(instance, controllers.upload), { prefix: '/api/upload' });

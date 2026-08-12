@@ -156,4 +156,24 @@ export class RagController {
     const result = await this.evidenceAnalysisService.analyzeEvidence(parseResult.data);
     reply.status(200).send(result);
   }
+
+  /**
+   * Endpoint Handler: POST /api/analyze
+   * Feature-by-feature evidence extraction for a selected patent reference.
+   */
+  async analyzePatentFeatures(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (!request.body || typeof request.body !== 'object') {
+      throw new BadRequestError('Request body is required');
+    }
+
+    const { AnalyzeRequestSchema } = await import('../dto/analyze.dto.js');
+    const parseResult = AnalyzeRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0];
+      throw new BadRequestError(issue ? issue.message : 'Invalid analyze request payload');
+    }
+
+    const result = await this.evidenceAnalysisService.analyzePatentFeatures(parseResult.data);
+    reply.status(200).send(result);
+  }
 }
