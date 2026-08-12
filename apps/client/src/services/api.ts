@@ -386,3 +386,21 @@ export const exportAttorneyPdfReport = async (payload: {
     throw new Error(errorMsg);
   }
 };
+
+/**
+ * Fetches Evidence-Based Prior-Art Analysis & Statutory 102/103 Legal Risk Breakdown via /api/rag/evidence-analysis.
+ */
+export const fetchEvidenceAnalysis = async (payload: {
+  query: string;
+  selectedPatentIds?: string[];
+  strictMode?: boolean;
+}): Promise<any> => {
+  try {
+    const response = await apiClient.post("/rag/evidence-analysis", payload);
+    return response.data;
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || "Evidence analysis execution failed";
+    console.error("[PatentIQ API] Evidence analysis error:", errorMsg);
+    throw new Error(errorMsg);
+  }
+};

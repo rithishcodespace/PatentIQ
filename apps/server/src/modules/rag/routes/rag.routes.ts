@@ -127,4 +127,19 @@ export async function ragRoutes(fastify: FastifyInstance, controller: RagControl
     },
     handler: (req: FastifyRequest, reply: FastifyReply) => controller.designAround(req, reply),
   });
+
+  // POST /api/rag/evidence-analysis - Evidence-Based Prior-Art & Statutory 102/103 Analysis
+  fastify.post('/evidence-analysis', {
+    schema: {
+      tags: ['RAG'],
+      summary: 'Evidence-Based Prior-Art & Statutory 102/103 Analysis',
+      description:
+        'Maps technical feature limitations to verbatim cited patent claim text snippets and evaluates 35 U.S.C. 102 (Anticipation) vs 103 (Obviousness) legal risk.',
+      response: {
+        400: standardErrorResponses[400],
+        500: standardErrorResponses[500],
+      },
+    },
+    handler: (req: FastifyRequest, reply: FastifyReply) => controller.analyzeEvidence(req, reply),
+  });
 }

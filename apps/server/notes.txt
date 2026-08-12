@@ -8,3 +8,64 @@ OLLAMA MODELS:
 3 embeddings for each patent -> 32,352 (dimension = 768)
 (title, abstract, claims) -> embeddings -> semantic similarity search   
 
+# deployment strategy
+                         INTERNET
+                            │
+                            ▼
+                     Route 53 / DNS
+                            │
+                            ▼
+                    CloudFront + S3
+                         React
+                            │
+                       /api/*
+                            │
+                            ▼
+                    AWS Load Balancer
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+                 ▼                     ▼
+            Fastify Pod            Fastify Pod
+                 │                     │
+                 └──────────┬──────────┘
+                            │
+            ┌───────────────┼────────────────┐
+            │               │                │
+            ▼               ▼                ▼
+       RDS PostgreSQL   ElastiCache Redis   Ollama
+            │               │                │
+            │             BullMQ             │
+            │               │                │
+            │        ┌──────┴──────┐         │
+            │        ▼             ▼         │
+            │    Worker Pod    Worker Pod    │
+            │        │             │          │
+            │        └──────┬──────┘          │
+            │               │                │
+            └───────────────┼────────────────┘
+                            │
+                            ▼
+                         Pinecone
+                     Vector Database
+
+
+       OBSERVABILITY
+       ─────────────
+       Prometheus → Grafana
+       CloudWatch → Logs / Alerts
+
+
+       CI/CD
+       ─────
+       GitHub
+          ↓
+       GitHub Actions
+          ↓
+       Tests
+          ↓
+       Docker Build
+          ↓
+       Amazon ECR
+          ↓
+       EKS Rolling Deployment

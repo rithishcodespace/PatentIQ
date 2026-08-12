@@ -7,9 +7,11 @@ import {
   FileText,
   RefreshCw,
   Layers,
+  ShieldAlert,
 } from 'lucide-react';
 import PatentCard, { type PatentItem } from '../components/results/PatentCard';
 import PatentDetailsModal from '../components/results/PatentDetailsModal';
+import EvidenceAnalysisWorkspace from '../components/results/EvidenceAnalysisWorkspace';
 
 const Results = () => {
   const location = useLocation();
@@ -19,6 +21,9 @@ const Results = () => {
   const [selectedIpc, setSelectedIpc] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'relevance' | 'date-newest' | 'date-oldest'>('relevance');
   const [topKLimit, setTopKLimit] = useState<number>(20);
+
+  const [activeTab, setActiveTab] = useState<'results' | 'evidence'>('results');
+  const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
 
   // Read live state from router location OR sessionStorage
   const [liveSearchData] = useState<any>(() => {
@@ -133,6 +138,12 @@ const Results = () => {
     navigate('/search');
   };
 
+  const handleToggleSelectPatent = (patentId: string) => {
+    setSelectedPatentIds((prev) =>
+      prev.includes(patentId) ? prev.filter((id) => id !== patentId) : [...prev, patentId]
+    );
+  };
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 font-body pb-16">
       {/* 1. Industry Standard Search Header */}
@@ -182,115 +193,173 @@ const Results = () => {
           </div>
         </div>
 
-        {/* 2. Sub-Toolbar: Metrics & Filter Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-600">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Results Count Summary */}
-            <span className="font-semibold text-slate-800">
-              Found <strong className="text-indigo-600 font-bold">{mappedPatents.length}</strong> prior-art patent references
-            </span>
-
-            <span className="hidden sm:inline text-slate-300">|</span>
-
-            {/* Keyword Filter inside results */}
-            <div className="relative min-w-[200px]">
-              <input
-                type="text"
-                placeholder="Filter retrieved patents..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
-              />
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            </div>
-
-            {/* IPC Filter Dropdown */}
-            {availableIpcClasses.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                <select
-                  value={selectedIpc}
-                  onChange={(e) => setSelectedIpc(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-                >
-                  <option value="ALL">All IPC Classes</option>
-                  {availableIpcClasses.map((ipc) => (
-                    <option key={ipc} value={ipc}>
-                      IPC: {ipc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Sort & Limit Options */}
-          <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-slate-500">Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-              >
-                <option value="relevance">Retrieval Relevance</option>
-                <option value="date-newest">Publication Date (Newest)</option>
-                <option value="date-oldest">Publication Date (Oldest)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <span className="font-medium text-slate-500">Show:</span>
-              <select
-                value={topKLimit}
-                onChange={(e) => setTopKLimit(Number(e.target.value))}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
-              >
-                <option value={10}>Top 10</option>
-                <option value={20}>Top 20</option>
-                <option value={50}>Top 50</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Matching Patents Cards List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-indigo-600" />
-            Matching Patents ({filteredPatents.length})
-          </h2>
-          <span className="text-xs text-slate-500 font-medium">
-            Showing top {filteredPatents.length} of {mappedPatents.length} retrieved references
-          </span>
-        </div>
-
-        {filteredPatents.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center space-y-3">
-            <p className="text-sm font-semibold text-slate-700">No matching patents found for the selected filter.</p>
+        {/* Workstation Tab Switching Bar */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                setFilterText('');
-                setSelectedIpc('ALL');
-              }}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+              onClick={() => setActiveTab('results')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                activeTab === 'results'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              Clear filters and view all results
+              <FileText className="h-4 w-4" />
+              Prior-Art References ({mappedPatents.length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('evidence')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                activeTab === 'evidence'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <ShieldAlert className="h-4 w-4 text-amber-400" />
+              Evidence-Based Legal Analysis
+              {selectedPatentIds.length > 0 && (
+                <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">
+                  {selectedPatentIds.length}
+                </span>
+              )}
             </button>
           </div>
-        ) : (
-          filteredPatents.map((patent, index) => (
-            <PatentCard
-              key={patent.patentId || index}
-              patent={patent}
-              rank={patent.rank || index + 1}
-              onInspectDetails={(p) => setSelectedPatent(p)}
-            />
-          ))
+
+          {selectedPatentIds.length > 0 && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+              <span>Selected <strong>{selectedPatentIds.length}</strong> patents</span>
+              <button
+                onClick={() => setActiveTab('evidence')}
+                className="bg-amber-600 text-white px-3 py-1 rounded-lg hover:bg-amber-700 transition cursor-pointer text-xs font-bold"
+              >
+                Run Evidence Analysis →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 2. Sub-Toolbar: Metrics & Filter Controls (only shown on results tab) */}
+        {activeTab === 'results' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-600">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Results Count Summary */}
+              <span className="font-semibold text-slate-800">
+                Found <strong className="text-indigo-600 font-bold">{mappedPatents.length}</strong> prior-art patent references
+              </span>
+
+              <span className="hidden sm:inline text-slate-300">|</span>
+
+              {/* Keyword Filter inside results */}
+              <div className="relative min-w-[200px]">
+                <input
+                  type="text"
+                  placeholder="Filter retrieved patents..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+                />
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              </div>
+
+              {/* IPC Filter Dropdown */}
+              {availableIpcClasses.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedIpc}
+                    onChange={(e) => setSelectedIpc(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="ALL">All IPC Classes</option>
+                    {availableIpcClasses.map((ipc) => (
+                      <option key={ipc} value={ipc}>
+                        IPC: {ipc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Sort & Limit Options */}
+            <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-slate-500">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                >
+                  <option value="relevance">Retrieval Relevance</option>
+                  <option value="date-newest">Publication Date (Newest)</option>
+                  <option value="date-oldest">Publication Date (Oldest)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-slate-500">Show:</span>
+                <select
+                  value={topKLimit}
+                  onChange={(e) => setTopKLimit(Number(e.target.value))}
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                >
+                  <option value={10}>Top 10</option>
+                  <option value={20}>Top 20</option>
+                  <option value={50}>Top 50</option>
+                </select>
+              </div>
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Tab Content Rendering */}
+      {activeTab === 'evidence' ? (
+        <EvidenceAnalysisWorkspace
+          query={queryText}
+          selectedPatentIds={selectedPatentIds}
+        />
+      ) : (
+        /* 3. Matching Patents Cards List */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-indigo-600" />
+              Matching Patents ({filteredPatents.length})
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">
+              Select checkboxes to analyze verbatim evidence
+            </span>
+          </div>
+
+          {filteredPatents.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center space-y-3">
+              <p className="text-sm font-semibold text-slate-700">No matching patents found for the selected filter.</p>
+              <button
+                onClick={() => {
+                  setFilterText('');
+                  setSelectedIpc('ALL');
+                }}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+              >
+                Clear filters and view all results
+              </button>
+            </div>
+          ) : (
+            filteredPatents.map((patent, index) => (
+              <PatentCard
+                key={patent.patentId || index}
+                patent={patent}
+                rank={patent.rank || index + 1}
+                onInspectDetails={(p) => setSelectedPatent(p)}
+                isSelected={selectedPatentIds.includes(patent.patentId)}
+                onToggleSelect={handleToggleSelectPatent}
+              />
+            ))
+          )}
+        </div>
+      )}
 
       {/* Patent Details Modal */}
       <PatentDetailsModal

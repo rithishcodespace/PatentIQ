@@ -7,14 +7,21 @@ import {
   type HybridRankingDto,
   DesignAroundRequestDtoSchema,
 } from '../dto/rag.dto.js';
+import { EvidenceAnalysisRequestSchema } from '../dto/evidence-analysis.dto.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 import type { DesignAroundService } from '../services/design-around.service.js';
+import { EvidenceAnalysisService } from '../services/evidence-analysis.service.js';
 
 export class RagController {
+  private readonly evidenceAnalysisService: EvidenceAnalysisService;
+
   constructor(
     private readonly ragService: IRagService,
-    private readonly designAroundService?: DesignAroundService
-  ) {}
+    private readonly designAroundService?: DesignAroundService,
+    evidenceAnalysisService?: EvidenceAnalysisService
+  ) {
+    this.evidenceAnalysisService = evidenceAnalysisService || new EvidenceAnalysisService();
+  }
 
   /**
    * Endpoint Handler: POST /api/rag/analyze
@@ -129,5 +136,24 @@ export class RagController {
       success: true,
       data: result,
     });
+  }
+
+  /**
+   * Endpoint Handler: POST /api/rag/evidence-analysis
+   * Performs evidence-based prior-art analysis mapping disclosure limitations to verbatim claim snippets.
+   */
+  async analyzeEvidence(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    if (!request.body || typeof request.body !== 'object') {
+      throw new BadRequestError('Request body is required');
+    }
+
+    const parseResult = EvidenceAnalysisRequestSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0];
+      throw new BadRequestError(issue ? issue.message : 'Invalid evidence analysis request payload');
+    }
+
+    const result = await this.evidenceAnalysisService.analyzeEvidence(parseResult.data);
+    reply.status(200).send(result);
   }
 }

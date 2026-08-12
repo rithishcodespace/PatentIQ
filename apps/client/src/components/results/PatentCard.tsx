@@ -28,6 +28,8 @@ interface PatentCardProps {
   patent: PatentItem;
   rank: number;
   onInspectDetails?: (patent: PatentItem) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (patentId: string) => void;
 }
 
 const getGooglePatentsUrl = (patent: PatentItem): string => {
@@ -58,7 +60,7 @@ const getSearchRelevanceLabel = (patent: PatentItem, rank: number): { label: str
   return { label: 'Low', badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200' };
 };
 
-export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectDetails }) => {
+export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectDetails, isSelected, onToggleSelect }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const rawAbstract = patent.abstract || 'No abstract description available for this prior-art document.';
@@ -79,10 +81,19 @@ export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectD
   const { label: relevanceLabel, badgeStyle } = getSearchRelevanceLabel(patent, rank);
 
   return (
-    <div className="group relative rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all duration-200 hover:border-indigo-300 hover:shadow-md font-body">
-      {/* Header Row: Rank, Patent ID, and Qualitative Search Relevance Badge */}
+    <div className={`group relative rounded-2xl border bg-white p-5 shadow-xs transition-all duration-200 hover:shadow-md font-body ${isSelected ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-200 hover:border-indigo-300'}`}>
+      {/* Header Row: Checkbox, Rank, Patent ID, and Qualitative Search Relevance Badge */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={!!isSelected}
+              onChange={() => onToggleSelect(patent.patentId)}
+              title="Select patent for evidence analysis"
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+          )}
           <span className="inline-flex h-7 px-2.5 items-center justify-center rounded-lg bg-indigo-50 font-mono text-xs font-bold text-indigo-700">
             #{rank}
           </span>
