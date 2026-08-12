@@ -404,3 +404,23 @@ export const fetchEvidenceAnalysis = async (payload: {
     throw new Error(errorMsg);
   }
 };
+
+/**
+ * Fetches Feature-by-Feature Evidence Analysis for a specific target patent via POST /api/analyze.
+ */
+export const fetchFeatureEvidenceAnalysis = async (payload: {
+  invention?: string;
+  inventionDisclosure?: string;
+  query?: string;
+  patentId: string;
+  sessionId?: string;
+}): Promise<any> => {
+  try {
+    const response = await apiClient.post("/analyze", payload);
+    return response.data;
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || "Feature evidence analysis failed";
+    console.error("[PatentIQ API] Feature evidence analysis error:", errorMsg);
+    throw new Error(errorMsg);
+  }
+};
