@@ -6,12 +6,10 @@ import {
   Download,
   Loader2,
   HelpCircle,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { fetchFeatureEvidenceAnalysis, fetchEvidenceAnalysis, exportAttorneyPdfReport } from '../../services/api';
 import { TechnicalFeatureSummary } from './TechnicalFeatureSummary';
+import { SupportingEvidenceCard } from './SupportingEvidenceCard';
 import type { PatentItem } from './PatentCard';
 
 interface EvidenceAnalysisWorkspaceProps {
@@ -51,7 +49,6 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
 
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
-  const [isEvidenceExpanded, setIsEvidenceExpanded] = useState(false);
 
   // Target Patent selector state
   const [targetPatentId, setTargetPatentId] = useState<string>(() => {
@@ -340,86 +337,28 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
               selectedFeatureId={activeFeature?.id}
               onSelectFeature={(id) => {
                 setSelectedFeatureId(id);
-                setIsEvidenceExpanded(false);
               }}
             />
           </div>
 
           {/* Right Column: Supporting Evidence Detail */}
-          <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
-            {activeFeature ? (
-              <>
-                <div className="pb-3 border-b border-slate-100 space-y-1">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                    <span>Supporting Evidence</span>
-                    <span className="font-mono text-indigo-600">{activeFeature.id}</span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">{activeFeature.text}</h3>
-                </div>
-
-                {activeFeature.evidence ? (
-                  <div className="space-y-4">
-                    {/* Collapsible Verbatim Evidence Snippet */}
-                    <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 space-y-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-900 block">
-                        Evidence Text:
-                      </span>
-                      <p className="text-xs sm:text-sm font-mono text-slate-900 leading-relaxed italic">
-                        "{isEvidenceExpanded || activeFeature.evidence.text.length <= 220
-                          ? activeFeature.evidence.text
-                          : `${activeFeature.evidence.text.slice(0, 220)}...`}"
-                      </p>
-
-                      {activeFeature.evidence.text.length > 220 && (
-                        <button
-                          onClick={() => setIsEvidenceExpanded(!isEvidenceExpanded)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer pt-1"
-                        >
-                          {isEvidenceExpanded ? (
-                            <>
-                              Collapse text <ChevronUp className="h-3.5 w-3.5" />
-                            </>
-                          ) : (
-                            <>
-                              Expand text <ChevronDown className="h-3.5 w-3.5" />
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Source Indicator & Open Patent Link */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <div className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                        Source: {activeFeature.evidence.section === 'Claim' && activeFeature.evidence.claimNumber ? `Claim ${activeFeature.evidence.claimNumber}` : activeFeature.evidence.section}
-                      </div>
-
-                      <a
-                        href={activeFeature.evidence.sourceUrl || getGooglePatentsUrl(targetPatentId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
-                      >
-                        Open Patent
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-slate-50 p-8 text-center space-y-2 border border-slate-200/80">
-                    <XCircle className="h-6 w-6 text-slate-400 mx-auto" />
-                    <div className="text-xs font-bold text-slate-700">No Supporting Evidence Found</div>
-                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                      This feature was not found in the evaluated sections of this patent, indicating potential structural novelty for your invention.
-                    </p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="p-8 text-center text-xs text-slate-400">
-                Select a feature from the list to inspect supporting evidence.
-              </div>
-            )}
+          <div className="lg:col-span-7">
+            <SupportingEvidenceCard
+              featureName={activeFeature?.text || 'Selected Feature'}
+              status={activeFeature?.status || 'NOT_FOUND'}
+              evidence={
+                activeFeature?.evidence
+                  ? {
+                      text: activeFeature.evidence.text,
+                      section: activeFeature.evidence.section,
+                      claimNumber: activeFeature.evidence.claimNumber,
+                      sourceUrl: activeFeature.evidence.sourceUrl || getGooglePatentsUrl(targetPatentId),
+                      highlightTerms: activeFeature.text.split(' '),
+                    }
+                  : null
+              }
+              patentId={targetPatentId}
+            />
           </div>
         </div>
       </div>
