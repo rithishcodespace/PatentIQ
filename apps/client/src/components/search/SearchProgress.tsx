@@ -5,11 +5,11 @@ interface SearchProgressProps {
 }
 
 const steps = [
-  "Extracting Patent Sections",
-  "Generating Embeddings",
-  "Searching Similar Patents",
-  "Ranking Results",
-  "Generating Report",
+  "Extracting Technical Features",
+  "Analyzing Patent Index",
+  "Matching Similar Patents",
+  "Evaluating Match Strength",
+  "Compiling Prior-Art Analysis",
 ];
 
 const SearchProgress = ({ step }: SearchProgressProps) => {

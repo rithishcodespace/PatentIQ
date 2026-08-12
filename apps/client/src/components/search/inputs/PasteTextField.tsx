@@ -25,7 +25,7 @@ const PasteTextField = ({ value, onChange }: PasteTextFieldProps) => {
 
       <p className="mt-2.5 flex items-start gap-1.5 font-body text-xs text-slate-600">
         <Info size={14} className="mt-0.5 shrink-0 text-indigo-600" />
-        Paste your complete invention draft. PatentIQ AI will extract technical features and perform hybrid vector search across USPTO prior art.
+        Paste your complete invention draft. PatentIQ will extract technical features and search across USPTO prior-art patents to find supporting evidence.
       </p>
 
       {/* 1-Click Sample Prompts */}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Calendar, Tag, User, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { ExternalLink, Calendar, Tag, User, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
 
 export interface PatentItem {
   rank: number;
@@ -22,12 +22,14 @@ export interface PatentItem {
   retrievalRelevanceScore?: number;
   relevanceReason?: string;
   sourceUrl?: string;
+  section?: string;
 }
 
 interface PatentCardProps {
   patent: PatentItem;
   rank: number;
   onInspectDetails?: (patent: PatentItem) => void;
+  onAnalyzeEvidence?: (patent: PatentItem) => void;
   isSelected?: boolean;
   onToggleSelect?: (patentId: string) => void;
 }
@@ -42,7 +44,7 @@ const getGooglePatentsUrl = (patent: PatentItem): string => {
   return `https://patents.google.com/patent/${formattedId}/en`;
 };
 
-const getSearchRelevanceLabel = (patent: PatentItem, rank: number): { label: string; badgeStyle: string } => {
+const getMatchStrengthLabel = (patent: PatentItem, rank: number): { label: string; badgeStyle: string } => {
   const relScore = patent.retrievalRelevanceScore ?? patent.score;
 
   if (typeof relScore === 'number') {
@@ -60,7 +62,14 @@ const getSearchRelevanceLabel = (patent: PatentItem, rank: number): { label: str
   return { label: 'Low', badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200' };
 };
 
-export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectDetails, isSelected, onToggleSelect }) => {
+export const PatentCard: React.FC<PatentCardProps> = ({
+  patent,
+  rank,
+  onInspectDetails,
+  onAnalyzeEvidence,
+  isSelected,
+  onToggleSelect,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const rawAbstract = patent.abstract || 'No abstract description available for this prior-art document.';
@@ -78,11 +87,11 @@ export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectD
   const ipcClass = patent.ipc || 'General Classification';
   const officialUrl = getGooglePatentsUrl(patent);
 
-  const { label: relevanceLabel, badgeStyle } = getSearchRelevanceLabel(patent, rank);
+  const { label: strengthLabel, badgeStyle } = getMatchStrengthLabel(patent, rank);
 
   return (
     <div className={`group relative rounded-2xl border bg-white p-5 shadow-xs transition-all duration-200 hover:shadow-md font-body ${isSelected ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-200 hover:border-indigo-300'}`}>
-      {/* Header Row: Checkbox, Rank, Patent ID, and Qualitative Search Relevance Badge */}
+      {/* Header Row: Checkbox, Rank, Patent ID, and Match Strength Badge */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
           {onToggleSelect && (
@@ -105,7 +114,7 @@ export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectD
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${badgeStyle}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            Search Relevance: {relevanceLabel}
+            Match Strength: {strengthLabel}
           </span>
         </div>
       </div>
@@ -166,13 +175,23 @@ export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectD
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          {onAnalyzeEvidence && (
+            <button
+              onClick={() => onAnalyzeEvidence(patent)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition cursor-pointer"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Analyze Evidence
+            </button>
+          )}
+
           {onInspectDetails && (
             <button
               onClick={() => onInspectDetails(patent)}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             >
               <FileText className="h-3.5 w-3.5 text-slate-500" />
-              Inspect
+              Patent Details
             </button>
           )}
 
@@ -180,10 +199,9 @@ export const PatentCard: React.FC<PatentCardProps> = ({ patent, rank, onInspectD
             href={officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
           >
-            View Patent
-            <ExternalLink className="h-3.5 w-3.5" />
+            Source <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
           </a>
         </div>
       </div>

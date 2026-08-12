@@ -6,6 +6,7 @@ import type {
   EvidenceSummary,
   VerbatimCitedPatent,
 } from '../dto/evidence-analysis.dto.js';
+import type { IFeatureDeconstructionService } from '../interfaces/rag.interface.js';
 import { FeatureDeconstructionService } from './feature-deconstruction.service.js';
 import { BadRequestError } from '../../../common/errors/http-errors.js';
 
@@ -29,9 +30,9 @@ const SAMPLE_PATENT_CORPUS = [
 ];
 
 export class EvidenceAnalysisService {
-  private featureDeconstructService: FeatureDeconstructionService;
+  private featureDeconstructService: IFeatureDeconstructionService;
 
-  constructor(featureDeconstructService?: FeatureDeconstructionService) {
+  constructor(featureDeconstructService?: IFeatureDeconstructionService) {
     this.featureDeconstructService = featureDeconstructService || new FeatureDeconstructionService();
   }
 

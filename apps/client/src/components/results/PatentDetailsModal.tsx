@@ -1,11 +1,12 @@
 import React from 'react';
-import { X, ExternalLink, Calendar, Tag, User, Hash, FileText } from 'lucide-react';
+import { X, ExternalLink, Calendar, Tag, User, Hash, FileText, Search } from 'lucide-react';
 import type { PatentItem } from './PatentCard';
 
 interface PatentDetailsModalProps {
   patent: PatentItem | null;
   isOpen: boolean;
   onClose: () => void;
+  onAnalyzeEvidence?: (patent: PatentItem) => void;
 }
 
 const getGooglePatentsUrl = (patent: PatentItem): string => {
@@ -18,11 +19,18 @@ const getGooglePatentsUrl = (patent: PatentItem): string => {
   return `https://patents.google.com/patent/${formattedId}/en`;
 };
 
-export const PatentDetailsModal: React.FC<PatentDetailsModalProps> = ({ patent, isOpen, onClose }) => {
+export const PatentDetailsModal: React.FC<PatentDetailsModalProps> = ({ patent, isOpen, onClose, onAnalyzeEvidence }) => {
   if (!isOpen || !patent) return null;
 
   const officialUrl = getGooglePatentsUrl(patent);
   const patentIdFormatted = patent.patentId ? (patent.patentId.startsWith('US') ? patent.patentId : `US${patent.patentId}`) : 'US-PATENT';
+
+  const handleAnalyzeClick = () => {
+    if (onAnalyzeEvidence) {
+      onAnalyzeEvidence(patent);
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -89,7 +97,7 @@ export const PatentDetailsModal: React.FC<PatentDetailsModalProps> = ({ patent, 
         <div className="space-y-2">
           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
             <FileText className="h-4 w-4 text-indigo-600" />
-            Full Abstract & Technical Disclosure
+            Full Abstract & Technical Description
           </h3>
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-700 leading-relaxed font-normal max-h-60 overflow-y-auto whitespace-pre-wrap">
             {patent.abstract || 'No abstract text available for this prior-art reference.'}
@@ -104,14 +112,23 @@ export const PatentDetailsModal: React.FC<PatentDetailsModalProps> = ({ patent, 
           >
             Close
           </button>
+          {onAnalyzeEvidence && (
+            <button
+              onClick={handleAnalyzeClick}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition cursor-pointer"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Analyze Evidence
+            </button>
+          )}
           <a
             href={officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
           >
-            View Official Patent Record
-            <ExternalLink className="h-3.5 w-3.5" />
+            View Source
+            <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
           </a>
         </div>
       </div>

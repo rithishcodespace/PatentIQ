@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { EvidenceAnalysisService } from '../../../src/modules/rag/services/evidence-analysis.service.js';
+import type { IFeatureDeconstructionService } from '../../../src/modules/rag/interfaces/rag.interface.js';
 
 describe('EvidenceAnalysisService Unit Tests', () => {
-  const mockDeconstructionService: any = {
-    deconstructInvention: async (query: string) => ({
-      coreTitle: query,
-      technicalDomain: ['Robotics'],
-      extractedFeatures: [
-        { id: 'F1', name: 'Autonomous drone', description: 'UAV navigation framework' },
-        { id: 'F2', name: 'Sensor fusion', description: 'Multispectral sensor array' },
-      ],
-      isFallback: false,
-    }),
+  const mockDeconstructionService: IFeatureDeconstructionService = {
+    deconstructInvention: async (input: string | { query?: string; text?: string }) => {
+      const query = typeof input === 'string' ? input : input.query || input.text || '';
+      return {
+        coreTitle: query,
+        technicalDomain: ['Robotics'],
+        extractedFeatures: [
+          { id: 'F1', name: 'Autonomous drone', description: 'UAV navigation framework', category: 'system', importance: 'CRITICAL' },
+          { id: 'F2', name: 'Sensor fusion', description: 'Multispectral sensor array', category: 'sensor', importance: 'HIGH' },
+        ],
+        isFallback: false,
+      };
+    },
   };
 
   const service = new EvidenceAnalysisService(mockDeconstructionService);

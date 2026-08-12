@@ -10,47 +10,47 @@ interface TechnicalDeepDiveProps {
 }
 
 export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepDiveProps) => {
-  const [subTab, setSubTab] = useState<'rag' | 'confidence' | 'vectors'>('rag');
+  const [subTab, setSubTab] = useState<'pipeline' | 'factors' | 'details'>('pipeline');
 
   return (
     <div className="space-y-6 font-body">
       {/* Sub-Tab Navigation Segmented Control */}
       <div className="flex border border-slate-200 bg-slate-100/80 p-1.5 rounded-2xl shadow-2xs">
         <button
-          onClick={() => setSubTab('rag')}
+          onClick={() => setSubTab('pipeline')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 font-body text-xs font-semibold transition ${
-            subTab === 'rag' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            subTab === 'pipeline' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Cpu className="h-4 w-4" />
-          RAG Pipeline Mechanics
+          Search & Analysis Pipeline
         </button>
 
         <button
-          onClick={() => setSubTab('confidence')}
+          onClick={() => setSubTab('factors')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 font-body text-xs font-semibold transition ${
-            subTab === 'confidence' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            subTab === 'factors' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <ShieldCheck className="h-4 w-4" />
-          Heuristic Formula Weights
+          Match Strength Factors
         </button>
 
         <button
-          onClick={() => setSubTab('vectors')}
+          onClick={() => setSubTab('details')}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 font-body text-xs font-semibold transition ${
-            subTab === 'vectors' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            subTab === 'details' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Layers className="h-4 w-4" />
-          Vector Embedding Metadata
+          System Technical Details
         </button>
       </div>
 
       <AnimatePresence mode="wait">
-        {subTab === 'rag' && (
+        {subTab === 'pipeline' && (
           <motion.div
-            key="rag"
+            key="pipeline"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -59,7 +59,7 @@ export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepD
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-base font-semibold text-slate-900 flex items-center gap-2">
                 <Cpu className="h-4 w-4 text-indigo-600" />
-                Underlying Grounded RAG Pipeline Execution
+                PatentIQ Search & Evidence Pipeline
               </h3>
               <span className="font-mono text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
                 Latency: {metrics?.totalTimeMs || 145}ms
@@ -69,34 +69,34 @@ export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepD
             <div className="grid gap-4 sm:grid-cols-3 text-xs">
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
                 <span className="font-mono font-bold text-indigo-600">STAGE 01</span>
-                <h4 className="font-semibold text-slate-900">Dense Vector Query Embedding</h4>
+                <h4 className="font-semibold text-slate-900">Feature Extraction</h4>
                 <p className="text-slate-600 leading-relaxed">
-                  Converts invention query into 768-dimensional float32 vector using Ollama nomic-embed-text.
+                  Extracts structured technical features from the invention description.
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
                 <span className="font-mono font-bold text-indigo-600">STAGE 02</span>
-                <h4 className="font-semibold text-slate-900">Pinecone Hybrid Cosine Search</h4>
+                <h4 className="font-semibold text-slate-900">Prior-Art Patent Search</h4>
                 <p className="text-slate-600 leading-relaxed">
-                  Queries Top-10 nearest neighbor vectors with PostgreSQL IPC classification metadata masks.
+                  Queries USPTO prior-art patent index with IPC classification filters.
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
                 <span className="font-mono font-bold text-indigo-600">STAGE 03</span>
-                <h4 className="font-semibold text-slate-900">Citation-Grounded LLM Prompt</h4>
+                <h4 className="font-semibold text-slate-900">Supporting Evidence Analysis</h4>
                 <p className="text-slate-600 leading-relaxed">
-                  Synthesizes novelty analysis enforcing strict inline citations [US-XXXXXXX-B2] from retrieved snippets.
+                  Matches feature limitations against patent claims and extracts supporting text snippets.
                 </p>
               </div>
             </div>
           </motion.div>
         )}
 
-        {subTab === 'confidence' && (
+        {subTab === 'factors' && (
           <motion.div
-            key="confidence"
+            key="factors"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -105,9 +105,9 @@ export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepD
           </motion.div>
         )}
 
-        {subTab === 'vectors' && (
+        {subTab === 'details' && (
           <motion.div
-            key="vectors"
+            key="details"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -116,21 +116,19 @@ export const TechnicalDeepDive = ({ confidence, metrics, query }: TechnicalDeepD
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-display text-base font-semibold text-slate-900 flex items-center gap-2">
                 <Database className="h-4 w-4 text-indigo-600" />
-                Pinecone System Architecture Metadata
+                PatentIQ Index Architecture
               </h3>
               <span className="font-mono text-xs text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200 font-semibold">
-                768-Dim Dense Vectors
+                High Precision Match Engine
               </span>
             </div>
 
             <div className="space-y-3 font-mono text-xs">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-800 overflow-x-auto">
-                <p className="text-slate-500 font-body mb-2 text-xs font-medium">// System Architecture & Hybrid Filter Context</p>
+                <p className="text-slate-500 font-body mb-2 text-xs font-medium">// Search Context & Classification Filters</p>
                 <pre className="font-mono text-xs text-indigo-700">
 {`{
   "query": "${query || 'Autonomous LiDAR drone sensor fusion'}",
-  "vectorDimensions": 768,
-  "similarityMetric": "Cosine Vector Space",
   "topK": 5,
   "ipcClassificationFilter": "B64C, G06F, H02J"
 }`}

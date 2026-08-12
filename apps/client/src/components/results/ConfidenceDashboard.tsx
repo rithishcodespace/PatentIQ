@@ -33,7 +33,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
   const overallLevel = confidence?.overall?.level ?? 'High';
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs font-body">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
@@ -41,10 +41,10 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           </div>
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900">
-              Heuristic Confidence Evaluation
+              Match Reliability Evaluation
             </h3>
             <p className="font-body text-xs text-slate-500">
-              Multi-factor reliability scoring for retrieval precision & prior-art synthesis
+              Multi-factor reliability scoring for patent search and technical feature mapping
             </p>
           </div>
         </div>
@@ -54,13 +54,13 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-body text-xs font-medium text-slate-700 hover:bg-slate-50 transition shadow-xs"
         >
           <Info className="h-3.5 w-3.5 text-indigo-600" />
-          {showFactors ? 'Hide Score Factors' : 'View Formula Factors'}
+          {showFactors ? 'Hide Factors' : 'View Match Factors'}
         </button>
       </div>
 
       {/* 3 Main Gauges */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3 font-body">
-        {/* Gauge 1: Retrieval Confidence */}
+        {/* Gauge 1: Patent Match Precision */}
         <motion.div
           whileHover={{ y: -2 }}
           className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
@@ -68,7 +68,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-body text-xs font-medium text-slate-500">
               <BarChart2 className="h-3.5 w-3.5 text-indigo-500" />
-              Retrieval Confidence
+              Patent Match Precision
             </span>
             <span
               className={`rounded-full border px-2 py-0.5 font-body text-[11px] font-semibold ${getLevelBadgeStyle(
@@ -85,7 +85,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               <span className="text-base font-medium text-slate-400">%</span>
             </div>
             <span className="code-chip bg-slate-100 text-slate-600 text-[10px]">
-              TopK & Vector Score
+              Index Relevance
             </span>
           </div>
 
@@ -100,7 +100,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           </div>
         </motion.div>
 
-        {/* Gauge 2: Analysis Confidence */}
+        {/* Gauge 2: Feature Evidence Grounding */}
         <motion.div
           whileHover={{ y: -2 }}
           className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
@@ -108,7 +108,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-body text-xs font-medium text-slate-500">
               <FileText className="h-3.5 w-3.5 text-indigo-600" />
-              Novelty Analysis Confidence
+              Feature Evidence Grounding
             </span>
             <span
               className={`rounded-full border px-2 py-0.5 font-body text-[11px] font-semibold ${getLevelBadgeStyle(
@@ -125,7 +125,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               <span className="text-base font-medium text-slate-400">%</span>
             </div>
             <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
-              7-Section Grounding
+              Feature Mapping
             </span>
           </div>
 
@@ -140,7 +140,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           </div>
         </motion.div>
 
-        {/* Gauge 3: Overall Confidence */}
+        {/* Gauge 3: Overall Match Strength Score */}
         <motion.div
           whileHover={{ y: -2 }}
           className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
@@ -148,7 +148,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-body text-xs font-medium text-slate-500">
               <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" />
-              Overall System Confidence
+              Overall Match Strength Score
             </span>
             <span
               className={`rounded-full border px-2 py-0.5 font-body text-[11px] font-semibold ${getLevelBadgeStyle(
@@ -165,7 +165,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               <span className="text-base font-medium text-slate-400">%</span>
             </div>
             <span className="code-chip bg-indigo-50 text-indigo-700 text-[10px]">
-              Weighted Score
+              Combined Score
             </span>
           </div>
 
@@ -194,7 +194,7 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               <div className="rounded-lg border border-slate-200 bg-white/80 p-3 text-xs">
                 <p className="font-semibold text-slate-800 flex items-center gap-1.5 mb-2">
                   <Layers className="h-3.5 w-3.5 text-indigo-600" />
-                  Retrieval Factor Weights
+                  Search Precision Factors
                 </p>
                 <ul className="space-y-1 text-slate-600">
                   <li className="flex justify-between">
@@ -227,31 +227,25 @@ const ConfidenceDashboard = ({ confidence }: ConfidenceDashboardProps) => {
               <div className="rounded-lg border border-slate-200 bg-white/80 p-3 text-xs">
                 <p className="font-semibold text-slate-800 flex items-center gap-1.5 mb-2">
                   <FileText className="h-3.5 w-3.5 text-indigo-600" />
-                  Novelty Analysis Factor Weights
+                  Evidence Grounding Factors
                 </p>
                 <ul className="space-y-1 text-slate-600">
                   <li className="flex justify-between">
-                    <span>Retrieval Base Confidence (50%):</span>
+                    <span>Search Base Score (50%):</span>
                     <span className="font-mono font-medium text-slate-900">
                       {confidence?.analysis?.factors?.retrievalScore ?? 92.1}%
                     </span>
                   </li>
                   <li className="flex justify-between">
-                    <span>7-Section Report Structure (30%):</span>
+                    <span>Technical Structure Completeness (30%):</span>
                     <span className="font-mono font-medium text-slate-900">
                       {confidence?.analysis?.factors?.completenessScore ?? 100}%
                     </span>
                   </li>
                   <li className="flex justify-between">
-                    <span>Overlapping Claim Groundedness (20%):</span>
+                    <span>Overlapping Claim Snippet Support (20%):</span>
                     <span className="font-mono font-medium text-slate-900">
                       {confidence?.analysis?.factors?.claimOverlapScore ?? 85}%
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Formula Blend:</span>
-                    <span className="font-mono font-medium text-indigo-600">
-                      0.40 * Retrieval + 0.60 * Analysis
                     </span>
                   </li>
                 </ul>

@@ -144,11 +144,18 @@ const Results = () => {
     );
   };
 
+  const handleAnalyzeEvidenceForPatent = (patent: PatentItem) => {
+    if (!selectedPatentIds.includes(patent.patentId)) {
+      setSelectedPatentIds([patent.patentId]);
+    }
+    setActiveTab('evidence');
+  };
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 font-body pb-16">
       {/* 1. Industry Standard Search Header */}
       <div className="space-y-4 font-body">
-        {/* Top Search Input Bar (Google Patents / Legal Workstation Style) */}
+        {/* Top Search Input Bar (Google Patents / Workstation Style) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-white p-3 border border-slate-200 shadow-2xs">
           {/* Active Query Input Display */}
           <div className="relative flex-1 min-w-0">
@@ -205,7 +212,7 @@ const Results = () => {
               }`}
             >
               <FileText className="h-4 w-4" />
-              Prior-Art References ({mappedPatents.length})
+              Matching Patents ({mappedPatents.length})
             </button>
 
             <button
@@ -217,7 +224,7 @@ const Results = () => {
               }`}
             >
               <ShieldAlert className="h-4 w-4 text-amber-400" />
-              Evidence-Based Legal Analysis
+              Evidence-Based Analysis
               {selectedPatentIds.length > 0 && (
                 <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">
                   {selectedPatentIds.length}
@@ -233,7 +240,7 @@ const Results = () => {
                 onClick={() => setActiveTab('evidence')}
                 className="bg-amber-600 text-white px-3 py-1 rounded-lg hover:bg-amber-700 transition cursor-pointer text-xs font-bold"
               >
-                Run Evidence Analysis →
+                Analyze Selected Evidence →
               </button>
             </div>
           )}
@@ -245,7 +252,7 @@ const Results = () => {
             <div className="flex flex-wrap items-center gap-3">
               {/* Results Count Summary */}
               <span className="font-semibold text-slate-800">
-                Found <strong className="text-indigo-600 font-bold">{mappedPatents.length}</strong> prior-art patent references
+                Found <strong className="text-indigo-600 font-bold">{mappedPatents.length}</strong> matching patents
               </span>
 
               <span className="hidden sm:inline text-slate-300">|</span>
@@ -291,7 +298,7 @@ const Results = () => {
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="relevance">Retrieval Relevance</option>
+                  <option value="relevance">Match Strength</option>
                   <option value="date-newest">Publication Date (Newest)</option>
                   <option value="date-oldest">Publication Date (Oldest)</option>
                 </select>
@@ -319,6 +326,7 @@ const Results = () => {
         <EvidenceAnalysisWorkspace
           query={queryText}
           selectedPatentIds={selectedPatentIds}
+          availablePatents={mappedPatents}
         />
       ) : (
         /* 3. Matching Patents Cards List */
@@ -329,7 +337,7 @@ const Results = () => {
               Matching Patents ({filteredPatents.length})
             </h2>
             <span className="text-xs text-slate-500 font-medium">
-              Select checkboxes to analyze verbatim evidence
+              Select a patent or click Analyze Evidence to view supporting evidence
             </span>
           </div>
 
@@ -353,6 +361,7 @@ const Results = () => {
                 patent={patent}
                 rank={patent.rank || index + 1}
                 onInspectDetails={(p) => setSelectedPatent(p)}
+                onAnalyzeEvidence={handleAnalyzeEvidenceForPatent}
                 isSelected={selectedPatentIds.includes(patent.patentId)}
                 onToggleSelect={handleToggleSelectPatent}
               />
@@ -366,6 +375,7 @@ const Results = () => {
         patent={selectedPatent}
         isOpen={!!selectedPatent}
         onClose={() => setSelectedPatent(null)}
+        onAnalyzeEvidence={handleAnalyzeEvidenceForPatent}
       />
     </div>
   );
