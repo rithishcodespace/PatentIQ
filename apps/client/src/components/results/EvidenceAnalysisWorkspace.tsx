@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText,
   AlertCircle,
-  CheckCircle2,
   ExternalLink,
   Download,
   Loader2,
@@ -12,6 +11,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { fetchFeatureEvidenceAnalysis, fetchEvidenceAnalysis, exportAttorneyPdfReport } from '../../services/api';
+import { TechnicalFeatureSummary } from './TechnicalFeatureSummary';
 import type { PatentItem } from './PatentCard';
 
 interface EvidenceAnalysisWorkspaceProps {
@@ -328,51 +328,21 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
           {/* Left Column: Technical Features Summary */}
-          <div className="lg:col-span-5 space-y-2.5">
-            {features.map((item) => {
-              const isSelected = item.id === activeFeature?.id;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedFeatureId(item.id);
-                    setIsEvidenceExpanded(false);
-                  }}
-                  className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                    isSelected
-                      ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500/20'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <span className="font-mono text-xs font-bold text-slate-400">{item.id}</span>
-                    <div className="text-sm font-bold text-slate-900 leading-snug">{item.text}</div>
-                  </div>
-
-                  <div className="shrink-0">
-                    {item.status === 'MATCH' && (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Match
-                      </span>
-                    )}
-                    {item.status === 'PARTIAL_MATCH' && (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                        <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
-                        Partial match
-                      </span>
-                    )}
-                    {item.status === 'NOT_FOUND' && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                        <XCircle className="h-3.5 w-3.5 text-slate-400" />
-                        Not found
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="lg:col-span-5">
+            <TechnicalFeatureSummary
+              features={features.map((f) => ({
+                id: f.id,
+                name: f.text,
+                description: f.description,
+                status: f.status,
+                confidence: f.matchStrength,
+              }))}
+              selectedFeatureId={activeFeature?.id}
+              onSelectFeature={(id) => {
+                setSelectedFeatureId(id);
+                setIsEvidenceExpanded(false);
+              }}
+            />
           </div>
 
           {/* Right Column: Supporting Evidence Detail */}

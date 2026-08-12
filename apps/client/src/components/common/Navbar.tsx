@@ -40,9 +40,8 @@ const Navbar = () => {
               <NavLink key={item.to} to={item.to} className="relative py-1">
                 {({ isActive }) => (
                   <span
-                    className={`flex items-center gap-1.5 font-body text-xs font-semibold transition-colors ${
-                      isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'
-                    }`}
+                    className={`flex items-center gap-1.5 font-body text-xs font-semibold transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'
+                      }`}
                   >
                     {item.icon && <item.icon className="h-4 w-4" />}
                     {item.label}
