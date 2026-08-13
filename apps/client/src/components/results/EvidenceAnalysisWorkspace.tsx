@@ -37,7 +37,74 @@ export interface NormalizedEvidenceItem {
   } | null;
 }
 
-// Requirement: Clear progression steps (Analyzing technical features -> Checking selected patent -> Finding supporting evidence -> Preparing comparison)
+export interface UserFriendlyError {
+  title: string;
+  message: string;
+  type: 'PATENT_UNAVAILABLE' | 'SERVICE_UNAVAILABLE' | 'NO_EVIDENCE' | 'TIMEOUT' | 'INVALID_PATENT' | 'NETWORK' | 'UNKNOWN';
+}
+
+// Requirement: Classify technical errors into user-friendly messages without exposing raw stack traces or internal logs
+export function classifyEvidenceError(error: any): UserFriendlyError {
+  // Keep technical details available ONLY in developer console logs
+  console.error('[PatentIQ Developer Log - Evidence Analysis Failure Detail]:', error);
+
+  const rawMessage = (error?.response?.data?.message || error?.message || '').toLowerCase();
+  const status = error?.response?.status;
+  const code = error?.code;
+
+  // 1. Invalid patent
+  if (status === 400 || rawMessage.includes('invalid patent') || rawMessage.includes('malformed')) {
+    return {
+      type: 'INVALID_PATENT',
+      title: "We couldn't analyze this patent right now.",
+      message: 'The selected patent identifier appears to be invalid or formatted incorrectly.',
+    };
+  }
+
+  // 2. Patent unavailable
+  if (status === 404 || rawMessage.includes('not found') || rawMessage.includes('unavailable')) {
+    return {
+      type: 'PATENT_UNAVAILABLE',
+      title: "We couldn't analyze this patent right now.",
+      message: 'The requested patent document is currently unavailable in the index.',
+    };
+  }
+
+  // 3. Request timeout
+  if (code === 'ECONNABORTED' || rawMessage.includes('timeout') || rawMessage.includes('timed out')) {
+    return {
+      type: 'TIMEOUT',
+      title: "We couldn't analyze this patent right now.",
+      message: 'The analysis request took longer than expected to complete. Please try again.',
+    };
+  }
+
+  // 4. Network failure
+  if (code === 'ERR_NETWORK' || rawMessage.includes('network error') || rawMessage.includes('econnrefused')) {
+    return {
+      type: 'NETWORK',
+      title: "We couldn't analyze this patent right now.",
+      message: 'Network connectivity was interrupted during the analysis request.',
+    };
+  }
+
+  // 5. Analysis service unavailable
+  if (status >= 500 || rawMessage.includes('embedding') || rawMessage.includes('pinecone') || rawMessage.includes('service')) {
+    return {
+      type: 'SERVICE_UNAVAILABLE',
+      title: "We couldn't analyze this patent right now.",
+      message: 'The AI analysis service is temporarily busy. Please try again in a few moments.',
+    };
+  }
+
+  // Default fallback user-friendly message
+  return {
+    type: 'UNKNOWN',
+    title: "We couldn't analyze this patent right now.",
+    message: 'An unexpected issue occurred while analyzing feature evidence. Please try again.',
+  };
+}
+
 const PROGRESSION_STEPS = [
   {
     id: 1,
@@ -69,7 +136,8 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isCanceled, setIsCanceled] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<UserFriendlyError | null>(null);
+  const [isPartial, setIsPartial] = useState(false);
   const [features, setFeatures] = useState<NormalizedEvidenceItem[]>([]);
   const [patentMetadata, setPatentMetadata] = useState<{
     id: string;
@@ -116,10 +184,11 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
 
     setLoading(true);
     setIsCanceled(false);
-    setError(null);
+    setErrorState(null);
+    setIsPartial(false);
     setCurrentStep(1);
 
-    // Timed step progression (no fake progress percentages)
+    // Timed step progression
     const stepTimer1 = setTimeout(() => setCurrentStep(2), 700);
     const stepTimer2 = setTimeout(() => setCurrentStep(3), 1500);
     const stepTimer3 = setTimeout(() => setCurrentStep(4), 2300);
@@ -139,10 +208,11 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         if (axios.isCancel(err) || err.name === 'CanceledError') {
           throw err;
         }
+        console.error('[PatentIQ Developer Log - Primary /api/analyze Endpoint Error]:', err);
         // Fallback to /api/rag/evidence-analysis endpoint
       }
 
-      if (res && res.features) {
+      if (res && res.features && res.features.length > 0) {
         setPatentMetadata(
           res.patent || {
             id: targetPatentId,
@@ -171,6 +241,8 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         if (mapped.length > 0) {
           setSelectedFeatureId(mapped[0].id);
         }
+        setErrorState(null);
+        setIsPartial(false);
         return;
       }
 
@@ -184,7 +256,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         { signal: controller.signal }
       );
 
-      if (fallbackRes?.featureEvidenceMatrix) {
+      if (fallbackRes?.featureEvidenceMatrix && fallbackRes.featureEvidenceMatrix.length > 0) {
         setPatentMetadata({
           id: targetPatentId,
           title: activePatentInfo?.title || `Prior-Art Patent ${targetPatentId}`,
@@ -219,12 +291,29 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         if (mapped.length > 0) {
           setSelectedFeatureId(mapped[0].id);
         }
+        setErrorState(null);
+        setIsPartial(false);
+        return;
       }
+
+      // 3. Evidence could not be found failure state
+      setErrorState({
+        type: 'NO_EVIDENCE',
+        title: "We couldn't analyze this patent right now.",
+        message: 'No direct evidence matching your technical features was identified in this patent document.',
+      });
     } catch (err: any) {
       if (axios.isCancel(err) || err.name === 'CanceledError') {
         setIsCanceled(true);
       } else {
-        setError(err?.message || 'Failed to execute evidence analysis for selected patent.');
+        // Requirement: Do NOT expose raw technical errors. Classify into user-friendly message
+        const classified = classifyEvidenceError(err);
+        setErrorState(classified);
+
+        // Requirement: If partial results exist, show them rather than throwing away the entire analysis
+        if (features.length > 0) {
+          setIsPartial(true);
+        }
       }
     } finally {
       clearTimeout(stepTimer1);
@@ -284,16 +373,14 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
     return `https://patents.google.com/patent/${formattedId}/en`;
   };
 
-  // Requirement: Preserve patent title and basic info while analysis is running
   const currentTitle = patentMetadata?.title || activePatentInfo?.title || `Prior-Art Patent Document (${targetPatentId})`;
 
   /* -------------------------------------------------------------------------- */
-  /* 1. Loading State UI: Progression Stepper + Skeleton UI + Header Preservation */
+  /* 1. Loading State UI                                                         */
   /* -------------------------------------------------------------------------- */
   if (loading) {
     return (
       <div className="space-y-8 font-body max-w-6xl mx-auto">
-        {/* Preserved Header Block */}
         <div className="space-y-4 pb-6 border-b border-slate-200">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="space-y-2 max-w-3xl">
@@ -329,7 +416,6 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
               </div>
             </div>
 
-            {/* Patent Selector & Cancel Action */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               {availablePatents.length > 1 && (
                 <select
@@ -346,7 +432,6 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
                 </select>
               )}
 
-              {/* Requirement: Allow user to cancel/back out */}
               <button
                 onClick={handleCancel}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
@@ -358,7 +443,6 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
           </div>
         </div>
 
-        {/* 4-Step Progression Tracker (Analyzing technical features -> Checking patent -> Finding evidence -> Preparing comparison) */}
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
@@ -420,9 +504,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
           </div>
         </div>
 
-        {/* Skeleton UI for Technical Features & Evidence Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
-          {/* Left Column: Technical Features Summary Skeleton */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="h-4 w-36 bg-slate-200 rounded animate-pulse" />
@@ -442,7 +524,6 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
             </div>
           </div>
 
-          {/* Right Column: Supporting Evidence Card Skeleton */}
           <div className="lg:col-span-7">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-5 animate-pulse">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -475,7 +556,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 2. Canceled or Error State                                                 */
+  /* 2. Canceled State                                                           */
   /* -------------------------------------------------------------------------- */
   if (isCanceled) {
     return (
@@ -492,31 +573,46 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
           className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Resume / Retry Analysis
-        </button>
-      </div>
-    );
-  }
-
-  if (error || features.length === 0) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-3 font-body max-w-xl mx-auto">
-        <AlertCircle className="h-7 w-7 text-amber-500 mx-auto" />
-        <h3 className="text-sm font-bold text-slate-900">Evidence Analysis Could Not Be Loaded</h3>
-        <p className="text-xs text-slate-500 max-w-md mx-auto">{error || 'No technical features extracted for analysis.'}</p>
-        <button
-          onClick={runAnalysis}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Retry Analysis
+          Try again
         </button>
       </div>
     );
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 3. Complete Loaded View                                                    */
+  /* 3. Full Error State (When NO features could be loaded)                      */
+  /* -------------------------------------------------------------------------- */
+  if (errorState && features.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-10 text-center space-y-5 max-w-xl mx-auto font-body shadow-xs">
+        <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-500 border border-slate-200">
+          <AlertCircle className="h-6 w-6 text-slate-500" />
+        </div>
+
+        <div className="space-y-1.5">
+          <h3 className="text-base font-bold text-slate-900">
+            {errorState.title}
+          </h3>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
+            {errorState.message}
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <button
+            onClick={runAnalysis}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* 4. Complete Loaded View (with optional Partial Results Warning Banner)     */
   /* -------------------------------------------------------------------------- */
   const activeFeature = features.find((f) => f.id === selectedFeatureId) || features[0];
 
@@ -527,6 +623,25 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
 
   return (
     <div className="space-y-8 font-body max-w-6xl mx-auto">
+      {/* Partial Results Banner */}
+      {isPartial && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 flex items-center justify-between gap-3 text-xs font-body shadow-2xs">
+          <div className="flex items-center gap-2 text-amber-900">
+            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>
+              Showing partial evidence analysis results ({features.length} feature{features.length > 1 ? 's' : ''} loaded). Some features could not be processed completely.
+            </span>
+          </div>
+          <button
+            onClick={runAnalysis}
+            className="inline-flex items-center gap-1 font-bold text-amber-900 hover:text-amber-950 bg-white px-3 py-1.5 rounded-lg border border-amber-300 shadow-2xs hover:bg-amber-100/60 transition cursor-pointer shrink-0"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Header Block */}
       <div className="space-y-4 pb-6 border-b border-slate-200">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -671,4 +786,5 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
 };
 
 export default EvidenceAnalysisWorkspace;
+
 
