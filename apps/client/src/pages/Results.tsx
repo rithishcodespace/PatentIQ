@@ -152,6 +152,7 @@ const Results = () => {
       setSelectedPatentIds([patent.patentId]);
     }
     setActiveTab('evidence');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
