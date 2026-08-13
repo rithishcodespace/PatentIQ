@@ -12,6 +12,7 @@ import {
 import PatentCard, { type PatentItem } from '../components/results/PatentCard';
 import PatentDetailsModal from '../components/results/PatentDetailsModal';
 import EvidenceAnalysisWorkspace from '../components/results/EvidenceAnalysisWorkspace';
+import TechnicalDetailsSection from '../components/results/TechnicalDetailsSection';
 
 const Results = () => {
   const location = useLocation();
@@ -331,8 +332,10 @@ const Results = () => {
           availablePatents={mappedPatents}
         />
       ) : (
-        /* 3. Matching Patents Cards List */
+        /* 3. Matching Patents Cards List & Developer Technical Details */
         <div className="space-y-4">
+          <TechnicalDetailsSection searchData={liveSearchData} patents={mappedPatents} />
+
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
               <FileText className="h-4 w-4 text-indigo-600" />
