@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FileText,
   AlertCircle,
   ExternalLink,
   Download,
@@ -643,20 +642,16 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
       )}
 
       {/* Header Block */}
-      <div className="space-y-4 pb-6 border-b border-slate-200">
+      <div className="space-y-4 pb-4">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
-              {currentTitle}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 font-medium">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
               <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">
                 {targetPatentId}
               </span>
               <span className="text-slate-300">•</span>
               <span>
-                Publication Date: <strong className="text-slate-800 font-semibold">{activePatentInfo?.publicationDate || 'N/A'}</strong>
+                Published: <strong className="text-slate-800 font-semibold">{activePatentInfo?.publicationDate || 'N/A'}</strong>
               </span>
               <span className="text-slate-300">•</span>
               <a
@@ -669,6 +664,10 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
+
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
+              {currentTitle}
+            </h1>
           </div>
 
           {/* Controls: Target Patent Selector & Export */}
@@ -681,7 +680,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
               >
                 {availablePatents.map((p) => (
                   <option key={p.patentId} value={p.patentId}>
-                    {p.publicationNumber || p.patentId} - {p.title ? (p.title.length > 30 ? `${p.title.slice(0, 30)}...` : p.title) : 'Patent'}
+                    {p.publicationNumber || p.patentId} - {p.title ? (p.title.length > 28 ? `${p.title.slice(0, 28)}...` : p.title) : 'Patent'}
                   </option>
                 ))}
               </select>
@@ -690,7 +689,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
             <button
               onClick={handleExportPdf}
               disabled={exportingPdf}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
             >
               {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
               Export Brief (PDF)
@@ -699,87 +698,69 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         </div>
       </div>
 
-      {/* Relevance Rationale */}
-      <div className="space-y-2 pb-6 border-b border-slate-200">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-          <HelpCircle className="h-4 w-4 text-indigo-600" />
-          Why this patent may be relevant
-        </h2>
-        <p className="text-sm text-slate-600 leading-relaxed max-w-4xl font-normal">
+      {/* Unified Executive Rationale & Summary Card */}
+      <div className="rounded-2xl bg-slate-50/80 p-5 border border-slate-200/80 space-y-3 font-body">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <HelpCircle className="h-4 w-4 text-indigo-600" />
+            Executive Analysis Summary
+          </h2>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-semibold text-slate-700">
+              Matched <strong className="text-emerald-700 font-bold">{totalMatched}</strong> of <strong className="text-slate-900 font-bold">{features.length}</strong> features
+            </span>
+            <span className="text-[11px] text-slate-500">
+              ({matchCount} direct, {partialCount} partial)
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
           This prior-art patent document discloses or overlaps with <strong>{totalMatched} of your {features.length} technical features</strong>. 
           {notFoundCount > 0
-            ? ` The remaining ${notFoundCount} feature${notFoundCount > 1 ? 's were' : ' was'} not found, highlighting your core technical novelty points.`
-            : ' All technical features of your disclosure are covered in this reference.'}
+            ? ` The remaining ${notFoundCount} feature${notFoundCount > 1 ? 's were' : ' was'} not identified in this reference, highlighting your primary technical novelty differentiators.`
+            : ' All technical features of your disclosure overlap with cited disclosures in this reference.'}
         </p>
       </div>
 
-      {/* Technical Features List & Progressive Evidence View */}
-      <div className="space-y-4 pb-6 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <FileText className="h-4 w-4 text-indigo-600" />
-            Technical Features
-          </h2>
-          <span className="text-xs text-slate-400 font-medium">Click a feature to inspect supporting evidence</span>
+      {/* Technical Features & Supporting Evidence Workstation */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+        {/* Left Column: Technical Features Summary */}
+        <div className="lg:col-span-5">
+          <TechnicalFeatureSummary
+            features={features.map((f) => ({
+              id: f.id,
+              name: f.text,
+              description: f.description,
+              status: f.status,
+              confidence: f.matchStrength,
+            }))}
+            selectedFeatureId={activeFeature?.id}
+            onSelectFeature={(id) => {
+              setSelectedFeatureId(id);
+            }}
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
-          {/* Left Column: Technical Features Summary */}
-          <div className="lg:col-span-5">
-            <TechnicalFeatureSummary
-              features={features.map((f) => ({
-                id: f.id,
-                name: f.text,
-                description: f.description,
-                status: f.status,
-                confidence: f.matchStrength,
-              }))}
-              selectedFeatureId={activeFeature?.id}
-              onSelectFeature={(id) => {
-                setSelectedFeatureId(id);
-              }}
-            />
-          </div>
-
-          {/* Right Column: Supporting Evidence Detail */}
-          <div className="lg:col-span-7">
-            <SupportingEvidenceCard
-              featureName={activeFeature?.text || 'Selected Feature'}
-              status={activeFeature?.status || 'NOT_FOUND'}
-              evidence={
-                activeFeature?.evidence
-                  ? {
-                      text: activeFeature.evidence.text,
-                      section: activeFeature.evidence.section,
-                      claimNumber: activeFeature.evidence.claimNumber,
-                      sourceUrl: activeFeature.evidence.sourceUrl || getGooglePatentsUrl(targetPatentId),
-                      highlightTerms: activeFeature.text.split(' '),
-                    }
-                  : null
-              }
-              patentId={targetPatentId}
-            />
-          </div>
+        {/* Right Column: Supporting Evidence Detail */}
+        <div className="lg:col-span-7">
+          <SupportingEvidenceCard
+            featureName={activeFeature?.text || 'Selected Feature'}
+            status={activeFeature?.status || 'NOT_FOUND'}
+            evidence={
+              activeFeature?.evidence
+                ? {
+                    text: activeFeature.evidence.text,
+                    section: activeFeature.evidence.section,
+                    claimNumber: activeFeature.evidence.claimNumber,
+                    sourceUrl: activeFeature.evidence.sourceUrl || getGooglePatentsUrl(targetPatentId),
+                    highlightTerms: activeFeature.text.split(' '),
+                  }
+                : null
+            }
+            patentId={targetPatentId}
+          />
         </div>
-      </div>
-
-      {/* Summary Block */}
-      <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200/80 flex flex-wrap items-center justify-between gap-4 text-sm">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Summary</span>
-          <span className="font-semibold text-slate-900">
-            Matched: <strong className="text-emerald-700 font-bold">{totalMatched}</strong> of <strong className="text-slate-900 font-bold">{features.length}</strong> features
-          </span>
-          <span className="text-xs text-slate-500 ml-2">
-            ({matchCount} direct match{matchCount !== 1 ? 'es' : ''}, {partialCount} partial match{partialCount !== 1 ? 'es' : ''})
-          </span>
-        </div>
-
-        {notFoundCount > 0 && (
-          <div className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200/80">
-            {notFoundCount} Unique Feature{notFoundCount > 1 ? 's' : ''} Identified
-          </div>
-        )}
       </div>
     </div>
   );

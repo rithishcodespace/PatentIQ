@@ -37,23 +37,21 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
   const totalMatched = matchCount + partialCount;
 
   return (
-    <div className={`space-y-4 font-body ${className}`}>
+    <div className={`space-y-3 font-body ${className}`}>
       {/* Header & Match Count */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+      <div className="flex items-center justify-between px-0.5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
           {title}
         </h3>
-        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200/70">
           {totalMatched} of {features.length} matched
         </span>
       </div>
 
-      {/* Feature List (Grid: 1-col on mobile, 2-col on large screens if > 4 items) */}
+      {/* Clean Single-Column Feature Checklist */}
       <div
-        className={`grid gap-3 ${
-          features.length > 4 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
-        }`}
-        role="list"
+        className="space-y-2"
+        role="tablist"
         aria-label="Technical feature summary checklist"
       >
         {features.map((feature) => {
@@ -63,31 +61,22 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
             switch (feature.status) {
               case 'MATCH':
                 return {
-                  symbol: '✓',
-                  label: 'Found in this patent',
-                  ariaText: 'Match: Found in this patent',
+                  label: 'Match',
                   icon: <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" aria-hidden="true" />,
-                  badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                  symbolClass: 'text-emerald-600 font-bold',
+                  badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
                 };
               case 'PARTIAL_MATCH':
                 return {
-                  symbol: '◐',
-                  label: 'Partially supported',
-                  ariaText: 'Partial match: Partially supported',
+                  label: 'Partial match',
                   icon: <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" aria-hidden="true" />,
-                  badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
-                  symbolClass: 'text-amber-600 font-bold',
+                  badgeClass: 'bg-amber-50 text-amber-800 border-amber-200/80',
                 };
               case 'NOT_FOUND':
               default:
                 return {
-                  symbol: '—',
                   label: 'Not found',
-                  ariaText: 'Not found: Feature not identified in patent',
                   icon: <MinusCircle className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />,
-                  badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
-                  symbolClass: 'text-slate-400 font-bold',
+                  badgeClass: 'bg-slate-100 text-slate-600 border-slate-200/80',
                 };
             }
           };
@@ -98,25 +87,21 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
             <button
               key={feature.id}
               onClick={() => onSelectFeature?.(feature.id)}
-              aria-label={`${feature.name} - ${config.ariaText}`}
-              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
+              role="tab"
+              aria-selected={isSelected}
+              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
                 isSelected
-                  ? 'border-indigo-600 bg-indigo-50/50 shadow-2xs ring-1 ring-indigo-500/20'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  ? 'border-indigo-600 bg-indigo-50/60 shadow-2xs ring-1 ring-indigo-500/20'
+                  : 'border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300'
               }`}
             >
-              <div className="space-y-1 pr-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-mono ${config.symbolClass}`} aria-hidden="true">
-                    {config.symbol}
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 leading-snug">
-                    {feature.name}
-                  </span>
+              <div className="space-y-1 min-w-0 pr-1">
+                <div className="text-xs font-bold text-slate-900 leading-snug">
+                  {feature.name}
                 </div>
 
                 {feature.description && (
-                  <p className="text-[11px] text-slate-500 line-clamp-2 pl-5 font-normal">
+                  <p className="text-[11px] text-slate-500 line-clamp-2 font-normal leading-relaxed">
                     {feature.description}
                   </p>
                 )}
@@ -125,8 +110,7 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
               <div className="shrink-0 flex items-center gap-1.5 pt-0.5">
                 {config.icon}
                 <span
-                  role="status"
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${config.badgeClass}`}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${config.badgeClass}`}
                 >
                   {config.label}
                 </span>
@@ -140,3 +124,4 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
 };
 
 export default TechnicalFeatureSummary;
+
