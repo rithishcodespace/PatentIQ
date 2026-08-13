@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ExternalLink, Calendar, Tag, User, Hash, FileText, Search } from 'lucide-react';
+import { X, ExternalLink, Calendar, Tag, User, Hash, FileText, Sparkles } from 'lucide-react';
 import type { PatentItem } from './PatentCard';
 
 interface PatentDetailsModalProps {
@@ -115,20 +115,20 @@ export const PatentDetailsModal: React.FC<PatentDetailsModalProps> = ({ patent, 
           {onAnalyzeEvidence && (
             <button
               onClick={handleAnalyzeClick}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer shadow-2xs"
             >
-              <Search className="h-3.5 w-3.5" />
-              Analyze Evidence
+              <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+              Analyze Match
             </button>
           )}
           <a
             href={officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
           >
-            View Source
-            <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+            View Patent
+            <ExternalLink className="h-3.5 w-3.5 text-white/90" />
           </a>
         </div>
       </div>

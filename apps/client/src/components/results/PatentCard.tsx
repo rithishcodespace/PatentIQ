@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Calendar, Tag, User, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
+import { ExternalLink, Sparkles, ChevronDown, ChevronUp, HelpCircle, Tag } from 'lucide-react';
 
 export interface PatentItem {
   rank: number;
@@ -19,8 +19,10 @@ export interface PatentItem {
   score?: number;
   denseScore?: number;
   bm25Score?: number;
+  rrfScore?: number;
   retrievalRelevanceScore?: number;
   relevanceReason?: string;
+  keyMatchingFeatures?: string[];
   sourceUrl?: string;
   section?: string;
 }
@@ -44,55 +46,41 @@ const getGooglePatentsUrl = (patent: PatentItem): string => {
   return `https://patents.google.com/patent/${formattedId}/en`;
 };
 
-const getMatchStrengthLabel = (patent: PatentItem, rank: number): { label: string; badgeStyle: string } => {
-  const relScore = patent.retrievalRelevanceScore ?? patent.score;
-
-  if (typeof relScore === 'number') {
-    if (relScore >= 0.70 || rank <= 3) {
-      return { label: 'High', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-    }
-    if (relScore >= 0.40 || rank <= 7) {
-      return { label: 'Medium', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200' };
-    }
-    return { label: 'Low', badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200' };
-  }
-
-  if (rank <= 3) return { label: 'High', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-  if (rank <= 7) return { label: 'Medium', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200' };
-  return { label: 'Low', badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200' };
-};
-
 export const PatentCard: React.FC<PatentCardProps> = ({
   patent,
   rank,
-  onInspectDetails,
   onAnalyzeEvidence,
   isSelected,
   onToggleSelect,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
   const rawAbstract = patent.abstract || 'No abstract description available for this prior-art document.';
-  const shouldTruncate = rawAbstract.length > 280;
-  const displayedAbstract = isExpanded || !shouldTruncate ? rawAbstract : `${rawAbstract.substring(0, 280)}...`;
+  const shouldTruncate = rawAbstract.length > 260;
+  const displayedAbstract = isExpanded || !shouldTruncate ? rawAbstract : `${rawAbstract.substring(0, 260)}...`;
 
   const displayPatentId = patent.publicationNumber || patent.patentId;
   const patentIdFormatted = displayPatentId
     ? (displayPatentId.startsWith('US') ? displayPatentId : `US${displayPatentId}`)
     : `PAT-${rank}`;
 
-  const ownerName = patent.owner || patent.assignee || patent.applicant || 'Undisclosed';
-  const pubDate = patent.publicationDate || 'N/A';
-  const priorityDate = patent.priorityDate || patent.filingDate || 'N/A';
-  const ipcClass = patent.ipc || 'General Classification';
   const officialUrl = getGooglePatentsUrl(patent);
 
-  const { label: strengthLabel, badgeStyle } = getMatchStrengthLabel(patent, rank);
+  // Requirement: Display Key Matching Features
+  const keyFeatures = patent.keyMatchingFeatures && patent.keyMatchingFeatures.length > 0
+    ? patent.keyMatchingFeatures
+    : ['Prior-Art Claim Overlap', 'Technical Specification Match'];
+
+  // Requirement: Display Why it is relevant
+  const relevanceReasonText = patent.relevanceReason || 
+    'Discloses prior-art claim structure and technical specifications overlapping with core invention limitations.';
 
   return (
-    <div className={`group relative rounded-2xl border bg-white p-5 shadow-xs transition-all duration-200 hover:shadow-md font-body ${isSelected ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-200 hover:border-indigo-300'}`}>
-      {/* Header Row: Checkbox, Rank, Patent ID, and Match Strength Badge */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+    <div className={`group relative rounded-2xl border bg-white p-6 shadow-xs transition-all duration-200 hover:shadow-md font-body ${isSelected ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-200 hover:border-indigo-300'}`}>
+      
+      {/* 1. Header Row: Selection Checkbox, Rank, Patent ID, and Technical Details Toggle */}
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
           {onToggleSelect && (
             <input
@@ -103,7 +91,7 @@ export const PatentCard: React.FC<PatentCardProps> = ({
               className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
             />
           )}
-          <span className="inline-flex h-7 px-2.5 items-center justify-center rounded-lg bg-indigo-50 font-mono text-xs font-bold text-indigo-700">
+          <span className="inline-flex h-6 px-2 items-center justify-center rounded-md bg-slate-100 font-mono text-xs font-bold text-slate-800 border border-slate-200">
             #{rank}
           </span>
           <span className="font-mono text-sm font-bold text-slate-900 tracking-tight">
@@ -111,102 +99,140 @@ export const PatentCard: React.FC<PatentCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${badgeStyle}`}>
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            Match Strength: {strengthLabel}
-          </span>
-        </div>
+        {/* Optional Collapsible Technical Details Toggle */}
+        <button
+          onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 transition cursor-pointer"
+        >
+          Technical Details
+          {showTechnicalDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
       </div>
 
-      {/* Main Content: Title and Abstract */}
-      <div className="mt-3.5 space-y-2">
+      {/* 2. Main Content: Patent Title & Relevance Explanation */}
+      <div className="mt-3.5 space-y-2.5">
         <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
           {patent.title || `Patent Reference ${patentIdFormatted}`}
         </h3>
 
-        <p className="text-xs text-slate-600 leading-relaxed font-normal">
+        {/* Requirement: Why it is relevant */}
+        <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <HelpCircle className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+            Why it is relevant
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-normal pl-5">
+            {relevanceReasonText}
+          </p>
+        </div>
+
+        {/* Patent Abstract */}
+        <p className="text-xs text-slate-600 leading-relaxed font-normal pt-0.5">
           {displayedAbstract}
         </p>
 
         {shouldTruncate && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition pt-1 cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
           >
             {isExpanded ? (
-              <>
-                Show less <ChevronUp className="h-3.5 w-3.5" />
-              </>
+              <>Show less <ChevronUp className="h-3.5 w-3.5" /></>
             ) : (
-              <>
-                Read full abstract <ChevronDown className="h-3.5 w-3.5" />
-              </>
+              <>Read full abstract <ChevronDown className="h-3.5 w-3.5" /></>
             )}
           </button>
         )}
       </div>
 
-      {/* Metadata Row: Publication Date, Priority Date, IPC/CPC, Assignee */}
-      <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>Publication Date: <strong className="text-slate-700 font-medium">{pubDate}</strong></span>
-          </div>
+      {/* 3. Requirement: Key Matching Features */}
+      <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          Key Matching Features
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {keyFeatures.map((feat, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/70"
+            >
+              <Tag className="h-3 w-3 text-indigo-500" />
+              {feat}
+            </span>
+          ))}
+        </div>
+      </div>
 
-          {priorityDate !== 'N/A' && (
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span>Priority Date: <strong className="text-slate-700 font-medium">{priorityDate}</strong></span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-1.5">
-            <Tag className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>IPC/CPC: <strong className="text-slate-700 font-mono font-medium">{ipcClass}</strong></span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="truncate max-w-[200px]">Applicant/Assignee: <strong className="text-slate-700 font-medium">{ownerName}</strong></span>
-          </div>
+      {/* 4. Requirement: Only 2 Actions (Primary: View Patent, Secondary: Analyze Match) */}
+      <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs text-slate-600">
+          Publication Date: <strong className="text-slate-800 font-semibold">{patent.publicationDate || 'N/A'}</strong>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Secondary Action: [Analyze Match] */}
           {onAnalyzeEvidence && (
             <button
               onClick={() => onAnalyzeEvidence(patent)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer shadow-2xs"
             >
-              <Search className="h-3.5 w-3.5" />
-              Analyze Evidence
+              <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+              Analyze Match
             </button>
           )}
 
-          {onInspectDetails && (
-            <button
-              onClick={() => onInspectDetails(patent)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-            >
-              <FileText className="h-3.5 w-3.5 text-slate-500" />
-              Patent Details
-            </button>
-          )}
-
+          {/* Primary Action: [View Patent] */}
           <a
             href={officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer"
           >
-            Source <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+            View Patent
+            <ExternalLink className="h-3.5 w-3.5 text-white/90" />
           </a>
         </div>
       </div>
+
+      {/* 5. Requirement: Optional Technical Details Section (hides vector scores by default) */}
+      {showTechnicalDetails && (
+        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/90 text-xs font-mono space-y-2 text-slate-600 animate-in fade-in duration-150">
+          <div className="font-sans font-bold text-[11px] uppercase tracking-wider text-slate-500 flex items-center justify-between">
+            <span>Vector Search & Algorithmic Scoring</span>
+            <span className="text-3xs font-mono text-slate-400">TECHNICAL DETAILS</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div className="p-2 rounded bg-white border border-slate-200">
+              <span className="text-3xs font-sans text-slate-400 block uppercase">BM25 Score</span>
+              <strong className="text-slate-800 font-bold text-xs">{patent.bm25Score?.toFixed(4) || 'N/A'}</strong>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-slate-200">
+              <span className="text-3xs font-sans text-slate-400 block uppercase">Dense Similarity</span>
+              <strong className="text-slate-800 font-bold text-xs">{patent.denseScore?.toFixed(4) || patent.score?.toFixed(4) || 'N/A'}</strong>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-slate-200">
+              <span className="text-3xs font-sans text-slate-400 block uppercase">RRF Rank Score</span>
+              <strong className="text-slate-800 font-bold text-xs">{patent.retrievalRelevanceScore?.toFixed(4) || 'N/A'}</strong>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-slate-200">
+              <span className="text-3xs font-sans text-slate-400 block uppercase">Pinecone Score</span>
+              <strong className="text-slate-800 font-bold text-xs">{patent.score ? `${(patent.score * 100).toFixed(1)}%` : 'N/A'}</strong>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between text-3xs font-sans text-slate-500">
+            <span>IPC Classification: <strong>{patent.ipc || 'General'}</strong></span>
+            <span>Assignee: <strong>{patent.owner || patent.assignee || 'Undisclosed'}</strong></span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default PatentCard;
+

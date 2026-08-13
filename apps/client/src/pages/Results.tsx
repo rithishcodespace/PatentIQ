@@ -82,8 +82,10 @@ const Results = () => {
       score: item.score ?? item.similarityScore ?? item.similarity,
       denseScore: item.denseScore,
       bm25Score: item.bm25Score,
+      rrfScore: item.rrfScore || item.rrf_score,
       retrievalRelevanceScore: item.retrievalRelevanceScore,
-      relevanceReason: item.relevanceReason,
+      relevanceReason: item.relevanceReason || item.reason || item.relevance,
+      keyMatchingFeatures: item.keyMatchingFeatures || item.matchedFeatures || item.features,
       sourceUrl: item.sourceUrl,
       section: item.section,
     }));
