@@ -390,15 +390,23 @@ export const exportAttorneyPdfReport = async (payload: {
 /**
  * Fetches Evidence-Based Prior-Art Analysis & Statutory 102/103 Legal Risk Breakdown via /api/rag/evidence-analysis.
  */
-export const fetchEvidenceAnalysis = async (payload: {
-  query: string;
-  selectedPatentIds?: string[];
-  strictMode?: boolean;
-}): Promise<any> => {
+export const fetchEvidenceAnalysis = async (
+  payload: {
+    query: string;
+    selectedPatentIds?: string[];
+    strictMode?: boolean;
+  },
+  options?: { signal?: AbortSignal }
+): Promise<any> => {
   try {
-    const response = await apiClient.post("/rag/evidence-analysis", payload);
+    const response = await apiClient.post("/rag/evidence-analysis", payload, {
+      signal: options?.signal,
+    });
     return response.data;
   } catch (error: any) {
+    if (axios.isCancel(error) || error.name === "CanceledError") {
+      throw error;
+    }
     const errorMsg = error?.response?.data?.message || error?.message || "Evidence analysis execution failed";
     console.error("[PatentIQ API] Evidence analysis error:", errorMsg);
     throw new Error(errorMsg);
@@ -408,17 +416,25 @@ export const fetchEvidenceAnalysis = async (payload: {
 /**
  * Fetches Feature-by-Feature Evidence Analysis for a specific target patent via POST /api/analyze.
  */
-export const fetchFeatureEvidenceAnalysis = async (payload: {
-  invention?: string;
-  inventionDisclosure?: string;
-  query?: string;
-  patentId: string;
-  sessionId?: string;
-}): Promise<any> => {
+export const fetchFeatureEvidenceAnalysis = async (
+  payload: {
+    invention?: string;
+    inventionDisclosure?: string;
+    query?: string;
+    patentId: string;
+    sessionId?: string;
+  },
+  options?: { signal?: AbortSignal }
+): Promise<any> => {
   try {
-    const response = await apiClient.post("/analyze", payload);
+    const response = await apiClient.post("/analyze", payload, {
+      signal: options?.signal,
+    });
     return response.data;
   } catch (error: any) {
+    if (axios.isCancel(error) || error.name === "CanceledError") {
+      throw error;
+    }
     const errorMsg = error?.response?.data?.message || error?.message || "Feature evidence analysis failed";
     console.error("[PatentIQ API] Feature evidence analysis error:", errorMsg);
     throw new Error(errorMsg);
