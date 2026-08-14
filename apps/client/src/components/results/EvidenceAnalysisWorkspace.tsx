@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import {
   AlertCircle,
   ExternalLink,
@@ -154,6 +155,13 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
     if (availablePatents.length > 0) return availablePatents[0].patentId;
     return 'US1001';
   });
+
+  // Automatically sync targetPatentId when selectedPatentIds prop changes from user action
+  useEffect(() => {
+    if (selectedPatentIds.length > 0 && selectedPatentIds[0] !== targetPatentId) {
+      setTargetPatentId(selectedPatentIds[0]);
+    }
+  }, [selectedPatentIds]);
 
   // Request deduplication & cancellation refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -621,7 +629,26 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   const totalMatched = matchCount + partialCount;
 
   return (
-    <div className="space-y-8 font-body max-w-6xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      className="space-y-6 font-body max-w-6xl mx-auto"
+    >
+      {/* 1. Context Transition Communication Banner */}
+      <div className="rounded-xl bg-indigo-50/80 p-3.5 px-4 border border-indigo-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-indigo-950 font-medium shadow-2xs">
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+          <span>
+            You are now examining how <strong>{targetPatentId}</strong> relates to your invention.
+          </span>
+        </div>
+        <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] shrink-0">
+          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+          Analysis Complete
+        </span>
+      </div>
+
       {/* Partial Results Banner */}
       {isPartial && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 flex items-center justify-between gap-3 text-xs font-body shadow-2xs">
@@ -641,8 +668,8 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         </div>
       )}
 
-      {/* Header Block */}
-      <div className="space-y-4 pb-4">
+      {/* 2. Target Patent Metadata Header */}
+      <div className="space-y-4 pb-2 border-b border-slate-100">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
@@ -660,7 +687,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 transition"
               >
-                Source Document
+                View Patent
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
@@ -762,7 +789,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
