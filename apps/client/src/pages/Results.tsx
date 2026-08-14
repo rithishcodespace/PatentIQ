@@ -209,11 +209,10 @@ const Results = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('results')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-                activeTab === 'results'
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${activeTab === 'results'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
+                }`}
             >
               <FileText className="h-4 w-4" />
               Matching Patents ({mappedPatents.length})
@@ -221,11 +220,10 @@ const Results = () => {
 
             <button
               onClick={() => setActiveTab('evidence')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-                activeTab === 'evidence'
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${activeTab === 'evidence'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
+                }`}
             >
               <ShieldAlert className="h-4 w-4 text-amber-400" />
               Evidence-Based Analysis

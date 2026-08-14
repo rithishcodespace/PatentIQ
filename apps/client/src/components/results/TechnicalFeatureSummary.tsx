@@ -92,11 +92,10 @@ export const TechnicalFeatureSummary: React.FC<TechnicalFeatureSummaryProps> = (
               role="tab"
               aria-selected={isSelected}
               aria-label={`${feature.name}: ${config.textLabel}`}
-              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
-                isSelected
+              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${isSelected
                   ? 'border-indigo-600 bg-indigo-50/50 shadow-2xs ring-1 ring-indigo-500/30'
                   : 'border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300'
-              }`}
+                }`}
             >
               <div className="space-y-1 min-w-0 pr-1">
                 <div className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">

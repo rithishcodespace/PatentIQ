@@ -5,7 +5,6 @@ import {
   ExternalLink,
   Download,
   Loader2,
-  HelpCircle,
   CheckCircle2,
   Sparkles,
   XCircle,
@@ -387,7 +386,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   /* -------------------------------------------------------------------------- */
   if (loading) {
     return (
-      <div className="space-y-8 font-body max-w-6xl mx-auto">
+      <div className="space-y-8 font-body w-full">
         <div className="space-y-4 pb-6 border-b border-slate-200">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="space-y-2 max-w-3xl">
@@ -628,39 +627,47 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   const notFoundCount = features.filter((f) => f.status === 'NOT_FOUND').length;
   const totalMatched = matchCount + partialCount;
 
+  const getOverlapRating = () => {
+    const ratio = features.length > 0 ? totalMatched / features.length : 0;
+    if (ratio >= 0.7) {
+      return {
+        title: 'Strong technical overlap',
+        description: 'This patent contains evidence for most of the technical features identified in your invention.',
+      };
+    }
+    if (ratio >= 0.4) {
+      return {
+        title: 'Moderate technical overlap',
+        description: 'Several technical features appear in this patent, while other features remain distinct.',
+      };
+    }
+    return {
+      title: 'Limited technical overlap',
+      description: 'Some technical information overlaps, but the available evidence is limited.',
+    };
+  };
+
+  const overlapRating = getOverlapRating();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="space-y-6 font-body max-w-6xl mx-auto"
+      className="space-y-6 font-body w-full"
     >
-      {/* 1. Context Transition Communication Banner */}
-      <div className="rounded-xl bg-indigo-50/80 p-3.5 px-4 border border-indigo-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-indigo-950 font-medium shadow-2xs">
-        <div className="flex items-center gap-2.5">
-          <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
-          <span>
-            You are now examining how <strong>{targetPatentId}</strong> relates to your invention.
-          </span>
-        </div>
-        <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] shrink-0">
-          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-          Analysis Complete
-        </span>
-      </div>
-
-      {/* Partial Results Banner */}
+      {/* Partial Results Banner (Only when needed) */}
       {isPartial && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 flex items-center justify-between gap-3 text-xs font-body shadow-2xs">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 flex items-center justify-between gap-3 text-xs font-body shadow-2xs">
           <div className="flex items-center gap-2 text-amber-900">
             <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
             <span>
-              Showing partial evidence analysis results ({features.length} feature{features.length > 1 ? 's' : ''} loaded). Some features could not be processed completely.
+              Showing partial evidence analysis results ({features.length} feature{features.length > 1 ? 's' : ''} loaded).
             </span>
           </div>
           <button
             onClick={runAnalysis}
-            className="inline-flex items-center gap-1 font-bold text-amber-900 hover:text-amber-950 bg-white px-3 py-1.5 rounded-lg border border-amber-300 shadow-2xs hover:bg-amber-100/60 transition cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1 font-bold text-amber-900 hover:text-amber-950 bg-white px-2.5 py-1 rounded-lg border border-amber-300 shadow-2xs hover:bg-amber-100/60 transition cursor-pointer shrink-0"
           >
             <RefreshCw className="h-3 w-3" />
             Try again
@@ -668,86 +675,91 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
         </div>
       )}
 
-      {/* 2. Target Patent Metadata Header */}
-      <div className="space-y-4 pb-2 border-b border-slate-100">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="space-y-2 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
-              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">
-                {targetPatentId}
-              </span>
-              <span className="text-slate-300">•</span>
-              <span>
-                Published: <strong className="text-slate-800 font-semibold">{activePatentInfo?.publicationDate || 'N/A'}</strong>
-              </span>
-              <span className="text-slate-300">•</span>
-              <a
-                href={getGooglePatentsUrl(targetPatentId)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 transition"
-              >
-                View Patent
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
+      {/* Ultra-Minimal Single-Line Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 font-body">
+        {/* Left: Patent ID + Title + View Patent Link */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200 text-xs shrink-0">
+            {targetPatentId}
+          </span>
+          <h1 className="text-base font-bold text-slate-900 truncate">
+            {currentTitle}
+          </h1>
+          <a
+            href={getGooglePatentsUrl(targetPatentId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition shrink-0 ml-1"
+          >
+            View Patent
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
-              {currentTitle}
-            </h1>
-          </div>
-
-          {/* Controls: Target Patent Selector & Export */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {availablePatents.length > 1 && (
-              <select
-                value={targetPatentId}
-                onChange={(e) => setTargetPatentId(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer hover:bg-slate-100 transition shadow-2xs"
-              >
-                {availablePatents.map((p) => (
-                  <option key={p.patentId} value={p.patentId}>
-                    {p.publicationNumber || p.patentId} - {p.title ? (p.title.length > 28 ? `${p.title.slice(0, 28)}...` : p.title) : 'Patent'}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <button
-              onClick={handleExportPdf}
-              disabled={exportingPdf}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
+        {/* Right Actions: Target Patent Switcher & PDF Export */}
+        <div className="flex items-center gap-2 shrink-0">
+          {availablePatents.length > 1 && (
+            <select
+              value={targetPatentId}
+              onChange={(e) => setTargetPatentId(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden cursor-pointer hover:bg-slate-50 transition shadow-2xs"
             >
-              {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Export Brief (PDF)
-            </button>
-          </div>
+              {availablePatents.map((p) => (
+                <option key={p.patentId} value={p.patentId}>
+                  {p.publicationNumber || p.patentId}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            Export Brief
+          </button>
         </div>
       </div>
 
-      {/* Unified Executive Rationale & Summary Card */}
-      <div className="rounded-2xl bg-slate-50/80 p-5 border border-slate-200/80 space-y-3 font-body">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <HelpCircle className="h-4 w-4 text-indigo-600" />
-            Executive Analysis Summary
-          </h2>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-semibold text-slate-700">
-              Matched <strong className="text-emerald-700 font-bold">{totalMatched}</strong> of <strong className="text-slate-900 font-bold">{features.length}</strong> features
-            </span>
-            <span className="text-[11px] text-slate-500">
-              ({matchCount} direct, {partialCount} partial)
-            </span>
+      {/* Analysis Summary Card */}
+      <div className="rounded-2xl bg-slate-50/90 p-5 border border-slate-200/90 space-y-4 font-body shadow-2xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1 max-w-xl">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Analysis Summary
+            </h2>
+            <div className="text-base sm:text-lg font-bold text-slate-900">
+              {totalMatched} of {features.length} technical features match
+            </div>
+            <div className="text-xs text-slate-600 leading-relaxed pt-0.5">
+              <strong className="text-slate-900 font-semibold">{overlapRating.title}</strong> — {overlapRating.description}
+            </div>
+          </div>
+
+          {/* Stat Breakdown Counters */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 text-center min-w-[76px] shadow-2xs">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Matched</div>
+              <div className="text-lg font-extrabold text-emerald-700">{matchCount}</div>
+            </div>
+
+            <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 text-center min-w-[76px] shadow-2xs">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Partial</div>
+              <div className="text-lg font-extrabold text-amber-700">{partialCount}</div>
+            </div>
+
+            <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 text-center min-w-[76px] shadow-2xs">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Not found</div>
+              <div className="text-lg font-extrabold text-slate-500">{notFoundCount}</div>
+            </div>
           </div>
         </div>
 
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-          This prior-art patent document discloses or overlaps with <strong>{totalMatched} of your {features.length} technical features</strong>. 
-          {notFoundCount > 0
-            ? ` The remaining ${notFoundCount} feature${notFoundCount > 1 ? 's were' : ' was'} not identified in this reference, highlighting your primary technical novelty differentiators.`
-            : ' All technical features of your disclosure overlap with cited disclosures in this reference.'}
-        </p>
+        <div className="text-[11px] text-slate-400 border-t border-slate-200/60 pt-2.5">
+          This analysis is intended to support prior-art research.
+        </div>
       </div>
 
       {/* Technical Features & Supporting Evidence Workstation */}
