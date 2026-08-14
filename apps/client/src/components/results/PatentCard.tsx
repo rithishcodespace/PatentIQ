@@ -79,9 +79,33 @@ export const PatentCard: React.FC<PatentCardProps> = ({
         { name: 'System Architecture Alignment', status: 'PARTIAL_MATCH' },
       ];
 
-  // Why it may be relevant
-  const relevanceReasonText = patent.relevanceReason || 
-    'Discloses prior-art technical specifications and claim structures overlapping with your invention.';
+  // Generate concise, plain-language relevance explanation answering "Why should I care about this patent?"
+  const getRelevanceExplanation = (): string => {
+    // 1. If backend provided a clean relevanceReason without raw vector/ai jargon, use it
+    if (
+      patent.relevanceReason &&
+      !/cosine|bm25|dense|vector|embedding|pinecone|rrf|chunk/i.test(patent.relevanceReason)
+    ) {
+      return patent.relevanceReason;
+    }
+
+    // 2. If backend matching features exist, synthesize a plain-language 1-2 sentence explanation using real features
+    if (patent.keyMatchingFeatures && patent.keyMatchingFeatures.length > 0) {
+      const feats = patent.keyMatchingFeatures.slice(0, 3);
+      if (feats.length === 1) {
+        return `This patent describes technical implementations for ${feats[0]}, which directly overlaps with your invention.`;
+      }
+      if (feats.length === 2) {
+        return `This patent describes technical implementations for ${feats[0]} and ${feats[1]}, which overlap with core features in your disclosure.`;
+      }
+      return `This patent describes technical implementations for ${feats[0]}, ${feats[1]}, and ${feats[2]}, covering similar concepts disclosed in your invention.`;
+    }
+
+    // 3. Fallback when insufficient specific evidence exists
+    return 'Some technical information overlaps, but the available evidence is limited.';
+  };
+
+  const relevanceReasonText = getRelevanceExplanation();
 
   // Match strength calculation
   const getMatchStrengthLabel = () => {
