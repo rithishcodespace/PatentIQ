@@ -246,12 +246,12 @@ export const SupportingEvidenceCard: React.FC<SupportingEvidenceCardProps> = ({
           </div>
 
           {/* 3. Secondary Source Information & Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
-                Cited Source:
+          <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+            <div className="flex flex-col gap-1 text-xs">
+              <span className="font-bold text-slate-500 text-xs">
+                Source
               </span>
-              <span className="font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/80 font-medium text-xs">
+              <span className="font-mono text-slate-800 bg-slate-100/90 px-2.5 py-1 rounded-md border border-slate-200/80 font-semibold text-xs">
                 {formatSourceLabel()}
               </span>
             </div>
@@ -272,9 +272,9 @@ export const SupportingEvidenceCard: React.FC<SupportingEvidenceCardProps> = ({
         /* Empty / Not Found State */
         <div className="rounded-xl bg-slate-50/80 p-8 text-center space-y-2 border border-slate-200/80">
           <XCircle className="h-6 w-6 text-slate-400 mx-auto" />
-          <div className="text-xs font-bold text-slate-700">No Supporting Evidence Identified</div>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            This feature was not identified in the cited prior-art patent claims or specification text.
+          <div className="text-sm font-bold text-slate-800">No Supporting Evidence</div>
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            No supporting evidence was found for this feature in this patent.
           </p>
         </div>
       )}
