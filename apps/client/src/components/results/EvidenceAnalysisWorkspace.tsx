@@ -42,17 +42,26 @@ export interface UserFriendlyError {
   type: 'PATENT_UNAVAILABLE' | 'SERVICE_UNAVAILABLE' | 'NO_EVIDENCE' | 'TIMEOUT' | 'INVALID_PATENT' | 'NETWORK' | 'UNKNOWN';
 }
 
-// Requirement: Classify technical errors into user-friendly messages without exposing raw stack traces or internal logs
 export function classifyEvidenceError(error: any): UserFriendlyError {
-  // Keep technical details available ONLY in developer console logs
+  // Technical error details logged exclusively to developer console
   console.error('[PatentIQ Developer Log - Evidence Analysis Failure Detail]:', error);
 
-  const rawMessage = (error?.response?.data?.message || error?.message || '').toLowerCase();
+  const rawMessage = String(
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    ''
+  ).toLowerCase();
   const status = error?.response?.status;
   const code = error?.code;
 
-  // 1. Invalid patent
-  if (status === 400 || rawMessage.includes('invalid patent') || rawMessage.includes('malformed')) {
+  // 1. Invalid patent identifier or malformed request parameters
+  if (
+    status === 400 ||
+    rawMessage.includes('invalid patent') ||
+    rawMessage.includes('malformed') ||
+    rawMessage.includes('bad request')
+  ) {
     return {
       type: 'INVALID_PATENT',
       title: "We couldn't analyze this patent right now.",
@@ -60,8 +69,12 @@ export function classifyEvidenceError(error: any): UserFriendlyError {
     };
   }
 
-  // 2. Patent unavailable
-  if (status === 404 || rawMessage.includes('not found') || rawMessage.includes('unavailable')) {
+  // 2. Requested patent document unavailable in index
+  if (
+    status === 404 ||
+    rawMessage.includes('not found') ||
+    rawMessage.includes('unavailable in index')
+  ) {
     return {
       type: 'PATENT_UNAVAILABLE',
       title: "We couldn't analyze this patent right now.",
@@ -69,8 +82,12 @@ export function classifyEvidenceError(error: any): UserFriendlyError {
     };
   }
 
-  // 3. Request timeout
-  if (code === 'ECONNABORTED' || rawMessage.includes('timeout') || rawMessage.includes('timed out')) {
+  // 3. Network or request timeout
+  if (
+    code === 'ECONNABORTED' ||
+    rawMessage.includes('timeout') ||
+    rawMessage.includes('timed out')
+  ) {
     return {
       type: 'TIMEOUT',
       title: "We couldn't analyze this patent right now.",
@@ -78,17 +95,31 @@ export function classifyEvidenceError(error: any): UserFriendlyError {
     };
   }
 
-  // 4. Network failure
-  if (code === 'ERR_NETWORK' || rawMessage.includes('network error') || rawMessage.includes('econnrefused')) {
+  // 4. Network connection failure or server unreachable
+  if (
+    code === 'ERR_NETWORK' ||
+    code === 'ECONNREFUSED' ||
+    rawMessage.includes('network error') ||
+    rawMessage.includes('econnrefused') ||
+    rawMessage.includes('failed to fetch')
+  ) {
     return {
       type: 'NETWORK',
       title: "We couldn't analyze this patent right now.",
-      message: 'Network connectivity was interrupted during the analysis request.',
+      message: 'Network connectivity was interrupted during the analysis request. Please try again.',
     };
   }
 
-  // 5. Analysis service unavailable
-  if (status >= 500 || rawMessage.includes('embedding') || rawMessage.includes('pinecone') || rawMessage.includes('service')) {
+  // 5. Backend analysis service, vector database, or embedding failure
+  if (
+    (status && status >= 500) ||
+    rawMessage.includes('pinecone') ||
+    rawMessage.includes('embedding') ||
+    rawMessage.includes('ollama') ||
+    rawMessage.includes('500') ||
+    rawMessage.includes('internal server error') ||
+    rawMessage.includes('service')
+  ) {
     return {
       type: 'SERVICE_UNAVAILABLE',
       title: "We couldn't analyze this patent right now.",
