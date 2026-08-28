@@ -99,6 +99,7 @@ Respond ONLY with a valid JSON array of objects:
     return features
 
 @app.post("/api/search")
+@app.post("/api/ai/search")
 async def search_patents(req: SearchRequest):
     logger.info(f"Received search request for query: '{req.query}'")
     try:
