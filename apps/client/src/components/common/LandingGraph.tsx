@@ -1,201 +1,292 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Activity } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { Play, Pause } from 'lucide-react';
 
-interface CandidatePoint {
+interface PatentNodeData {
   id: string;
-  title: string;
-  similarity: number;
-  ipc: string;
-  x: number;
-  y: number;
-  status: 'High Match' | 'Moderate' | 'Low Risk';
+  label: string;
+  category: string;
+  confidence: number;
+  color: number;
+  position: [number, number, number];
 }
 
-const CANDIDATES: CandidatePoint[] = [
-  { id: 'US-10948372-B2', title: 'LiDAR Obstacle Avoidance', similarity: 94.8, ipc: 'G01S 17/89', x: 260, y: 70, status: 'High Match' },
-  { id: 'US-10812944-B1', title: 'Autonomous Sensor Fusion', similarity: 89.2, ipc: 'G06V 20/58', x: 340, y: 120, status: 'High Match' },
-  { id: 'US-10654321-A1', title: 'Optical Flow Motion Tracking', similarity: 82.5, ipc: 'G06T 7/20', x: 320, y: 210, status: 'Moderate' },
-  { id: 'US-10498765-B2', title: 'Spatial Point Cloud Filter', similarity: 76.1, ipc: 'G06F 18/24', x: 180, y: 230, status: 'Moderate' },
-  { id: 'US-10234567-B1', title: 'Multi-Radar Range Matrix', similarity: 68.4, ipc: 'G01S 13/93', x: 100, y: 160, status: 'Low Risk' },
-  { id: 'US-10111222-A1', title: 'Ultrasonic Pulse Detector', similarity: 61.0, ipc: 'G01S 15/89', x: 130, y: 90, status: 'Low Risk' },
+const NODES_DATA: PatentNodeData[] = [
+  {
+    id: 'US-10948372',
+    label: 'LiDAR Navigation • 94.8%',
+    category: 'Sensor Fusion',
+    confidence: 94.8,
+    color: 0x4f46e5, // Deep Indigo
+    position: [2.8, 1.4, 0.8],
+  },
+  {
+    id: 'US-10812944',
+    label: 'Spatial Tracking • 89.2%',
+    category: 'Computer Vision',
+    confidence: 89.2,
+    color: 0x2563eb, // Royal Blue
+    position: [-2.6, 1.6, -1.4],
+  },
+  {
+    id: 'US-10654321',
+    label: 'Motion Matrix • 82.5%',
+    category: 'Image Processing',
+    confidence: 82.5,
+    color: 0x0284c7, // Sky Blue
+    position: [2.0, -2.2, 1.2],
+  },
+  {
+    id: 'US-10498765',
+    label: 'Point Cloud ML • 76.1%',
+    category: 'Point Cloud',
+    confidence: 76.1,
+    color: 0x7c3aed, // Violet
+    position: [-2.8, -1.6, 0.9],
+  },
+  {
+    id: 'US-10234567',
+    label: 'Radar Analyzer • 68.4%',
+    category: 'Radar Systems',
+    confidence: 68.4,
+    color: 0x475569, // Slate
+    position: [0.0, 2.8, -2.2],
+  },
 ];
 
 export default function LandingGraph({ className = '' }: { className?: string }) {
-  const [activeNode, setActiveNode] = useState<CandidatePoint>(CANDIDATES[0]);
-  const [activeTab, setActiveTab] = useState<'vector' | 'trend'>('vector');
+  const mountRef = useRef<HTMLDivElement>(null);
+  const [isRotating, setIsRotating] = useState<boolean>(true);
+
+  const isRotatingRef = useRef(isRotating);
+  isRotatingRef.current = isRotating;
+
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
+
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 420;
+
+    // 1. Scene & Camera
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 9.5);
+
+    // 2. Renderer with transparent background (NO OUTER BOX)
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // 3. Realistic Multi-Point Lighting & Ambient Aura
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0x818cf8, 2.5);
+    dirLight1.position.set(5, 8, 5);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.8);
+    dirLight2.position.set(-5, -6, -4);
+    scene.add(dirLight2);
+
+    // 4. Main 3D Group for Smooth Rotation
+    const networkGroup = new THREE.Group();
+    scene.add(networkGroup);
+
+    // 5. Realistic Central Core (Glossy Glass/Metal Sphere with Pulsing Core)
+    const centralGeo = new THREE.IcosahedronGeometry(0.75, 4);
+    const centralMat = new THREE.MeshStandardMaterial({
+      color: 0x4f46e5,
+      roughness: 0.15,
+      metalness: 0.85,
+      emissive: 0x3730a3,
+      emissiveIntensity: 0.6,
+    });
+    const centralMesh = new THREE.Mesh(centralGeo, centralMat);
+    networkGroup.add(centralMesh);
+
+    // Inner Glowing Energy Nucleus
+    const nucleusGeo = new THREE.SphereGeometry(0.45, 16, 16);
+    const nucleusMat = new THREE.MeshBasicMaterial({ color: 0xc7d2fe, transparent: true, opacity: 0.8 });
+    const nucleusMesh = new THREE.Mesh(nucleusGeo, nucleusMat);
+    centralMesh.add(nucleusMesh);
+
+    // 3D Atomic Orbit Rings (Gyroscopic Torus Geometry)
+    const torusGeo1 = new THREE.TorusGeometry(1.6, 0.015, 16, 100);
+    const torusMat1 = new THREE.MeshBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.35 });
+    const torusMesh1 = new THREE.Mesh(torusGeo1, torusMat1);
+    torusMesh1.rotation.x = Math.PI / 3;
+    networkGroup.add(torusMesh1);
+
+    const torusGeo2 = new THREE.TorusGeometry(2.4, 0.012, 16, 100);
+    const torusMat2 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25 });
+    const torusMesh2 = new THREE.Mesh(torusGeo2, torusMat2);
+    torusMesh2.rotation.y = Math.PI / 4;
+    networkGroup.add(torusMesh2);
+
+    // 6. Canvas Text Sprite Helper for Floating 3D Text Labels
+    const createTextSprite = (text: string, colorHex: string = '#1e293b') => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(4, 4, 248, 56, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = colorHex;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 128, 32);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(1.4, 0.35, 1);
+      return sprite;
+    };
+
+    // Label for Central Core
+    const coreLabel = createTextSprite('Core Invention Concept', '#4f46e5');
+    coreLabel.position.set(0, -1.1, 0);
+    networkGroup.add(coreLabel);
+
+    // 7. Outer Nodes & Realistic Glowing Tubes
+    NODES_DATA.forEach((data) => {
+      // Node Sphere
+      const geo = new THREE.IcosahedronGeometry(0.38, 3);
+      const mat = new THREE.MeshStandardMaterial({
+        color: data.color,
+        roughness: 0.2,
+        metalness: 0.7,
+        emissive: data.color,
+        emissiveIntensity: 0.2,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(...data.position);
+      networkGroup.add(mesh);
+
+      // Node Floating 3D Label Sprite
+      const labelSprite = createTextSprite(data.label, '#334155');
+      labelSprite.position.set(data.position[0], data.position[1] + 0.6, data.position[2]);
+      networkGroup.add(labelSprite);
+
+      // Connection Cable (Dynamic Curved Line)
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(data.position[0] * 0.5, data.position[1] * 0.5 + 0.2, data.position[2] * 0.5),
+        new THREE.Vector3(...data.position),
+      ]);
+
+      const tubeGeo = new THREE.TubeGeometry(curve, 20, 0.012, 8, false);
+      const tubeMat = new THREE.MeshBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.55 });
+      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      networkGroup.add(tubeMesh);
+    });
+
+    // 8. Background Cosmic Starfield / Floating Particles
+    const particleCount = 180;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      particlePositions[i] = (Math.random() - 0.5) * 18;
+      particlePositions[i + 1] = (Math.random() - 0.5) * 18;
+      particlePositions[i + 2] = (Math.random() - 0.5) * 18;
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleMat = new THREE.PointsMaterial({
+      size: 0.045,
+      color: 0x94a3b8,
+      transparent: true,
+      opacity: 0.45,
+    });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    networkGroup.add(particles);
+
+    // 9. Resize Handler
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 10. 60FPS 3D Realism Animation Loop
+    let animationFrameId: number;
+    let clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+
+      // Continuous 3D rotation & dynamic orbital wobble
+      if (isRotatingRef.current) {
+        networkGroup.rotation.y += 0.005;
+        networkGroup.rotation.x = Math.sin(elapsedTime * 0.4) * 0.12;
+      }
+
+      // Gyroscopic Ring Rotations
+      torusMesh1.rotation.z += 0.008;
+      torusMesh2.rotation.z -= 0.006;
+
+      // Pulse nucleus
+      nucleusMesh.scale.setScalar(1 + Math.sin(elapsedTime * 2.5) * 0.12);
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+    };
+  }, []);
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-blue-50/60 p-5 shadow-lg ${className}`}>
-      {/* Top Header Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-2xs backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
-            <Activity className="h-4 w-4" />
-          </div>
-          <div>
-            <h4 className="font-display text-xs font-bold text-slate-900 flex items-center gap-1.5">
-              Pinecone Prior-Art Vector Space
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-700 border border-emerald-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                ONLINE
-              </span>
-            </h4>
-          </div>
-        </div>
-
-        {/* View Selector */}
-        <div className="flex rounded-lg bg-slate-100 p-0.5 font-body text-[11px] font-medium text-slate-600">
+    <div className={`relative w-full ${className}`}>
+      {/* Three.js 3D WebGL Canvas - NO OUTER BOX, NO CARD BORDER, NO BOTTOM DETAILS CARD */}
+      <div className="relative h-[420px] w-full select-none" ref={mountRef}>
+        {/* Floating 3D Spin Control Button */}
+        <div className="absolute top-2 right-2 z-10">
           <button
-            onClick={() => setActiveTab('vector')}
-            className={`rounded-md px-2.5 py-1 transition ${
-              activeTab === 'vector' ? 'bg-white text-blue-700 font-semibold shadow-2xs' : 'hover:text-slate-900'
-            }`}
+            onClick={() => setIsRotating(!isRotating)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 px-3.5 py-1.5 font-body text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs backdrop-blur-md cursor-pointer"
           >
-            Vector Map
-          </button>
-          <button
-            onClick={() => setActiveTab('trend')}
-            className={`rounded-md px-2.5 py-1 transition ${
-              activeTab === 'trend' ? 'bg-white text-blue-700 font-semibold shadow-2xs' : 'hover:text-slate-900'
-            }`}
-          >
-            Similarity Curve
+            {isRotating ? (
+              <>
+                <Pause className="h-3.5 w-3.5 text-indigo-600" />
+                Pause 3D
+              </>
+            ) : (
+              <>
+                <Play className="h-3.5 w-3.5 text-indigo-600" />
+                Rotate 3D
+              </>
+            )}
           </button>
         </div>
       </div>
-
-      {/* GRAPH CANVAS AREA */}
-      <div className="blueprint-grid relative mt-4 h-[330px] w-full rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs overflow-hidden">
-        {activeTab === 'vector' ? (
-          /* SVG Vector Distance Map */
-          <svg className="h-full w-full overflow-visible" viewBox="0 0 420 280">
-            {/* Background Grid Circles */}
-            <circle cx="210" cy="140" r="120" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" fill="none" />
-            <circle cx="210" cy="140" r="75" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" fill="none" />
-            <circle cx="210" cy="140" r="35" stroke="#94a3b8" strokeWidth="1" fill="none" />
-
-            {/* Connecting Vector Distance Lines */}
-            {CANDIDATES.map((c, i) => (
-              <line
-                key={i}
-                x1="210"
-                y1="140"
-                x2={c.x}
-                y2={c.y}
-                stroke={activeNode.id === c.id ? '#2563eb' : '#cbd5e1'}
-                strokeWidth={activeNode.id === c.id ? '2' : '1'}
-                strokeDasharray={activeNode.id === c.id ? 'none' : '3 3'}
-              />
-            ))}
-
-            {/* Central Query Vector Node */}
-            <g transform="translate(210, 140)">
-              <circle r="18" fill="#eff6ff" stroke="#3b82f6" strokeWidth="2" />
-              <circle r="8" fill="#2563eb" className="animate-pulse" />
-              <text x="0" y="30" textAnchor="middle" className="font-mono text-[10px] font-bold fill-slate-700">
-                Target Disclosure Vector
-              </text>
-            </g>
-
-            {/* Prior Art Candidate Nodes */}
-            {CANDIDATES.map((c) => {
-              const isSelected = activeNode.id === c.id;
-              return (
-                <g
-                  key={c.id}
-                  transform={`translate(${c.x}, ${c.y})`}
-                  className="cursor-pointer transition-transform"
-                  onClick={() => setActiveNode(c)}
-                  onMouseEnter={() => setActiveNode(c)}
-                >
-                  <circle
-                    r={isSelected ? '14' : '10'}
-                    fill={isSelected ? '#2563eb' : '#475569'}
-                    stroke="#ffffff"
-                    strokeWidth="3"
-                    className="shadow-md"
-                  />
-                  <text
-                    x="0"
-                    y={c.y > 140 ? '24' : '-16'}
-                    textAnchor="middle"
-                    className={`font-mono text-[9px] font-semibold ${isSelected ? 'fill-blue-700 font-bold' : 'fill-slate-500'}`}
-                  >
-                    {c.id.split('-')[1]} ({c.similarity}%)
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        ) : (
-          /* SVG Similarity Score Curve Graph */
-          <div className="h-full w-full pt-4 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-              <span>Similarity Score vs Candidate Rank</span>
-              <span className="text-blue-600 font-bold">768-dim nomic-embed-text</span>
-            </div>
-            <svg className="h-[230px] w-full" viewBox="0 0 400 200" preserveAspectRatio="none">
-              <path
-                d="M 0,20 L 66,35 L 133,65 L 200,95 L 266,130 L 333,160 L 400,180"
-                fill="none"
-                stroke="#2563eb"
-                strokeWidth="3"
-              />
-              <path
-                d="M 0,20 L 66,35 L 133,65 L 200,95 L 266,130 L 333,160 L 400,180 L 400,200 L 0,200 Z"
-                fill="url(#blueGradientFill)"
-                opacity="0.15"
-              />
-              {CANDIDATES.map((c, i) => (
-                <circle
-                  key={i}
-                  cx={(i * 400) / (CANDIDATES.length - 1)}
-                  cy={200 - (c.similarity / 100) * 180}
-                  r="6"
-                  fill="#2563eb"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                />
-              ))}
-              <defs>
-                <linearGradient id="blueGradientFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563eb" />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-        )}
-      </div>
-
-      {/* Selected Node Details Card Overlay (Light Mode) */}
-      <motion.div 
-        key={activeNode.id}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs"
-      >
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="code-chip font-mono text-[10px]">{activeNode.id}</span>
-            <span className="font-mono text-[11px] font-semibold text-slate-500">IPC: {activeNode.ipc}</span>
-          </div>
-          <h5 className="font-display text-xs font-bold text-slate-900 truncate max-w-[240px]">
-            {activeNode.title}
-          </h5>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="font-mono text-[10px] text-slate-400 uppercase">Cosine Similarity</p>
-            <p className="font-display text-base font-extrabold text-blue-600">{activeNode.similarity}%</p>
-          </div>
-          <span className="rounded-lg bg-emerald-50 px-2.5 py-1 font-body text-xs font-bold text-emerald-700 border border-emerald-200">
-            {activeNode.status}
-          </span>
-        </div>
-      </motion.div>
     </div>
   );
 }

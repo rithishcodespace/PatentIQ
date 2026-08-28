@@ -1,13 +1,12 @@
 import { Link, NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Shield, BookOpen, History, Search, Cpu, Activity } from 'lucide-react';
+import { User, Shield, BookOpen, History, Search, Cpu } from 'lucide-react';
 import AuthModal from './AuthModal';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { to: '/search', label: 'Prior-Art Search', icon: Search },
   { to: '/history', label: 'Search History', icon: History },
-  { to: '/dashboard', label: 'System Health', icon: Activity },
   { to: '/how-it-works', label: 'Architecture', icon: Cpu },
   { to: '/docs-preview', label: 'API Specs', icon: BookOpen },
 ];

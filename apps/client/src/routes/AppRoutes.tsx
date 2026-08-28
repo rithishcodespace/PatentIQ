@@ -11,7 +11,6 @@ const Results = lazy(() => import("../pages/Results"));
 const HowItWorksPage = lazy(() => import("../pages/HowItWorksPage"));
 const HistoryPage = lazy(() => import("../pages/HistoryPage"));
 const DocsPage = lazy(() => import("../pages/DocsPage"));
-const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 
 const PageLoader = () => (
@@ -40,22 +39,6 @@ const AppRoutes = () => {
                 element={
                   <ProtectedRoute>
                     <HistoryPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="admin"
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboardPage />
                   </ProtectedRoute>
                 }
               />
