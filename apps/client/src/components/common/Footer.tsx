@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   return (
     <footer className="mt-20 border-t border-slate-100 bg-white">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
+      <div className="w-full flex flex-col items-center justify-between gap-4 px-4 sm:px-8 lg:px-12 py-8 sm:flex-row">
         <div>
           <p className="font-display font-semibold text-slate-900 text-sm">
             Patent<span className="text-amber-500">IQ</span> Enterprise Engine v1.2

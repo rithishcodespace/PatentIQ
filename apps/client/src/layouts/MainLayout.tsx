@@ -11,7 +11,7 @@ const MainLayout = () => {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
+      <main className="w-full flex-1 px-4 sm:px-8 lg:px-12 py-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

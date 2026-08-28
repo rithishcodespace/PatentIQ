@@ -127,7 +127,7 @@ const HowItWorksPage = () => {
   const selectedPipeline = pipelineSteps.find((s) => s.id === activeStep) || pipelineSteps[0];
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 py-4 px-4 sm:px-6">
+    <div className="w-full space-y-8 py-4">
       {/* Clean Header */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="max-w-3xl space-y-3">

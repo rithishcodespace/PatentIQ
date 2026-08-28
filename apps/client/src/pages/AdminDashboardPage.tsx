@@ -146,7 +146,7 @@ const AdminDashboardPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
         <motion.div

@@ -108,7 +108,7 @@ const HistoryView = ({
   }, [historyRecords, searchTerm, selectedIpc]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Header Banner */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4">

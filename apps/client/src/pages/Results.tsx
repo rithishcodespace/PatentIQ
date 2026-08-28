@@ -156,7 +156,7 @@ const Results = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 font-body pb-16">
+    <div className="w-full space-y-6 font-body pb-16">
       {/* 1. Industry Standard Search Header */}
       <div className="space-y-4 font-body">
         {/* Top Search Input Bar (Google Patents / Workstation Style) */}
