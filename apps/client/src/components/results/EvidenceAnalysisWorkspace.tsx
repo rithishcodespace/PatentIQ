@@ -196,6 +196,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   // Request deduplication & cancellation refs
   const abortControllerRef = useRef<AbortController | null>(null);
   const inProgressKeyRef = useRef<string | null>(null);
+  const userCanceledRef = useRef<boolean>(false);
 
   // Find detailed patent info from availablePatents prop
   const activePatentInfo = availablePatents.find(
@@ -218,6 +219,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
     const controller = new AbortController();
     abortControllerRef.current = controller;
     inProgressKeyRef.current = requestKey;
+    userCanceledRef.current = false;
 
     setLoading(true);
     setIsCanceled(false);
@@ -341,7 +343,9 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
       });
     } catch (err: any) {
       if (axios.isCancel(err) || err.name === 'CanceledError') {
-        setIsCanceled(true);
+        if (userCanceledRef.current) {
+          setIsCanceled(true);
+        }
       } else {
         // Requirement: Do NOT expose raw technical errors. Classify into user-friendly message
         const classified = classifyEvidenceError(err);
@@ -371,6 +375,7 @@ export const EvidenceAnalysisWorkspace: React.FC<EvidenceAnalysisWorkspaceProps>
   }, [query, targetPatentId]);
 
   const handleCancel = () => {
+    userCanceledRef.current = true;
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
