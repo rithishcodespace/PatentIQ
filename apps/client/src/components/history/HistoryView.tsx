@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   History,
@@ -28,7 +28,7 @@ const HistoryView = ({
   onDeleteRecord: propOnDeleteRecord,
 }: HistoryViewProps) => {
   const [historyRecords, setHistoryRecords] = useState<SearchHistoryRecord[]>(initialRecords || []);
-  const [loading, setLoading] = useState<boolean>(!initialRecords || initialRecords.length === 0);
+  const [loading, setLoading] = useState<boolean>(initialRecords === undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIpc, setSelectedIpc] = useState<string>('ALL');
 
@@ -47,7 +47,7 @@ const HistoryView = ({
   useEffect(() => {
     let isMounted = true;
     async function initFetch() {
-      if (!initialRecords || initialRecords.length === 0) {
+      if (initialRecords === undefined) {
         setLoading(true);
         const records = await fetchSearchHistory(1, 50);
         if (isMounted) {
@@ -56,6 +56,7 @@ const HistoryView = ({
         }
       } else {
         setHistoryRecords(initialRecords);
+        setLoading(false);
       }
     }
     initFetch();
@@ -73,12 +74,38 @@ const HistoryView = ({
     }
   };
 
-  const filteredHistory = historyRecords.filter((rec) => {
-    const queryStr = rec.searchQuery || (rec as any).query || '';
-    const matchesSearch = queryStr.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesIpc = selectedIpc === 'ALL' || rec.appliedFilters?.ipc === selectedIpc;
-    return matchesSearch && matchesIpc;
-  });
+  // Group and deduplicate history records by search query text, prioritizing records with AI novelty analysis
+  const filteredHistory = useMemo(() => {
+    const queryMap = new Map<string, SearchHistoryRecord>();
+
+    for (const rec of historyRecords) {
+      const qKey = (rec.searchQuery || (rec as any).query || '').trim().toLowerCase();
+      if (!qKey) continue;
+
+      const existing = queryMap.get(qKey);
+      if (!existing) {
+        queryMap.set(qKey, rec);
+      } else {
+        const hasSummary = !!(rec.noveltyAnalysis?.summary || (rec as any).analysis?.summary);
+        const existingHasSummary = !!(existing.noveltyAnalysis?.summary || (existing as any).analysis?.summary);
+
+        if (hasSummary && !existingHasSummary) {
+          queryMap.set(qKey, rec);
+        } else if (!existingHasSummary && rec.createdAt && existing.createdAt && new Date(rec.createdAt) > new Date(existing.createdAt)) {
+          queryMap.set(qKey, rec);
+        }
+      }
+    }
+
+    const uniqueRecords = Array.from(queryMap.values());
+
+    return uniqueRecords.filter((rec) => {
+      const queryStr = rec.searchQuery || (rec as any).query || '';
+      const matchesSearch = queryStr.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesIpc = selectedIpc === 'ALL' || rec.appliedFilters?.ipc === selectedIpc;
+      return matchesSearch && matchesIpc;
+    });
+  }, [historyRecords, searchTerm, selectedIpc]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">

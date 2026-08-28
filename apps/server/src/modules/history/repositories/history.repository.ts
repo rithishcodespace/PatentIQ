@@ -31,24 +31,56 @@ export class HistoryRepository implements IHistoryRepository {
 
   /**
    * Saves search history and nested retrieved patents atomically within a Prisma transaction.
+   * Reuses recent search history records for identical search queries to prevent database duplicates.
    */
   async createSearchHistory(dto: CreateSearchHistoryDto): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
-      const createdSearch = await tx.searchHistory.create({
-        data: {
-          userId: dto.userId || null,
-          searchQuery: dto.searchQuery,
-          topK: dto.topK,
-          appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
-          totalResults: dto.totalResults,
-          searchLatency: dto.searchLatency,
+      const existing = await tx.searchHistory.findFirst({
+        where: {
+          searchQuery: {
+            equals: dto.searchQuery,
+            mode: 'insensitive',
+          },
+          createdAt: {
+            gte: new Date(Date.now() - 10 * 60 * 1000),
+          },
         },
+        orderBy: { createdAt: 'desc' },
       });
+
+      let searchId: string;
+      if (existing) {
+        searchId = existing.id;
+        await tx.searchHistory.update({
+          where: { id: searchId },
+          data: {
+            topK: dto.topK,
+            appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
+            totalResults: dto.totalResults,
+            searchLatency: dto.searchLatency,
+          },
+        });
+        await tx.retrievedPatent.deleteMany({
+          where: { searchHistoryId: searchId },
+        });
+      } else {
+        const createdSearch = await tx.searchHistory.create({
+          data: {
+            userId: dto.userId || null,
+            searchQuery: dto.searchQuery,
+            topK: dto.topK,
+            appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
+            totalResults: dto.totalResults,
+            searchLatency: dto.searchLatency,
+          },
+        });
+        searchId = createdSearch.id;
+      }
 
       if (dto.retrievedPatents && dto.retrievedPatents.length > 0) {
         await tx.retrievedPatent.createMany({
           data: dto.retrievedPatents.map((p) => ({
-            searchHistoryId: createdSearch.id,
+            searchHistoryId: searchId,
             patentId: p.patentId,
             title: p.title,
             similarityScore: p.similarityScore,
@@ -62,7 +94,7 @@ export class HistoryRepository implements IHistoryRepository {
       }
 
       return tx.searchHistory.findUnique({
-        where: { id: createdSearch.id },
+        where: { id: searchId },
         include: { retrievedPatents: true, noveltyAnalysis: true },
       });
     });
@@ -86,28 +118,57 @@ export class HistoryRepository implements IHistoryRepository {
   }
 
   /**
-   * Atomically creates SearchHistory, RetrievedPatents, and NoveltyAnalysis in a single transaction.
-   * If any step fails, the entire transaction is rolled back.
+   * Atomically creates or updates SearchHistory, RetrievedPatents, and NoveltyAnalysis in a single transaction.
+   * Reuses recent search history for the same query to prevent duplicate records.
    */
   async saveCompleteHistoryAtomically(dto: SaveCompleteSearchAndAnalysisDto): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Create SearchHistory record
-      const createdSearch = await tx.searchHistory.create({
-        data: {
-          userId: dto.userId || null,
-          searchQuery: dto.searchQuery,
-          topK: dto.topK,
-          appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
-          totalResults: dto.totalResults,
-          searchLatency: dto.searchLatency,
+      const existing = await tx.searchHistory.findFirst({
+        where: {
+          searchQuery: {
+            equals: dto.searchQuery,
+            mode: 'insensitive',
+          },
+          createdAt: {
+            gte: new Date(Date.now() - 10 * 60 * 1000),
+          },
         },
+        orderBy: { createdAt: 'desc' },
       });
 
-      // 2. Create RetrievedPatents records
+      let searchId: string;
+      if (existing) {
+        searchId = existing.id;
+        await tx.searchHistory.update({
+          where: { id: searchId },
+          data: {
+            topK: dto.topK,
+            appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
+            totalResults: dto.totalResults,
+            searchLatency: dto.searchLatency,
+          },
+        });
+        await tx.retrievedPatent.deleteMany({
+          where: { searchHistoryId: searchId },
+        });
+      } else {
+        const createdSearch = await tx.searchHistory.create({
+          data: {
+            userId: dto.userId || null,
+            searchQuery: dto.searchQuery,
+            topK: dto.topK,
+            appliedFilters: dto.appliedFilters ? (dto.appliedFilters as any) : undefined,
+            totalResults: dto.totalResults,
+            searchLatency: dto.searchLatency,
+          },
+        });
+        searchId = createdSearch.id;
+      }
+
       if (dto.retrievedPatents && dto.retrievedPatents.length > 0) {
         await tx.retrievedPatent.createMany({
           data: dto.retrievedPatents.map((p) => ({
-            searchHistoryId: createdSearch.id,
+            searchHistoryId: searchId,
             patentId: p.patentId,
             title: p.title,
             similarityScore: p.similarityScore,
@@ -120,11 +181,19 @@ export class HistoryRepository implements IHistoryRepository {
         });
       }
 
-      // 3. Create NoveltyAnalysis record if provided
       if (dto.noveltyAnalysis) {
-        await tx.noveltyAnalysis.create({
-          data: {
-            searchHistoryId: createdSearch.id,
+        await tx.noveltyAnalysis.upsert({
+          where: { searchHistoryId: searchId },
+          create: {
+            searchHistoryId: searchId,
+            summary: dto.noveltyAnalysis.summary,
+            novelty: dto.noveltyAnalysis.novelty,
+            overlappingClaims: dto.noveltyAnalysis.overlappingClaims,
+            recommendations: dto.noveltyAnalysis.recommendations,
+            confidenceScore: dto.noveltyAnalysis.confidenceScore,
+            rawLLMResponse: dto.noveltyAnalysis.rawLLMResponse,
+          },
+          update: {
             summary: dto.noveltyAnalysis.summary,
             novelty: dto.noveltyAnalysis.novelty,
             overlappingClaims: dto.noveltyAnalysis.overlappingClaims,
@@ -135,9 +204,8 @@ export class HistoryRepository implements IHistoryRepository {
         });
       }
 
-      // 4. Return full populated record
       return tx.searchHistory.findUnique({
-        where: { id: createdSearch.id },
+        where: { id: searchId },
         include: {
           retrievedPatents: true,
           noveltyAnalysis: true,
